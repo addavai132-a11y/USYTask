@@ -1,0 +1,17 @@
+{
+  "name": "USYTask — Universal System for Tasks",
+  "short_name": "USYTask",
+  "description": "Universal System for Tasks — El sistema centralizado para organizar tareas, calendario, compras, hogar y proyectos compartidos.",
+  "start_url": "/app",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#4f7d5e",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
