@@ -1,15 +1,15 @@
 'use client'
 
-import { Home, LayoutGrid, House, Dumbbell, Users, User, Plus, Moon, Sun } from 'lucide-react'
+import { LayoutDashboard, Folders, House, Dumbbell, Users, User, Plus, Moon, Sun, type LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useApp, type Tab } from './app-context'
 import { UsyTaskLogo } from '@/components/ui/usytask-logo'
 import { SpaceSelectorButton } from './space-selector-button'
 import { useThemeMode } from '@/components/ui/theme-mode-context'
 
-export const navItems: { id: Tab; label: string; icon: typeof Home }[] = [
-  { id: 'inicio', label: 'Inicio', icon: Home },
-  { id: 'organizar', label: 'Organizar', icon: LayoutGrid },
+export const navItems: { id: Tab; label: string; icon: LucideIcon }[] = [
+  { id: 'inicio', label: 'Inicio', icon: LayoutDashboard },
+  { id: 'organizar', label: 'Organizar', icon: Folders },
   { id: 'hogar', label: 'Hogar', icon: House },
   { id: 'fitness', label: 'Fitness', icon: Dumbbell },
   { id: 'familia', label: 'Familia', icon: Users },
