@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils'
-import type { Member } from '@/lib/mock-data'
+import type { Member } from '@/types'
 import { memberStyle } from '@/lib/member-color'
 
 const sizes = {

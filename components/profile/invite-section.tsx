@@ -25,23 +25,25 @@ import {
   toggleInvitationActive,
   getInvitationUrl,
 } from '@/lib/invitation'
-import { household } from '@/lib/mock-data'
+import { useApp } from '@/components/app/app-context'
 
 export function InviteSection() {
   const { toast } = useToast()
+  const { activeGroup } = useApp()
+  const groupName = activeGroup?.name || 'Mi Grupo'
   const [invitation, setInvitation] = useState<HouseholdInvitation | null>(null)
   const [copied, setCopied] = useState(false)
   const [qrModalOpen, setQrModalOpen] = useState(false)
   const [expiration, setExpiration] = useState<ExpirationOption>('never')
 
   useEffect(() => {
-    setInvitation(getActiveInvitation(household.name))
+    setInvitation(getActiveInvitation(groupName))
   }, [])
 
   if (!invitation) return null
 
   const inviteUrl = getInvitationUrl(invitation.token)
-  const householdName = invitation.household_name || household.name
+  const householdName = invitation.household_name || groupName
 
   const handleCopyLink = () => {
     if (typeof navigator !== 'undefined') {

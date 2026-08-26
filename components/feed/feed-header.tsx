@@ -1,50 +1,30 @@
 'use client'
 
-import { Bell, Plus } from 'lucide-react'
-import { members, getMember, getGreeting, getTodayLabel, currentUser } from '@/lib/mock-data'
-import { MemberAvatar } from '@/components/ui/member-avatar'
+import { Bell } from 'lucide-react'
 import { useApp } from '@/components/app/app-context'
-import { useToast } from '@/components/ui/toast'
+import { getGreeting, getTodayLabel } from '@/lib/date-utils'
 
 export function FeedHeader() {
-  const { setNotificationsOpen } = useApp()
-  const { toast } = useToast()
-  const me = getMember(currentUser)
+  const { setNotificationsOpen, userName, notifications } = useApp()
 
   return (
-    <header className="mb-4">
-      <div className="flex items-start justify-between gap-3">
+    <header className="mb-2">
+      <div className="flex items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-black tracking-tight text-balance">
-            {getGreeting()}, {me.name} <span aria-hidden="true">👋</span>
+          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
+            {getGreeting()}, {userName} <span aria-hidden="true">👋</span>
           </h1>
-          <p className="mt-0.5 text-sm font-medium text-muted-foreground">{getTodayLabel()}</p>
+          <p className="mt-0.5 text-xs sm:text-sm font-medium text-slate-400">{getTodayLabel()}</p>
         </div>
         <button
           onClick={() => setNotificationsOpen(true)}
           aria-label="Notificaciones"
-          className="relative flex size-11 shrink-0 items-center justify-center rounded-2xl border border-border/60 bg-card shadow-soft transition-transform active:scale-90"
+          className="relative flex size-10 sm:size-11 shrink-0 items-center justify-center rounded-2xl border border-purple-500/20 bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 hover:text-white shadow-soft transition-all active:scale-90"
         >
           <Bell className="size-5" />
-          <span className="absolute right-2.5 top-2.5 size-2 rounded-full bg-accent ring-2 ring-card" />
-        </button>
-      </div>
-
-      <div className="no-scrollbar mt-4 flex items-center gap-3 overflow-x-auto">
-        {members.map((m) => (
-          <div key={m.id} className="flex shrink-0 flex-col items-center gap-1">
-            <MemberAvatar member={m} size="lg" ring />
-            <span className="text-xs font-semibold">{m.name}</span>
-          </div>
-        ))}
-        <button
-          onClick={() => toast('Enlace de invitación copiado', '🔗')}
-          className="flex shrink-0 flex-col items-center gap-1"
-        >
-          <span className="flex size-14 items-center justify-center rounded-full border-2 border-dashed border-border text-muted-foreground transition-transform active:scale-90">
-            <Plus className="size-6" />
-          </span>
-          <span className="text-xs font-semibold text-muted-foreground">Invitar</span>
+          {notifications.length > 0 && (
+            <span className="absolute right-2.5 top-2.5 size-2 rounded-full border-2 border-[#100e23] bg-orange-500" />
+          )}
         </button>
       </div>
     </header>

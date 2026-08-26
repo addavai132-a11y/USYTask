@@ -72,29 +72,33 @@ function LoginContent() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col justify-between bg-background text-foreground px-4 py-8 sm:px-6">
+    <div className="relative min-h-screen flex flex-col justify-between bg-[#05050a] text-white px-4 py-8 sm:px-6 overflow-hidden">
+      {/* Ambient Radial Aurora Glows */}
+      <div className="pointer-events-none absolute -top-40 -left-40 size-96 rounded-full bg-purple-600/15 blur-[120px]" />
+      <div className="pointer-events-none absolute -bottom-40 -right-40 size-96 rounded-full bg-indigo-600/15 blur-[120px]" />
+
       {/* Top Header */}
-      <div className="mx-auto w-full max-w-md flex justify-between items-center pb-6">
+      <div className="relative z-10 mx-auto w-full max-w-md flex justify-between items-center pb-6">
         <Link href="/">
           <UsyTaskLogo size="md" />
         </Link>
         <Link
           href={nextTarget ? `/register?next=${encodeURIComponent(nextTarget)}` : '/register'}
-          className="text-sm font-bold text-primary hover:underline"
+          className="text-xs font-semibold text-purple-400 hover:text-purple-300 transition-colors"
         >
           Crear cuenta
         </Link>
       </div>
 
-      {/* Main Login Card */}
-      <div className="mx-auto w-full max-w-md my-auto">
-        <div className="rounded-[32px] border border-emerald-500/20 bg-gradient-to-br from-card via-card to-emerald-500/10 p-6 shadow-xl sm:p-8">
+      {/* Floating Central Dark Glass Card */}
+      <div className="relative z-10 mx-auto w-full max-w-md my-auto">
+        <div className="rounded-3xl border border-purple-500/20 bg-[#0e0d1d]/75 p-6 sm:p-8 backdrop-blur-2xl shadow-2xl shadow-black/80 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]">
           <div className="mb-6 flex flex-col items-center text-center">
-            <UsyTaskLogo size="lg" showSubtitle className="mb-4" />
-            <h1 className="text-2xl font-black tracking-tight sm:text-3xl mt-2">
+            <UsyTaskLogo size="lg" showSubtitle className="mb-3" />
+            <h1 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl mt-1">
               Bienvenido de nuevo
             </h1>
-            <p className="mt-1.5 text-sm font-medium text-muted-foreground">
+            <p className="mt-1 text-xs font-medium text-slate-400">
               Todo sigue exactamente donde lo dejaste.
             </p>
           </div>
@@ -104,35 +108,35 @@ function LoginContent() {
             type="button"
             onClick={handleGoogleLogin}
             disabled={googleLoading}
-            className="flex h-13 w-full items-center justify-center gap-3 rounded-2xl border border-border bg-card font-bold text-foreground shadow-sm transition-transform active:scale-[0.98] hover:border-primary/50 hover:bg-secondary/40"
+            className="flex h-12 w-full items-center justify-center gap-3 rounded-xl border border-white/10 bg-black/40 font-semibold text-slate-200 shadow-sm transition-all active:scale-[0.98] hover:border-purple-500/30 hover:bg-white/[0.04]"
           >
             <GoogleIcon className="size-5 shrink-0" />
-            <span>{googleLoading ? 'Conectando...' : 'Continuar con Google'}</span>
+            <span className="text-xs">{googleLoading ? 'Conectando...' : 'Continuar con Google'}</span>
           </button>
 
           {/* Separador */}
           <div className="my-5 flex items-center gap-3">
-            <div className="h-[1px] flex-1 bg-border/80" />
-            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            <div className="h-[1px] flex-1 bg-white/10" />
+            <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">
               o inicia sesión con email
             </span>
-            <div className="h-[1px] flex-1 bg-border/80" />
+            <div className="h-[1px] flex-1 bg-white/10" />
           </div>
 
           {error && (
-            <div className="mb-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 p-3 text-center text-xs font-bold text-rose-600 dark:text-rose-400">
+            <div className="mb-4 rounded-xl bg-rose-500/10 border border-rose-500/20 p-3 text-center text-xs font-bold text-rose-400 animate-fade-in">
               {error}
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             {/* Email */}
-            <div className="flex flex-col gap-1">
-              <label htmlFor="login-email" className="text-xs font-bold text-muted-foreground">
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="login-email" className="text-xs font-semibold text-slate-400">
                 Correo electrónico
               </label>
               <div className="relative">
-                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 size-5 text-muted-foreground" />
+                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-slate-500" />
                 <input
                   id="login-email"
                   type="email"
@@ -140,27 +144,27 @@ function LoginContent() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="tu@email.com"
-                  className="w-full rounded-2xl border border-border bg-secondary/50 py-3 pl-11 pr-4 text-sm font-semibold outline-none focus:border-primary focus:bg-card"
+                  className="w-full rounded-xl border border-white/10 bg-black/50 py-2.5 pl-10 pr-4 text-xs font-semibold text-white placeholder:text-slate-500 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500/40 transition-all"
                 />
               </div>
             </div>
 
             {/* Password */}
-            <div className="flex flex-col gap-1">
+            <div className="flex flex-col gap-1.5">
               <div className="flex items-center justify-between">
-                <label htmlFor="login-password" className="text-xs font-bold text-muted-foreground">
+                <label htmlFor="login-password" className="text-xs font-semibold text-slate-400">
                   Contraseña
                 </label>
                 <button
                   type="button"
                   onClick={() => alert('Próximamente: Recuperación de contraseña por email.')}
-                  className="text-xs font-bold text-primary hover:underline"
+                  className="text-[11px] font-semibold text-purple-400 hover:underline"
                 >
                   ¿Has olvidado tu contraseña?
                 </button>
               </div>
               <div className="relative">
-                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 size-5 text-muted-foreground" />
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-slate-500" />
                 <input
                   id="login-password"
                   type="password"
@@ -168,7 +172,7 @@ function LoginContent() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full rounded-2xl border border-border bg-secondary/50 py-3 pl-11 pr-4 text-sm font-semibold outline-none focus:border-primary focus:bg-card"
+                  className="w-full rounded-xl border border-white/10 bg-black/50 py-2.5 pl-10 pr-4 text-xs font-semibold text-white placeholder:text-slate-500 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500/40 transition-all"
                 />
               </div>
             </div>
@@ -177,19 +181,19 @@ function LoginContent() {
             <button
               type="submit"
               disabled={loading}
-              className="mt-2 flex h-13 w-full items-center justify-center gap-2 rounded-2xl bg-primary font-bold text-primary-foreground shadow-soft transition-transform active:scale-[0.98] disabled:opacity-50"
+              className="mt-2 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 font-semibold text-white shadow-lg shadow-purple-950/60 transition-all active:scale-[0.98] hover:from-purple-500 hover:to-indigo-500 hover:shadow-purple-600/30 disabled:opacity-50"
             >
-              {loading ? 'Iniciando sesión...' : 'Iniciar sesión'}
-              <ArrowRight className="size-5" />
+              <span className="text-xs">{loading ? 'Iniciando sesión...' : 'Iniciar sesión'}</span>
+              <ArrowRight className="size-4" />
             </button>
           </form>
 
           {/* Footer Link */}
-          <div className="mt-6 text-center text-xs font-semibold text-muted-foreground pt-4 border-t border-border/60">
+          <div className="mt-6 text-center text-xs font-medium text-slate-400 pt-4 border-t border-white/10">
             ¿No tienes cuenta?{' '}
             <Link
               href={nextTarget ? `/register?next=${encodeURIComponent(nextTarget)}` : '/register'}
-              className="font-bold text-primary hover:underline"
+              className="font-semibold text-purple-400 hover:underline"
             >
               Crear cuenta gratis
             </Link>
@@ -198,7 +202,7 @@ function LoginContent() {
       </div>
 
       {/* Footer */}
-      <div className="mx-auto w-full max-w-md text-center text-xs font-medium text-muted-foreground pt-6">
+      <div className="relative z-10 mx-auto w-full max-w-md text-center text-[11px] font-medium text-slate-500 pt-6">
         USYTask — Universal System for Tasks
       </div>
     </div>
@@ -209,10 +213,10 @@ export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center bg-background text-foreground">
+        <div className="min-h-screen flex items-center justify-center bg-[#05050a] text-white">
           <div className="flex flex-col items-center gap-3">
             <UsyTaskLogo size="md" />
-            <p className="text-sm font-bold text-muted-foreground animate-pulse">Cargando...</p>
+            <p className="text-xs font-semibold text-slate-400 animate-pulse">Cargando...</p>
           </div>
         </div>
       }

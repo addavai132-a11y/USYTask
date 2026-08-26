@@ -2,42 +2,55 @@
 
 import { useState } from 'react'
 import { PillTabs } from '@/components/ui/pill-tabs'
+import { ScreenHeader } from '@/components/shared/screen-header'
 import { CalendarSection } from './calendar-section'
 import { TasksSection } from './tasks-section'
 import { ShoppingSection } from './shopping-section'
 import { MealsSection } from './meals-section'
-import { PlansSection } from './plans-section'
+import { HistorySection } from './history-section'
 
-type Section = 'calendario' | 'tareas' | 'compras' | 'comidas' | 'planes'
+export type OrganizeSection =
+  | 'calendario'
+  | 'tareas'
+  | 'compras'
+  | 'comidas'
+  | 'historial'
 
 export function OrganizeScreen() {
-  const [section, setSection] = useState<Section>('calendario')
+  const [section, setSection] = useState<OrganizeSection>('calendario')
 
   return (
-    <div>
-      <header className="mb-5">
-        <h1 className="text-2xl font-extrabold tracking-tight">Organizar</h1>
-        <p className="text-sm text-muted-foreground">El día a día, en orden</p>
-      </header>
-
-      <PillTabs<Section>
-        className="mb-5"
-        value={section}
-        onChange={setSection}
-        tabs={[
-          { id: 'calendario', label: 'Calendario' },
-          { id: 'tareas', label: 'Tareas' },
-          { id: 'compras', label: 'Compras' },
-          { id: 'comidas', label: 'Comidas' },
-          { id: 'planes', label: 'Planes' },
-        ]}
+    <div className="flex flex-col gap-4 w-full max-w-6xl mx-auto">
+      <ScreenHeader
+        title="Centro de Control"
+        subtitle="Organización integral, calendario multimodal y productividad del hogar"
+        centered
       />
 
-      {section === 'calendario' && <CalendarSection />}
-      {section === 'tareas' && <TasksSection />}
-      {section === 'compras' && <ShoppingSection />}
-      {section === 'comidas' && <MealsSection />}
-      {section === 'planes' && <PlansSection />}
+      {/* ── NAVEGACIÓN PRINCIPAL DE LA SUITE (5 Pestañas Autoajustadas Centradas) ── */}
+      <div className="w-fit mx-auto flex items-center justify-center p-1.5 bg-white/[0.03] border border-white/10 rounded-2xl backdrop-blur-xl shadow-sm">
+        <PillTabs<OrganizeSection>
+          value={section}
+          onChange={setSection}
+          showScrollArrows={false}
+          tabs={[
+            { id: 'calendario', label: 'Calendario' },
+            { id: 'tareas', label: 'Actividades' },
+            { id: 'compras', label: 'Compras' },
+            { id: 'comidas', label: 'Comidas' },
+            { id: 'historial', label: 'Historial' },
+          ]}
+        />
+      </div>
+
+      {/* ── CONTENIDO DIRECTO DE LA SECCIÓN ACTIVA ── */}
+      <div className="w-full transition-all duration-200">
+        {section === 'calendario' && <CalendarSection />}
+        {section === 'tareas' && <TasksSection memberFilter="all" searchQuery="" />}
+        {section === 'compras' && <ShoppingSection memberFilter="all" searchQuery="" />}
+        {section === 'comidas' && <MealsSection />}
+        {section === 'historial' && <HistorySection memberFilter="all" searchQuery="" />}
+      </div>
     </div>
   )
 }

@@ -2,6 +2,7 @@ import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
 import { Manrope } from 'next/font/google'
 import { ServiceWorkerRegister } from '@/components/pwa/service-worker-register'
+import { ThemeModeProvider } from '@/components/ui/theme-mode-context'
 import './globals.css'
 
 const manrope = Manrope({
@@ -19,7 +20,7 @@ export const metadata: Metadata = {
   manifest: '/manifest.webmanifest',
   appleWebApp: {
     capable: true,
-    statusBarStyle: 'default',
+    statusBarStyle: 'black-translucent',
     title: 'USYTask',
   },
   formatDetection: {
@@ -32,7 +33,7 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  themeColor: '#4f7d5e',
+  themeColor: '#05050a',
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
@@ -46,11 +47,20 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="es" className={`${manrope.variable} bg-background`}>
-      <body className="font-sans antialiased">
-        {children}
-        <ServiceWorkerRegister />
-        {process.env.NODE_ENV === 'production' && <Analytics />}
+    <html lang="es" className={`${manrope.variable} dark`}>
+      <body className="font-sans antialiased bg-background text-foreground transition-colors duration-300">
+        <ThemeModeProvider>
+          {/* Fixed Ambient Aurora Glow Background Layer */}
+          <div className="fixed inset-0 pointer-events-none -z-10 overflow-hidden">
+            <div className="absolute top-[10%] left-[15%] size-[550px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,_rgba(147,51,234,0.14)_0%,_transparent_70%)] blur-3xl" />
+            <div className="absolute bottom-[15%] right-[15%] size-[650px] translate-x-1/2 translate-y-1/2 rounded-full bg-[radial-gradient(circle,_rgba(99,102,241,0.10)_0%,_transparent_70%)] blur-3xl" />
+            <div className="absolute top-[50%] left-[50%] size-[450px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,_rgba(217,70,239,0.04)_0%,_transparent_70%)] blur-3xl" />
+          </div>
+
+          {children}
+          <ServiceWorkerRegister />
+          {process.env.NODE_ENV === 'production' && <Analytics />}
+        </ThemeModeProvider>
       </body>
     </html>
   )

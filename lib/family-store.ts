@@ -1,0 +1,498 @@
+// USYTask — Family Data Store
+// CRUD, Persistence and Gamification Logic for Challenges, Rewards, Memories, Achievements, and Member Profiles.
+
+import type { FamilyChallenge, FamilyReward, FamilyMemory, FamilyAchievement, Member, Task } from '@/types'
+import { getTodayISO } from './date-utils'
+
+const CHALLENGES_KEY = 'usytask_family_challenges'
+const REWARDS_KEY = 'usytask_family_rewards'
+const MEMORIES_KEY = 'usytask_family_memories'
+const MEMBERS_KEY = 'usytask_members'
+
+function loadArray<T>(key: string): T[] {
+  if (typeof window === 'undefined') return []
+  try {
+    const raw = localStorage.getItem(key)
+    return raw ? JSON.parse(raw) : []
+  } catch {
+    return []
+  }
+}
+
+function saveArray<T>(key: string, data: T[]): void {
+  if (typeof window === 'undefined') return
+  try {
+    localStorage.setItem(key, JSON.stringify(data))
+  } catch (err) {
+    console.error(`Error saving ${key}`, err)
+  }
+}
+
+// ---------------- CHALLENGES ----------------
+
+const DEFAULT_CHALLENGES: Omit<FamilyChallenge, 'groupId'>[] = [
+  {
+    id: 'sample_chal_1',
+    title: '30 min de Lectura Diaria',
+    description: 'Leer al menos 30 minutos cada día antes de dormir para cultivar el hábito.',
+    rewardPoints: 150,
+    targetDays: 7,
+    currentDays: 4,
+    category: 'estudio',
+    assignedMemberIds: [],
+    status: 'en_progreso',
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: 'sample_chal_2',
+    title: 'Cocina Limpia tras la Cena',
+    description: 'Dejar la encimera y fregadero recogidos e impecables cada noche.',
+    rewardPoints: 200,
+    targetDays: 5,
+    currentDays: 5,
+    category: 'limpieza',
+    assignedMemberIds: [],
+    status: 'completado',
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: 'sample_chal_3',
+    title: 'Paseo en Familia o Deporte',
+    description: 'Realizar 45 minutos de ejercicio o paseo al aire libre.',
+    rewardPoints: 120,
+    targetDays: 5,
+    currentDays: 2,
+    category: 'deporte',
+    assignedMemberIds: [],
+    status: 'en_progreso',
+    createdAt: new Date().toISOString(),
+  },
+]
+
+export function getAllChallenges(): FamilyChallenge[] {
+  return loadArray<FamilyChallenge>(CHALLENGES_KEY)
+}
+
+export function getChallengesByGroup(groupId: string): FamilyChallenge[] {
+  const all = getAllChallenges()
+  const groupChallenges = all.filter((c) => c.groupId === groupId)
+  if (groupChallenges.length > 0) return groupChallenges
+
+  // Initialize with sample challenges
+  const defaults: FamilyChallenge[] = DEFAULT_CHALLENGES.map((dc, idx) => ({
+    ...dc,
+    id: `chal_seed_${groupId}_${idx + 1}`,
+    groupId,
+  }))
+  saveArray(CHALLENGES_KEY, [...all, ...defaults])
+  return defaults
+}
+
+export function addChallenge(challenge: FamilyChallenge): void {
+  const all = getAllChallenges()
+  all.unshift(challenge)
+  saveArray(CHALLENGES_KEY, all)
+}
+
+export function updateChallenge(challenge: FamilyChallenge): void {
+  const all = getAllChallenges()
+  const idx = all.findIndex((c) => c.id === challenge.id && c.groupId === challenge.groupId)
+  if (idx >= 0) {
+    all[idx] = challenge
+    saveArray(CHALLENGES_KEY, all)
+  }
+}
+
+export function deleteChallenge(id: string, groupId: string): void {
+  const all = getAllChallenges()
+  saveArray(CHALLENGES_KEY, all.filter((c) => !(c.id === id && c.groupId === groupId)))
+}
+
+export function incrementChallengeProgress(
+  id: string,
+  groupId: string
+): { challenge: FamilyChallenge | null; completedNow: boolean; pointsAwarded: number } {
+  const all = getAllChallenges()
+  const idx = all.findIndex((c) => c.id === id && c.groupId === groupId)
+  if (idx < 0) return { challenge: null, completedNow: false, pointsAwarded: 0 }
+
+  const chal = all[idx]
+  const today = getTodayISO()
+
+  if (chal.lastCheckedDate === today) {
+    return { challenge: chal, completedNow: false, pointsAwarded: 0 }
+  }
+
+  const nextDays = chal.currentDays + 1
+  const isNowCompleted = nextDays >= chal.targetDays && chal.status !== 'completado'
+
+  const updated: FamilyChallenge = {
+    ...chal,
+    currentDays: nextDays,
+    lastCheckedDate: today,
+    status: isNowCompleted ? 'completado' : chal.status,
+  }
+
+  all[idx] = updated
+  saveArray(CHALLENGES_KEY, all)
+
+  return {
+    challenge: updated,
+    completedNow: isNowCompleted,
+    pointsAwarded: isNowCompleted ? chal.rewardPoints : 0,
+  }
+}
+
+// ---------------- REWARDS ----------------
+
+const DEFAULT_REWARDS: Omit<FamilyReward, 'groupId'>[] = [
+  {
+    id: 'sample_rew_1',
+    title: 'Elegir Película del Viernes',
+    description: 'Mando absoluto sobre las palomitas y la peli familiar del fin de semana.',
+    pointCost: 150,
+    icon: '🎬',
+    claimedBy: [],
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: 'sample_rew_2',
+    title: 'Cena o Comida Favorita',
+    description: 'Elegir el menú especial o pedir pizza/hamburguesa para cenar.',
+    pointCost: 300,
+    icon: '🍕',
+    claimedBy: [],
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: 'sample_rew_3',
+    title: 'Tarde Extra de Videojuegos',
+    description: '1 hora adicional de juego o consola sin interrupciones.',
+    pointCost: 200,
+    icon: '🎮',
+    claimedBy: [],
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: 'sample_rew_4',
+    title: 'Salida al Cine o Parque',
+    description: 'Plan especial fuera de casa a elección del canjeador.',
+    pointCost: 500,
+    icon: '🎟️',
+    claimedBy: [],
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: 'sample_rew_5',
+    title: 'Exención de Tarea Doméstica',
+    description: 'Pase libre para librarse de poner la mesa o sacar la basura por 1 día.',
+    pointCost: 250,
+    icon: '🛡️',
+    claimedBy: [],
+    createdAt: new Date().toISOString(),
+  },
+]
+
+export function getAllRewards(): FamilyReward[] {
+  return loadArray<FamilyReward>(REWARDS_KEY)
+}
+
+export function getRewardsByGroup(groupId: string): FamilyReward[] {
+  const all = getAllRewards()
+  const groupRewards = all.filter((r) => r.groupId === groupId)
+  if (groupRewards.length > 0) return groupRewards
+
+  const defaults: FamilyReward[] = DEFAULT_REWARDS.map((dr, idx) => ({
+    ...dr,
+    id: `rew_seed_${groupId}_${idx + 1}`,
+    groupId,
+  }))
+  saveArray(REWARDS_KEY, [...all, ...defaults])
+  return defaults
+}
+
+export function addReward(reward: FamilyReward): void {
+  const all = getAllRewards()
+  all.unshift(reward)
+  saveArray(REWARDS_KEY, all)
+}
+
+export function updateReward(reward: FamilyReward): void {
+  const all = getAllRewards()
+  const idx = all.findIndex((r) => r.id === reward.id && r.groupId === reward.groupId)
+  if (idx >= 0) {
+    all[idx] = reward
+    saveArray(REWARDS_KEY, all)
+  }
+}
+
+export function deleteReward(id: string, groupId: string): void {
+  const all = getAllRewards()
+  saveArray(REWARDS_KEY, all.filter((r) => !(r.id === id && r.groupId === groupId)))
+}
+
+export function claimReward(
+  rewardId: string,
+  memberId: string,
+  groupId: string
+): { success: boolean; error?: string; reward?: FamilyReward } {
+  const allRewards = getAllRewards()
+  const rIdx = allRewards.findIndex((r) => r.id === rewardId && r.groupId === groupId)
+  if (rIdx < 0) return { success: false, error: 'Recompensa no encontrada' }
+
+  const reward = allRewards[rIdx]
+
+  // Check member points
+  const allMembers = loadArray<Member>(MEMBERS_KEY)
+  const mIdx = allMembers.findIndex((m) => m.id === memberId && m.groupId === groupId)
+  if (mIdx < 0) return { success: false, error: 'Miembro no encontrado' }
+
+  const member = allMembers[mIdx]
+  if (member.points < reward.pointCost) {
+    return {
+      success: false,
+      error: `Puntos insuficientes. ${member.name} tiene ${member.points} pts y se necesitan ${reward.pointCost} pts.`,
+    }
+  }
+
+  // Deduct points
+  allMembers[mIdx] = {
+    ...member,
+    points: Math.max(0, member.points - reward.pointCost),
+  }
+  saveArray(MEMBERS_KEY, allMembers)
+
+  // Register claim in reward
+  const updatedClaimedBy = reward.claimedBy || []
+  updatedClaimedBy.unshift({
+    id: `claim_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+    memberId,
+    date: new Date().toISOString(),
+    rewardTitle: reward.title,
+    pointCost: reward.pointCost,
+  })
+
+  const updatedReward: FamilyReward = {
+    ...reward,
+    stock: reward.stock !== undefined ? Math.max(0, reward.stock - 1) : undefined,
+    claimedBy: updatedClaimedBy,
+  }
+
+  allRewards[rIdx] = updatedReward
+  saveArray(REWARDS_KEY, allRewards)
+
+  return { success: true, reward: updatedReward }
+}
+
+// ---------------- MEMORIES ----------------
+
+const DEFAULT_MEMORIES: Omit<FamilyMemory, 'groupId'>[] = [
+  {
+    id: 'sample_mem_1',
+    title: 'Excursión a la Sierra de Guadarrama',
+    description: 'Día fantástico de senderismo y picnic bajo los pinos. ¡Hicimos más de 12 km juntos!',
+    date: getTodayISO(),
+    imagePlaceholder: 'linear-gradient(135deg, #059669 0%, #10b981 50%, #34d399 100%)',
+    tags: ['Naturaleza', 'Deporte', 'FinDeSemana'],
+    taggedMemberIds: [],
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: 'sample_mem_2',
+    title: 'Noche de Juegos de Mesa y Pizza Casera',
+    description: 'Partida épica de Catan con masa de pizza hecha en casa con masa madre.',
+    date: getTodayISO(),
+    imagePlaceholder: 'linear-gradient(135deg, #7c3aed 0%, #a855f7 50%, #ec4899 100%)',
+    tags: ['Juegos', 'Cena', 'Risas'],
+    taggedMemberIds: [],
+    createdAt: new Date().toISOString(),
+  },
+]
+
+export function getAllMemories(): FamilyMemory[] {
+  return loadArray<FamilyMemory>(MEMORIES_KEY)
+}
+
+export function getMemoriesByGroup(groupId: string): FamilyMemory[] {
+  const all = getAllMemories()
+  const groupMemories = all.filter((m) => m.groupId === groupId)
+  if (groupMemories.length > 0) return groupMemories
+
+  const defaults: FamilyMemory[] = DEFAULT_MEMORIES.map((dm, idx) => ({
+    ...dm,
+    id: `mem_seed_${groupId}_${idx + 1}`,
+    groupId,
+  }))
+  saveArray(MEMORIES_KEY, [...all, ...defaults])
+  return defaults
+}
+
+export function addMemory(memory: FamilyMemory): void {
+  const all = getAllMemories()
+  all.unshift(memory)
+  saveArray(MEMORIES_KEY, all)
+}
+
+export function updateMemory(memory: FamilyMemory): void {
+  const all = getAllMemories()
+  const idx = all.findIndex((m) => m.id === memory.id && m.groupId === memory.groupId)
+  if (idx >= 0) {
+    all[idx] = memory
+    saveArray(MEMORIES_KEY, all)
+  }
+}
+
+export function deleteMemory(id: string, groupId: string): void {
+  const all = getAllMemories()
+  saveArray(MEMORIES_KEY, all.filter((m) => !(m.id === id && m.groupId === groupId)))
+}
+
+// ---------------- ACHIEVEMENTS ENGINE ----------------
+
+export function computeAchievementsForGroup(
+  members: Member[],
+  tasks: Task[],
+  challenges: FamilyChallenge[],
+  rewards: FamilyReward[],
+  memories: FamilyMemory[]
+): FamilyAchievement[] {
+  const totalPoints = members.reduce((acc, m) => acc + (m.points || 0), 0)
+  const maxStreak = members.reduce((acc, m) => Math.max(acc, m.streak || m.streakDays || 0), 0)
+  const completedTasks = tasks.filter((t) => t.completed).length
+  const completedChallenges = challenges.filter((c) => c.status === 'completado').length
+  const totalClaims = rewards.reduce((acc, r) => acc + (r.claimedBy?.length || 0), 0)
+  const totalMemories = memories.length
+
+  const definitions: Omit<FamilyAchievement, 'isUnlocked' | 'progress'>[] = [
+    {
+      id: 'ach_first_step',
+      title: 'Primer Paso en Equipo',
+      description: 'Crea tu primer integrante y completa al menos 1 tarea.',
+      icon: '🌱',
+      maxProgress: 1,
+      category: 'tasks',
+    },
+    {
+      id: 'ach_streak_3',
+      title: 'Hábito Forjado (3 Días)',
+      description: 'Alcanza una racha de 3 días activos en el hogar.',
+      icon: '🔥',
+      maxProgress: 3,
+      category: 'streak',
+    },
+    {
+      id: 'ach_streak_7',
+      title: 'Semana Perfecta (7 Días)',
+      description: 'Mantén una racha imparable de 7 días continuos.',
+      icon: '⚡',
+      maxProgress: 7,
+      category: 'streak',
+    },
+    {
+      id: 'ach_points_500',
+      title: 'Bolsa de Oro (500 Puntos)',
+      description: 'Acumula un total de 500 puntos entre todos los miembros.',
+      icon: '⭐',
+      maxProgress: 500,
+      category: 'points',
+    },
+    {
+      id: 'ach_points_1500',
+      title: 'Leyendas del Hogar (1500 Pts)',
+      description: 'Supera la barrera de los 1500 puntos familiares acumulados.',
+      icon: '👑',
+      maxProgress: 1500,
+      category: 'points',
+    },
+    {
+      id: 'ach_tasks_10',
+      title: 'Colaborador Maestro (10 Tareas)',
+      description: 'Completa al menos 10 tareas en el hogar.',
+      icon: '🧹',
+      maxProgress: 10,
+      category: 'tasks',
+    },
+    {
+      id: 'ach_challenge_master',
+      title: 'Conquistador de Retos',
+      description: 'Lleva a término al menos 2 retos o desafíos familiares.',
+      icon: '🏆',
+      maxProgress: 2,
+      category: 'challenges',
+    },
+    {
+      id: 'ach_reward_hunter',
+      title: 'Cazador de Recompensas',
+      description: 'Canjea tu primer premio en la Tienda Familiar.',
+      icon: '🎁',
+      maxProgress: 1,
+      category: 'rewards',
+    },
+    {
+      id: 'ach_album_gold',
+      title: 'Álbum Dorado de Recuerdos',
+      description: 'Inmortaliza al menos 3 momentos especiales en el baúl.',
+      icon: '📸',
+      maxProgress: 3,
+      category: 'memories',
+    },
+  ]
+
+  return definitions.map((def) => {
+    let current = 0
+    if (def.id === 'ach_first_step') current = members.length > 0 && completedTasks >= 1 ? 1 : 0
+    else if (def.id === 'ach_streak_3') current = Math.min(3, maxStreak)
+    else if (def.id === 'ach_streak_7') current = Math.min(7, maxStreak)
+    else if (def.id === 'ach_points_500') current = Math.min(500, totalPoints)
+    else if (def.id === 'ach_points_1500') current = Math.min(1500, totalPoints)
+    else if (def.id === 'ach_tasks_10') current = Math.min(10, completedTasks)
+    else if (def.id === 'ach_challenge_master') current = Math.min(2, completedChallenges)
+    else if (def.id === 'ach_reward_hunter') current = Math.min(1, totalClaims)
+    else if (def.id === 'ach_album_gold') current = Math.min(3, totalMemories)
+
+    const isUnlocked = current >= def.maxProgress
+    return {
+      ...def,
+      progress: current,
+      isUnlocked,
+      unlockedAt: isUnlocked ? 'Desbloqueado' : undefined,
+    }
+  })
+}
+
+// ---------------- MEMBER ADJUSTMENTS ----------------
+
+export function updateMemberProfile(
+  memberId: string,
+  groupId: string,
+  updates: Partial<Member>
+): Member | null {
+  const allMembers = loadArray<Member>(MEMBERS_KEY)
+  const idx = allMembers.findIndex((m) => m.id === memberId && m.groupId === groupId)
+  if (idx < 0) return null
+
+  allMembers[idx] = {
+    ...allMembers[idx],
+    ...updates,
+  }
+  saveArray(MEMBERS_KEY, allMembers)
+  return allMembers[idx]
+}
+
+export function adjustMemberPoints(
+  memberId: string,
+  groupId: string,
+  pointsDelta: number
+): Member | null {
+  const allMembers = loadArray<Member>(MEMBERS_KEY)
+  const idx = allMembers.findIndex((m) => m.id === memberId && m.groupId === groupId)
+  if (idx < 0) return null
+
+  const updatedPoints = Math.max(0, (allMembers[idx].points || 0) + pointsDelta)
+  allMembers[idx] = {
+    ...allMembers[idx],
+    points: updatedPoints,
+  }
+  saveArray(MEMBERS_KEY, allMembers)
+  return allMembers[idx]
+}

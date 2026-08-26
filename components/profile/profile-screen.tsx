@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { User, Home, FileText, Smartphone, Copy, Check, ShieldCheck, Bell, LogOut, Zap } from 'lucide-react'
+import { User, Home, Smartphone, Bell, LogOut, Zap, History } from 'lucide-react'
 import { Card, CardHeader } from '@/components/ui/card'
 import { ScreenHeader } from '@/components/shared/screen-header'
 import { getActiveUserSession, handleLogout } from '@/lib/supabase-auth'
@@ -10,22 +10,13 @@ import { UserProfile, calculateAge } from '@/lib/user-session'
 import { isDevModeActive, disableDevMode } from '@/lib/dev-mode'
 import { InviteSection } from './invite-section'
 import { SpacesManagementSection } from './spaces-management-section'
-import {
-  household,
-  documents,
-  docTypeLabels,
-  getMember,
-  currentUser,
-} from '@/lib/mock-data'
 import { useToast } from '@/components/ui/toast'
 import { useApp } from '@/components/app/app-context'
 
 export function ProfileScreen() {
   const router = useRouter()
-  const me = getMember(currentUser)
   const { toast } = useToast()
-  const { notificationsOpen, setNotificationsOpen } = useApp()
-  const [copied, setCopied] = useState(false)
+  const { notificationsOpen, setNotificationsOpen, userName, activeGroup, members, openHistory } = useApp()
   const [session, setSession] = useState<UserProfile | null>(null)
 
   useEffect(() => {
@@ -36,24 +27,18 @@ export function ProfileScreen() {
     loadUser()
   }, [])
 
-  const copyInvite = () => {
-    if (typeof navigator !== 'undefined') {
-      navigator.clipboard.writeText(household.inviteCode)
-    }
-    setCopied(true)
-    toast('Código copiado al portapapeles', '📋')
-    setTimeout(() => setCopied(false), 2000)
-  }
-
   const onSignOut = async () => {
     await handleLogout()
     toast('Sesión cerrada correctamente', '👋')
     router.push('/login')
   }
 
-  const displayName = session?.fullName || session?.username || me.name
-  const displayEmail = session?.email || 'google.user@usytask.app'
-  const displayUsername = session?.username ? `@${session.username}` : '@usuario'
+  const displayName = session?.fullName || session?.username || userName
+  const displayEmail = session?.email || ''
+  const displayUsername = session?.username ? `@${session.username}` : ''
+
+  // Find current user's member data
+  const currentMember = members.find((m) => m.isOwner)
 
   return (
     <div className="flex flex-col gap-4">
@@ -82,66 +67,41 @@ export function ProfileScreen() {
               Miembro
             </span>
           </div>
-          <p className="text-xs text-muted-foreground truncate">{displayEmail}</p>
+          {displayEmail && <p className="text-xs text-muted-foreground truncate">{displayEmail}</p>}
           <div className="mt-1 flex items-center gap-2 text-xs font-extrabold text-cyan-900 dark:text-cyan-200">
-            <span>{displayUsername}</span>
+            {displayUsername && <span>{displayUsername}</span>}
             {session?.dateOfBirth || session?.age ? (
               <span>· {calculateAge(session?.dateOfBirth) ?? session?.age} años</span>
             ) : null}
           </div>
-          <div className="mt-2 flex items-center gap-3 text-xs font-extrabold">
-            <span className="text-amber-600 dark:text-amber-400">⭐ {me.points} puntos</span>
-            <span className="text-orange-500">🔥 {me.streak} días racha</span>
-          </div>
+          {currentMember && (
+            <div className="mt-2 flex items-center gap-3 text-xs font-extrabold">
+              <span className="text-amber-600 dark:text-amber-400">⭐ {currentMember.points} puntos</span>
+              <span className="text-orange-500">🔥 {currentMember.streak} días racha</span>
+            </div>
+          )}
         </div>
       </Card>
 
       {/* HOGAR */}
-      <Card variant="olive">
-        <CardHeader
-          title="Mi Hogar"
-          icon={<Home className="size-5 text-lime-700 dark:text-lime-400" />}
-        />
-        <div className="flex flex-col gap-3">
-          <div className="flex items-center justify-between rounded-2xl bg-lime-500/15 border border-lime-500/25 p-3">
-            <div>
-              <p className="font-bold text-sm">{household.name}</p>
-              <p className="text-xs text-muted-foreground">
-                Familia · 4 miembros activos
-              </p>
+      {activeGroup && (
+        <Card variant="olive">
+          <CardHeader
+            title="Mi Grupo Activo"
+            icon={<Home className="size-5 text-lime-700 dark:text-lime-400" />}
+          />
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center justify-between rounded-2xl bg-lime-500/15 border border-lime-500/25 p-3">
+              <div>
+                <p className="font-bold text-sm">{activeGroup.name}</p>
+                <p className="text-xs text-muted-foreground">
+                  {members.length} {members.length === 1 ? 'miembro' : 'miembros'}
+                </p>
+              </div>
             </div>
-            <span className="rounded-full bg-emerald-500/20 border border-emerald-500/30 px-2.5 py-1 text-xs font-bold text-emerald-800 dark:text-emerald-300 flex items-center gap-1">
-              <ShieldCheck className="size-3.5" />
-              Activo
-            </span>
           </div>
-
-          <div className="flex items-center justify-between rounded-2xl bg-lime-500/15 border border-lime-500/25 p-3">
-            <div>
-              <p className="text-xs font-semibold text-muted-foreground">Código de invitación</p>
-              <p className="text-base font-extrabold tracking-widest font-mono">
-                {household.inviteCode}
-              </p>
-            </div>
-            <button
-              onClick={copyInvite}
-              className="flex items-center gap-1.5 rounded-xl bg-card px-3 py-1.5 text-xs font-bold shadow-soft transition-transform active:scale-95"
-            >
-              {copied ? (
-                <>
-                  <Check className="size-4 text-emerald-500" />
-                  Copiado
-                </>
-              ) : (
-                <>
-                  <Copy className="size-4" />
-                  Copiar
-                </>
-              )}
-            </button>
-          </div>
-        </div>
-      </Card>
+        </Card>
+      )}
 
       {/* SECCIÓN MIS ESPACIOS */}
       <SpacesManagementSection />
@@ -149,46 +109,26 @@ export function ProfileScreen() {
       {/* SECCIÓN INVITACIÓN */}
       <InviteSection />
 
-      {/* DOCUMENTOS (Lavanda) */}
-      <Card variant="lavender">
-        <CardHeader
-          title="Documentos y Vencimientos"
-          icon={<FileText className="size-5 text-indigo-600 dark:text-indigo-400" />}
-          action="Añadir"
-          onAction={() => toast('Subir nuevo documento', '📄')}
-        />
-        <ul className="flex flex-col divide-y divide-border/60">
-          {documents.map((doc) => {
-            const owner = getMember(doc.owner)
-            return (
-              <li key={doc.id} className="flex items-center gap-3 py-2.5">
-                <span className="flex size-10 items-center justify-center rounded-2xl bg-indigo-500/20 text-xl">
-                  {doc.emoji}
-                </span>
-                <div className="flex-1">
-                  <p className="text-sm font-bold">{doc.name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {docTypeLabels[doc.type]} · {owner.name}
-                  </p>
-                </div>
-                {doc.expiresAt && (
-                  <span className="rounded-full bg-indigo-500/15 border border-indigo-500/25 px-2.5 py-1 text-[11px] font-semibold text-indigo-800 dark:text-indigo-300">
-                    Exp. {doc.expiresAt}
-                  </span>
-                )}
-              </li>
-            )
-          })}
-        </ul>
-      </Card>
-
-      {/* AJUSTES Y PWA (Menta) */}
+      {/* AJUSTES */}
       <Card variant="mint">
         <CardHeader
           title="Ajustes de la aplicación"
           icon={<Smartphone className="size-5 text-teal-600 dark:text-teal-400" />}
         />
         <div className="flex flex-col gap-2">
+          <button
+            onClick={openHistory}
+            className="flex items-center justify-between rounded-2xl bg-primary/10 border border-primary/20 p-3 text-left transition-colors hover:bg-primary/20"
+          >
+            <div className="flex items-center gap-3">
+              <History className="size-5 text-primary" />
+              <div>
+                <p className="text-sm font-bold">Historial del grupo</p>
+                <p className="text-xs text-muted-foreground">Ver elementos archivados</p>
+              </div>
+            </div>
+          </button>
+
           <button
             onClick={() => {
               setNotificationsOpen(!notificationsOpen)
@@ -208,7 +148,6 @@ export function ProfileScreen() {
             </span>
           </button>
 
-          {/* Botón Cerrar Sesión */}
           <button
             onClick={onSignOut}
             className="mt-2 flex items-center justify-center gap-2 rounded-2xl border border-rose-500/30 bg-rose-500/10 p-3 text-sm font-bold text-rose-600 dark:text-rose-400 transition-colors hover:bg-rose-500/20 active:scale-[0.98]"

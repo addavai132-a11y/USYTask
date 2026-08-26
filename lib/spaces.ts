@@ -186,7 +186,7 @@ const demoSpaces: SpaceData[] = [
 ]
 
 export function getAllSpaces(): SpaceData[] {
-  if (typeof window === 'undefined') return demoSpaces
+  if (typeof window === 'undefined') return []
   try {
     const raw = localStorage.getItem(SPACES_LIST_KEY)
     if (raw) {
@@ -197,9 +197,8 @@ export function getAllSpaces(): SpaceData[] {
     console.error('Error loading spaces list', err)
   }
 
-  // Seed default spaces if none saved
-  saveAllSpaces(demoSpaces)
-  return demoSpaces
+  // No saved data — return empty (no demo seeding)
+  return []
 }
 
 export function saveAllSpaces(spaces: SpaceData[]): void {
@@ -280,7 +279,7 @@ export function createNewSpace(name: string, type: SpaceType): SpaceData {
         points: 10,
       },
     ],
-    shoppingLists: [{ id: `shop_${Date.now()}`, name: 'Lista inicial', emoji: '🛒', items: [] }],
+    shoppingLists: [],
     reminders: [],
     expenses: [],
     plans: [],
@@ -308,12 +307,11 @@ export function updateSpaceName(spaceId: string, newName: string): SpaceData[] {
 export function deleteSpace(spaceId: string): SpaceData[] {
   const spaces = getAllSpaces()
   const filtered = spaces.filter((s) => s.id !== spaceId)
-  const remaining = filtered.length > 0 ? filtered : demoSpaces
-  saveAllSpaces(remaining)
-  if (getActiveSpaceId() === spaceId) {
-    setActiveSpaceId(remaining[0].id)
+  saveAllSpaces(filtered)
+  if (getActiveSpaceId() === spaceId && filtered.length > 0) {
+    setActiveSpaceId(filtered[0].id)
   }
-  return remaining
+  return filtered
 }
 
 export function leaveSpace(spaceId: string): SpaceData[] {

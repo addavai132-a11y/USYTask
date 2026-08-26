@@ -7,67 +7,55 @@ import {
   Check,
   Trash2,
   Edit2,
-  QrCode,
-  LogOut,
-  ShieldCheck,
   RefreshCw,
   AlertTriangle,
+  ShieldCheck,
 } from 'lucide-react'
 import { Card, CardHeader } from '@/components/ui/card'
 import { useApp } from '@/components/app/app-context'
-import {
-  SpaceData,
-  spaceTypeLabels,
-  updateSpaceName,
-  deleteSpace,
-  leaveSpace,
-} from '@/lib/spaces'
-import { regenerateInvitation } from '@/lib/invitation'
+import { groupTypeLabels } from '@/types'
+import { getMembersByGroup } from '@/lib/data-store'
 import { useToast } from '@/components/ui/toast'
 
 export function SpacesManagementSection() {
   const {
-    activeSpace,
-    spacesList,
-    switchSpace,
-    openCreateSpaceModal,
-    refreshSpaces,
+    activeGroup,
+    groups,
+    switchGroup,
+    openCreateGroupModal,
+    refreshData,
+    updateGroupName: updateName,
+    deleteGroup: deleteGrp,
+    confirmDelete,
   } = useApp()
   const { toast } = useToast()
 
-  const [editingSpaceId, setEditingSpaceId] = useState<string | null>(null)
+  const [editingGroupId, setEditingGroupId] = useState<string | null>(null)
   const [editingName, setEditingName] = useState('')
-  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
 
-  const handleStartEdit = (space: SpaceData) => {
-    setEditingSpaceId(space.id)
-    setEditingName(space.name)
+  const handleStartEdit = (groupId: string, name: string) => {
+    setEditingGroupId(groupId)
+    setEditingName(name)
   }
 
-  const handleSaveRename = (spaceId: string) => {
+  const handleSaveRename = (groupId: string) => {
     if (!editingName.trim()) return
-    updateSpaceName(spaceId, editingName)
+    updateName(groupId, editingName)
     toast('Nombre del espacio actualizado', '✏️')
-    setEditingSpaceId(null)
-    refreshSpaces()
+    setEditingGroupId(null)
   }
 
-  const handleDeleteSpace = (spaceId: string, isOwner: boolean) => {
-    if (isOwner) {
-      deleteSpace(spaceId)
-      toast('Espacio eliminado correctamente', '🗑️')
-    } else {
-      leaveSpace(spaceId)
-      toast('Has abandonado el espacio', '👋')
-    }
-    setConfirmDeleteId(null)
-    refreshSpaces()
-  }
-
-  const handleRegenerateInvite = (space: SpaceData) => {
-    regenerateInvitation('never', space.name)
-    toast(`Nueva invitación generada para "${space.name}"`, '🔄')
-    refreshSpaces()
+  const handleDeleteGroup = (groupId: string, groupName: string) => {
+    confirmDelete({
+      title: '¿Eliminar espacio / vivienda?',
+      itemName: groupName,
+      description: 'Esta acción no se puede deshacer. Se eliminarán permanentemente todos los datos, tareas y miembros de este espacio.',
+      confirmText: 'Eliminar Espacio',
+      onConfirm: () => {
+        deleteGrp(groupId)
+        toast('Espacio eliminado correctamente', '🗑️')
+      },
+    })
   }
 
   return (
@@ -76,54 +64,52 @@ export function SpacesManagementSection() {
         <CardHeader
           title="Mis espacios"
           action="+ Crear nuevo"
-          onAction={openCreateSpaceModal}
+          onAction={openCreateGroupModal}
           icon={<Grid className="size-5 text-primary" />}
         />
 
-        <div className="flex flex-col gap-3">
-          {spacesList.map((space) => {
-            const isActive = space.id === activeSpace.id
-            const typeMeta = spaceTypeLabels[space.type] || spaceTypeLabels.other
-            const memberCount = space.members.length
-            const isEditing = editingSpaceId === space.id
+        <div className="flex flex-col divide-y divide-border/60">
+          {groups.map((group) => {
+            const isActive = group.id === activeGroup?.id
+            const typeMeta = groupTypeLabels[group.type] || { label: 'Grupo', icon: '🏠' }
+            const memberCount = getMembersByGroup(group.id).length
+            const isEditing = editingGroupId === group.id
 
             return (
-              <div
-                key={space.id}
-                className={`rounded-2xl border p-4 transition-all ${
-                  isActive
-                    ? 'border-primary bg-primary/10 shadow-soft'
-                    : 'border-border/80 bg-card hover:border-primary/40'
-                }`}
-              >
+              <div key={group.id} className="py-4 first:pt-0 last:pb-0">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <span className="flex size-11 items-center justify-center rounded-2xl bg-secondary text-2xl shadow-xs">
-                      {space.icon || typeMeta.icon}
-                    </span>
+                    <div className="flex size-11 items-center justify-center rounded-2xl bg-secondary/80 text-foreground font-black text-xl border border-border">
+                      {group.icon || typeMeta.icon}
+                    </div>
+
                     <div>
                       {isEditing ? (
-                        <div className="flex items-center gap-1.5 mt-0.5">
+                        <div className="flex items-center gap-2">
                           <input
-                            type="text"
                             value={editingName}
                             onChange={(e) => setEditingName(e.target.value)}
-                            className="rounded-xl border border-primary bg-background px-2.5 py-1 text-xs font-extrabold outline-none"
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') handleSaveRename(group.id)
+                              if (e.key === 'Escape') setEditingGroupId(null)
+                            }}
+                            autoFocus
+                            className="rounded-xl border border-primary bg-card px-2.5 py-1 text-sm font-bold outline-none"
                           />
                           <button
                             type="button"
-                            onClick={() => handleSaveRename(space.id)}
+                            onClick={() => handleSaveRename(group.id)}
                             className="rounded-lg bg-primary p-1 text-primary-foreground"
                           >
-                            <Check className="size-3.5 stroke-[3]" />
+                            <Check className="size-3.5" />
                           </button>
                         </div>
                       ) : (
                         <div className="flex items-center gap-2">
-                          <h3 className="font-black text-base text-foreground">{space.name}</h3>
+                          <h3 className="font-black text-base text-foreground">{group.name}</h3>
                           <button
                             type="button"
-                            onClick={() => handleStartEdit(space)}
+                            onClick={() => handleStartEdit(group.id, group.name)}
                             className="text-muted-foreground hover:text-foreground"
                           >
                             <Edit2 className="size-3.5" />
@@ -138,16 +124,11 @@ export function SpacesManagementSection() {
                   </div>
 
                   <div className="flex items-center gap-1.5">
-                    {space.isOwner ? (
+                    {group.isOwner && (
                       <span className="rounded-full bg-amber-500/15 border border-amber-500/30 px-2.5 py-0.5 text-xs font-bold text-amber-700 dark:text-amber-300">
                         Owner
                       </span>
-                    ) : (
-                      <span className="rounded-full bg-secondary border border-border px-2.5 py-0.5 text-xs font-semibold text-muted-foreground">
-                        Miembro
-                      </span>
                     )}
-
                     {isActive && (
                       <span className="flex items-center gap-1 rounded-full bg-emerald-500/20 border border-emerald-500/30 px-2.5 py-0.5 text-xs font-bold text-emerald-700 dark:text-emerald-300">
                         <ShieldCheck className="size-3.5" />
@@ -157,38 +138,26 @@ export function SpacesManagementSection() {
                   </div>
                 </div>
 
-                {/* ACCIONES DEL ESPACIO */}
-                <div className="mt-3 pt-3 border-t border-border/60 flex flex-wrap items-center justify-between gap-2">
+                <div className="mt-3 pt-3 flex flex-wrap items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
                     {!isActive && (
                       <button
                         type="button"
-                        onClick={() => switchSpace(space.id)}
+                        onClick={() => switchGroup(group.id)}
                         className="rounded-xl bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground shadow-xs active:scale-95"
                       >
                         Entrar al espacio
-                      </button>
-                    )}
-
-                    {space.isOwner && (
-                      <button
-                        type="button"
-                        onClick={() => handleRegenerateInvite(space)}
-                        className="flex items-center gap-1 text-xs font-bold text-muted-foreground hover:text-foreground"
-                      >
-                        <RefreshCw className="size-3.5 text-primary" />
-                        <span>Regenerar QR</span>
                       </button>
                     )}
                   </div>
 
                   <button
                     type="button"
-                    onClick={() => setConfirmDeleteId(space.id)}
+                    onClick={() => handleDeleteGroup(group.id, group.name)}
                     className="flex items-center gap-1 text-xs font-bold text-rose-500 hover:text-rose-600"
                   >
                     <Trash2 className="size-3.5" />
-                    <span>{space.isOwner ? 'Eliminar' : 'Abandonar'}</span>
+                    <span>Eliminar</span>
                   </button>
                 </div>
               </div>
@@ -196,42 +165,6 @@ export function SpacesManagementSection() {
           })}
         </div>
       </Card>
-
-      {/* MODAL CONFIRMACIÓN ELIMINACIÓN */}
-      {confirmDeleteId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-md p-4 animate-fade-in">
-          <div className="relative w-full max-w-sm rounded-[32px] border border-rose-500/30 bg-card p-6 shadow-2xl text-center">
-            <div className="mx-auto mb-3 flex size-14 items-center justify-center rounded-full bg-rose-500/10 text-rose-500 border border-rose-500/20">
-              <AlertTriangle className="size-7" />
-            </div>
-
-            <h3 className="text-xl font-black">¿Estás seguro?</h3>
-            <p className="text-xs text-muted-foreground mt-1.5">
-              Esta acción no se puede deshacer. Se eliminarán los datos de este espacio.
-            </p>
-
-            <div className="mt-5 flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setConfirmDeleteId(null)}
-                className="flex-1 py-2.5 rounded-xl border border-border bg-card text-xs font-bold text-foreground"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  const target = spacesList.find((s) => s.id === confirmDeleteId)
-                  if (target) handleDeleteSpace(target.id, target.isOwner)
-                }}
-                className="flex-1 py-2.5 rounded-xl bg-rose-500 text-xs font-bold text-white shadow-soft"
-              >
-                Sí, eliminar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </>
   )
 }

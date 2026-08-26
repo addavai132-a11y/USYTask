@@ -1,20 +1,21 @@
 'use client'
 
-import { X, Plus, Check, ShieldCheck, ChevronRight } from 'lucide-react'
+import { X, Plus, Check, ChevronRight } from 'lucide-react'
 import { useApp } from './app-context'
-import { spaceTypeLabels } from '@/lib/spaces'
+import { groupTypeLabels } from '@/types'
+import { getMembersByGroup } from '@/lib/data-store'
 
 export function SpaceSelectorModal() {
   const {
-    spaceSelectorOpen,
-    closeSpaceSelector,
-    activeSpace,
-    spacesList,
-    switchSpace,
-    openCreateSpaceModal,
+    groupSelectorOpen,
+    closeGroupSelector,
+    activeGroup,
+    groups,
+    switchGroup,
+    openCreateGroupModal,
   } = useApp()
 
-  if (!spaceSelectorOpen) return null
+  if (!groupSelectorOpen) return null
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-background/80 backdrop-blur-md p-0 sm:p-4 animate-fade-in">
@@ -32,25 +33,25 @@ export function SpaceSelectorModal() {
           </div>
           <button
             type="button"
-            onClick={closeSpaceSelector}
+            onClick={closeGroupSelector}
             className="rounded-full bg-secondary p-2 text-muted-foreground hover:text-foreground transition-colors"
           >
             <X className="size-5" />
           </button>
         </div>
 
-        {/* Spaces List */}
+        {/* Groups List */}
         <div className="flex-1 overflow-y-auto py-4 flex flex-col gap-2.5">
-          {spacesList.map((space) => {
-            const isActive = space.id === activeSpace.id
-            const typeMeta = spaceTypeLabels[space.type] || spaceTypeLabels.other
-            const memberCount = space.members.length
+          {groups.map((group) => {
+            const isActive = group.id === activeGroup?.id
+            const typeMeta = groupTypeLabels[group.type] || groupTypeLabels.other
+            const memberCount = getMembersByGroup(group.id).length
 
             return (
               <button
-                key={space.id}
+                key={group.id}
                 type="button"
-                onClick={() => switchSpace(space.id)}
+                onClick={() => switchGroup(group.id)}
                 className={`flex items-center gap-3.5 rounded-2xl border p-4 text-left transition-all active:scale-[0.98] ${
                   isActive
                     ? 'border-primary bg-primary/10 shadow-soft'
@@ -58,15 +59,15 @@ export function SpaceSelectorModal() {
                 }`}
               >
                 <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-card border border-border text-2xl shadow-xs">
-                  {space.icon || typeMeta.icon}
+                  {group.icon || typeMeta.icon}
                 </span>
 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <h3 className="font-extrabold text-sm truncate text-foreground">
-                      {space.name}
+                      {group.name}
                     </h3>
-                    {space.isOwner && (
+                    {group.isOwner && (
                       <span className="rounded-full bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 text-[10px] font-bold text-amber-700 dark:text-amber-300">
                         Owner
                       </span>
@@ -93,7 +94,7 @@ export function SpaceSelectorModal() {
         <div className="pt-3 border-t border-border/60">
           <button
             type="button"
-            onClick={openCreateSpaceModal}
+            onClick={openCreateGroupModal}
             className="flex h-13 w-full items-center justify-center gap-2 rounded-2xl bg-primary font-bold text-primary-foreground shadow-soft transition-transform active:scale-[0.98]"
           >
             <Plus className="size-5 stroke-[2.5]" />

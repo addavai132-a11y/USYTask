@@ -1,216 +1,773 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo, useEffect } from 'react'
+import {
+  ChevronLeft,
+  ChevronRight,
+  ChevronDown,
+  CalendarDays,
+  ListChecks,
+  Bell,
+  UtensilsCrossed,
+  Plus,
+  Clock,
+  CheckCircle2,
+  Calendar as CalendarIcon,
+  Sparkles,
+  Layers,
+  Check,
+  X,
+  Trash2,
+  MapPin,
+  CalendarRange,
+} from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { events, members, getMember, type MemberId } from '@/lib/mock-data'
-import { EventRow } from '@/components/shared/event-row'
 import { Card } from '@/components/ui/card'
-import { EmptyState } from '@/components/ui/empty-state'
-import { PillTabs } from '@/components/ui/pill-tabs'
+import { CustomSelect } from '@/components/ui/custom-select'
+import { MemberAvatar } from '@/components/ui/member-avatar'
+import { useApp } from '@/components/app/app-context'
+import { useToast } from '@/components/ui/toast'
+import { getTodayISO } from '@/lib/date-utils'
+import { getEventMemberIds, getTaskMemberIds, getReminderMemberIds } from '@/types'
 
-type View = 'dia' | 'semana' | 'mes' | 'agenda'
+const dayFullNames = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
+const monthNames = [
+  'Enero',
+  'Febrero',
+  'Marzo',
+  'Abril',
+  'Mayo',
+  'Junio',
+  'Julio',
+  'Agosto',
+  'Septiembre',
+  'Octubre',
+  'Noviembre',
+  'Diciembre',
+]
 
-const dayNames = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
-
-function dayLabel(offset: number) {
-  const d = new Date()
-  d.setDate(d.getDate() + offset)
-  if (offset === 0) return 'Hoy'
-  if (offset === 1) return 'Mañana'
-  const s = new Intl.DateTimeFormat('es-ES', { weekday: 'long', day: 'numeric', month: 'short' }).format(d)
-  return s.charAt(0).toUpperCase() + s.slice(1)
+type CalendarItem = {
+  id: string
+  rawId: string
+  title: string
+  date: string
+  time: string
+  kind: 'event' | 'task' | 'reminder' | 'meal'
+  memberIds: string[]
+  completed?: boolean
+  location?: string
+  priority?: string
+  original: any
 }
 
-export function CalendarSection() {
-  const [view, setView] = useState<View>('agenda')
-  const [filter, setFilter] = useState<MemberId | 'all'>('all')
-
-  const filtered = events.filter((e) => filter === 'all' || e.member === filter)
-
-  return (
-    <div className="flex flex-col gap-4">
-      <PillTabs<View>
-        tabs={[
-          { id: 'dia', label: 'Día' },
-          { id: 'semana', label: 'Semana' },
-          { id: 'mes', label: 'Mes' },
-          { id: 'agenda', label: 'Agenda' },
-        ]}
-        value={view}
-        onChange={setView}
-      />
-
-      {/* member filter */}
-      <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4">
-        <FilterChip active={filter === 'all'} onClick={() => setFilter('all')} label="Todos" />
-        {members.map((m) => (
-          <FilterChip
-            key={m.id}
-            active={filter === m.id}
-            onClick={() => setFilter(m.id)}
-            label={m.name}
-            color={`var(--${m.colorVar})`}
-          />
-        ))}
-      </div>
-
-      {view === 'agenda' && <AgendaView events={filtered} />}
-      {view === 'dia' && <DayView events={filtered} />}
-      {view === 'semana' && <WeekView events={filtered} />}
-      {view === 'mes' && <MonthView events={filtered} />}
-    </div>
-  )
+const kindConfig: Record<
+  CalendarItem['kind'],
+  { dot: string; bg: string; border: string; text: string; label: string; icon: any }
+> = {
+  task: {
+    dot: 'bg-blue-500',
+    bg: 'bg-blue-500/15 text-blue-600 dark:text-blue-300',
+    border: 'border-blue-500/30',
+    text: 'text-blue-600 dark:text-blue-400',
+    label: 'Tareas con fecha',
+    icon: ListChecks,
+  },
+  event: {
+    dot: 'bg-purple-500',
+    bg: 'bg-purple-500/15 text-purple-600 dark:text-purple-300',
+    border: 'border-purple-500/30',
+    text: 'text-purple-600 dark:text-purple-400',
+    label: 'Eventos',
+    icon: CalendarDays,
+  },
+  reminder: {
+    dot: 'bg-orange-500',
+    bg: 'bg-orange-500/15 text-orange-600 dark:text-orange-300',
+    border: 'border-orange-500/30',
+    text: 'text-orange-600 dark:text-orange-400',
+    label: 'Recordatorios',
+    icon: Bell,
+  },
+  meal: {
+    dot: 'bg-emerald-500',
+    bg: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-300',
+    border: 'border-emerald-500/30',
+    text: 'text-emerald-600 dark:text-emerald-400',
+    label: 'Menús y Comidas',
+    icon: UtensilsCrossed,
+  },
 }
 
-function FilterChip({
-  active,
-  onClick,
-  label,
-  color,
+export function CalendarSection({
+  memberFilter = 'all',
+  searchQuery = '',
 }: {
-  active: boolean
-  onClick: () => void
-  label: string
-  color?: string
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={cn(
-        'flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-semibold transition-all active:scale-95',
-        active ? 'bg-foreground text-background' : 'bg-secondary text-secondary-foreground',
-      )}
-    >
-      {color && <span className="size-2.5 rounded-full" style={{ backgroundColor: color }} />}
-      {label}
-    </button>
-  )
-}
+  memberFilter?: string
+  searchQuery?: string
+} = {}) {
+  const {
+    events,
+    tasks,
+    reminders,
+    dailyMenus,
+    getMemberById,
+    openQuickAdd,
+    toggleTask,
+    deleteTask,
+    deleteEvent,
+    deleteReminder,
+  } = useApp()
+  const { toast } = useToast()
 
-function AgendaView({ events: evs }: { events: typeof events }) {
-  const days = Array.from(new Set(evs.map((e) => e.dayOffset))).sort((a, b) => a - b)
-  if (evs.length === 0) return <EmptyState emoji="📅" title="No hay eventos con este filtro." />
+  const todayISO = getTodayISO()
+  const [monthOffset, setMonthOffset] = useState<number>(0)
+  const [selectedDateISO, setSelectedDateISO] = useState<string>(todayISO)
+  const [selectedDayModalISO, setSelectedDayModalISO] = useState<string | null>(null)
+
+  // Layer filters (toggle on/off)
+  const [layers, setLayers] = useState<{
+    event: boolean
+    task: boolean
+    reminder: boolean
+    meal: boolean
+  }>({
+    event: true,
+    task: true,
+    reminder: true,
+    meal: true,
+  })
+
+  // Keyboard shortcut ('c' to add item)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (
+        e.key.toLowerCase() === 'c' &&
+        !['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName)
+      ) {
+        openQuickAdd('evento', { hideTabs: true })
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [openQuickAdd])
+
+  // Merge all types into CalendarItems
+  const allItems: CalendarItem[] = useMemo(() => {
+    const items: CalendarItem[] = []
+
+    // 1. Tasks with date
+    tasks.forEach((t) => {
+      const date = todayISO
+      items.push({
+        id: `tk-${t.id}`,
+        rawId: t.id,
+        title: t.title,
+        date,
+        time: '09:00',
+        kind: 'task',
+        memberIds: getTaskMemberIds(t),
+        completed: t.completed,
+        priority: t.priority,
+        original: t,
+      })
+    })
+
+    // 2. Events
+    events.forEach((e) => {
+      items.push({
+        id: `ev-${e.id}`,
+        rawId: e.id,
+        title: e.title,
+        date: e.date,
+        time: e.time || '00:00',
+        kind: 'event',
+        memberIds: getEventMemberIds(e),
+        location: e.location,
+        original: e,
+      })
+    })
+
+    // 3. Reminders
+    reminders.forEach((r) => {
+      items.push({
+        id: `rm-${r.id}`,
+        rawId: r.id,
+        title: r.title,
+        date: r.dueDate,
+        time: '08:00',
+        kind: 'reminder',
+        memberIds: getReminderMemberIds(r),
+        original: r,
+      })
+    })
+
+    // 4. Daily Menus
+    dailyMenus.forEach((m) => {
+      if (m.date) {
+        items.push({
+          id: `ml-${m.id}`,
+          rawId: m.id,
+          title: m.title || 'Menú planificado',
+          date: m.date,
+          time: '13:00',
+          kind: 'meal',
+          memberIds: [],
+          original: m,
+        })
+      }
+    })
+
+    return items
+  }, [events, tasks, reminders, dailyMenus, todayISO])
+
+  // Filtered by Member, Search query, and Active Layers
+  const filteredItems = useMemo(() => {
+    return allItems.filter((item) => {
+      if (!layers[item.kind]) return false
+      if (memberFilter !== 'all' && item.memberIds.length > 0 && !item.memberIds.includes(memberFilter)) {
+        return false
+      }
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase()
+        if (!item.title.toLowerCase().includes(q)) return false
+      }
+      return true
+    })
+  }, [allItems, layers, memberFilter, searchQuery])
+
+  // Map of items grouped by date for fast lookup
+  const itemsByDate = useMemo(() => {
+    const map = new Map<string, CalendarItem[]>()
+    filteredItems.forEach((item) => {
+      const existing = map.get(item.date) || []
+      existing.push(item)
+      map.set(item.date, existing)
+    })
+    return map
+  }, [filteredItems])
+
+  // Month navigation calculation
+  const currentMonthDate = useMemo(() => {
+    const d = new Date()
+    d.setMonth(d.getMonth() + monthOffset)
+    return d
+  }, [monthOffset])
+
+  const year = currentMonthDate.getFullYear()
+  const month = currentMonthDate.getMonth()
+
+  const yearsList = useMemo(() => {
+    const list: number[] = []
+    for (let y = 2024; y <= 2035; y++) {
+      list.push(y)
+    }
+    return list
+  }, [])
+
+  const handleSelectMonth = (newMonth: number) => {
+    const today = new Date()
+    const diff = (year - today.getFullYear()) * 12 + (newMonth - today.getMonth())
+    setMonthOffset(diff)
+  }
+
+  const handleSelectYear = (newYear: number) => {
+    const today = new Date()
+    const diff = (newYear - today.getFullYear()) * 12 + (month - today.getMonth())
+    setMonthOffset(diff)
+  }
+
+  const firstDay = new Date(year, month, 1)
+  const lastDay = new Date(year, month + 1, 0)
+  const daysInMonth = lastDay.getDate()
+  const startDayOfWeek = (firstDay.getDay() + 6) % 7 // Lun = 0
+
+  const calendarCells = useMemo(() => {
+    return Array.from({ length: 42 }, (_, i) => {
+      const dayNum = i - startDayOfWeek + 1
+      if (dayNum < 1 || dayNum > daysInMonth) return null
+      return dayNum
+    })
+  }, [startDayOfWeek, daysInMonth])
+
+  const toggleLayer = (key: keyof typeof layers) => {
+    setLayers((prev) => ({ ...prev, [key]: !prev[key] }))
+  }
+
+  // Selected Day Items for Modal
+  const selectedDayItems = useMemo(() => {
+    if (!selectedDayModalISO) return []
+    return filteredItems.filter((i) => i.date === selectedDayModalISO)
+  }, [selectedDayModalISO, filteredItems])
+
   return (
-    <div className="flex flex-col gap-4">
-      {days.map((offset) => (
-        <div key={offset}>
-          <p className="mb-2 px-1 text-xs font-bold uppercase tracking-wide text-muted-foreground">{dayLabel(offset)}</p>
-          <Card>
-            <div className="flex flex-col divide-y divide-border/60">
-              {evs
-                .filter((e) => e.dayOffset === offset)
-                .sort((a, b) => a.time.localeCompare(b.time))
-                .map((e) => (
-                  <EventRow key={e.id} event={e} />
-                ))}
+    <div className="w-full max-w-xl mx-auto space-y-3">
+      {/* ── CALENDARIO PRINCIPAL (Compacto max-w-xl) ── */}
+      <Card className="p-3.5 sm:p-4 bg-[#0e0d1d]/60 border border-purple-500/15 rounded-2xl backdrop-blur-xl shadow-md">
+        {/* Header: Desplegables de Mes/Año, Navegación y Botón Hoy */}
+        <div className="flex items-center justify-between mb-3 px-0.5">
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <div className="flex size-7 items-center justify-center rounded-lg bg-purple-500/15 text-purple-400 shrink-0">
+              <CalendarIcon className="size-3.5" />
             </div>
-          </Card>
-        </div>
-      ))}
-    </div>
-  )
-}
 
-function DayView({ events: evs }: { events: typeof events }) {
-  const today = evs.filter((e) => e.dayOffset === 0).sort((a, b) => a.time.localeCompare(b.time))
-  const hours = Array.from({ length: 15 }, (_, i) => i + 7) // 7:00 - 21:00
-  return (
-    <Card className="p-2">
-      <div className="flex flex-col">
-        {hours.map((h) => {
-          const hh = `${String(h).padStart(2, '0')}:`
-          const at = today.filter((e) => e.time.startsWith(hh.slice(0, 2)))
-          return (
-            <div key={h} className="flex min-h-12 gap-3 border-t border-border/50 py-1 first:border-t-0">
-              <span className="w-12 shrink-0 pt-1 text-right text-xs font-semibold text-muted-foreground">{`${h}:00`}</span>
-              <div className="flex flex-1 flex-col gap-1">
-                {at.map((e) => {
-                  const m = getMember(e.member)
-                  return (
-                    <div
-                      key={e.id}
-                      className="rounded-xl px-3 py-1.5 text-sm font-semibold text-white"
-                      style={{ backgroundColor: `var(--${m.colorVar})` }}
-                    >
-                      {e.time} · {e.title}
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          )
-        })}
-      </div>
-    </Card>
-  )
-}
+            {/* Desplegable de Mes */}
+            <CustomSelect<number>
+              value={month}
+              onChange={handleSelectMonth}
+              options={monthNames.map((name, idx) => ({ value: idx, label: name }))}
+              className="w-32"
+            />
 
-function WeekView({ events: evs }: { events: typeof events }) {
-  return (
-    <div className="grid grid-cols-1 gap-2">
-      {Array.from({ length: 7 }, (_, i) => i).map((offset) => {
-        const dayEvents = evs.filter((e) => e.dayOffset === offset).sort((a, b) => a.time.localeCompare(b.time))
-        return (
-          <Card key={offset} className="p-3">
-            <p className="mb-1.5 text-xs font-bold uppercase tracking-wide text-muted-foreground">{dayLabel(offset)}</p>
-            {dayEvents.length === 0 ? (
-              <p className="text-sm text-muted-foreground/60">Sin eventos</p>
-            ) : (
-              <div className="flex flex-wrap gap-1.5">
-                {dayEvents.map((e) => {
-                  const m = getMember(e.member)
-                  return (
-                    <span
-                      key={e.id}
-                      className="rounded-full px-2.5 py-1 text-xs font-semibold text-white"
-                      style={{ backgroundColor: `var(--${m.colorVar})` }}
-                    >
-                      {e.time} {e.title}
-                    </span>
-                  )
-                })}
-              </div>
-            )}
-          </Card>
-        )
-      })}
-    </div>
-  )
-}
+            {/* Desplegable de Año */}
+            <CustomSelect<number>
+              value={year}
+              onChange={handleSelectYear}
+              options={yearsList.map((y) => ({ value: y, label: String(y) }))}
+              className="w-24"
+            />
+          </div>
 
-function MonthView({ events: evs }: { events: typeof events }) {
-  const today = new Date()
-  const start = today.getDate()
-  // Build a simple 5x7 grid starting this week's Monday index
-  const cells = Array.from({ length: 35 }, (_, i) => i - today.getDay() + 1)
-  return (
-    <Card className="p-3">
-      <div className="mb-2 grid grid-cols-7 gap-1 text-center text-[11px] font-bold text-muted-foreground">
-        {dayNames.map((d) => (
-          <span key={d}>{d}</span>
-        ))}
-      </div>
-      <div className="grid grid-cols-7 gap-1">
-        {cells.map((dayNum, i) => {
-          const offset = dayNum - start
-          const has = evs.some((e) => e.dayOffset === offset && offset >= 0)
-          const isToday = offset === 0
-          const valid = dayNum >= 1 && dayNum <= 31
-          return (
-            <div
-              key={i}
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setMonthOffset((o) => o - 1)}
+              className="flex size-7 items-center justify-center rounded-lg bg-white/[0.05] hover:bg-white/[0.1] text-foreground transition-all active:scale-95 border border-white/10"
+              title="Mes anterior"
+            >
+              <ChevronLeft className="size-3.5" />
+            </button>
+            <button
+              onClick={() => {
+                setMonthOffset(0)
+                setSelectedDateISO(todayISO)
+              }}
               className={cn(
-                'flex aspect-square flex-col items-center justify-center rounded-xl text-sm',
-                isToday ? 'bg-primary font-bold text-primary-foreground' : valid ? 'bg-secondary/60' : 'opacity-30',
+                'rounded-lg px-2 py-0.5 text-[11px] font-bold transition-all border',
+                monthOffset === 0 && selectedDateISO === todayISO
+                  ? 'bg-purple-600 text-white border-purple-500 shadow-sm'
+                  : 'bg-white/[0.05] hover:bg-white/[0.1] text-foreground border-white/10'
               )}
             >
-              {valid ? dayNum : ''}
-              {has && !isToday && <span className="mt-0.5 size-1.5 rounded-full bg-accent" />}
-              {has && isToday && <span className="mt-0.5 size-1.5 rounded-full bg-primary-foreground" />}
+              Hoy
+            </button>
+            <button
+              onClick={() => setMonthOffset((o) => o + 1)}
+              className="flex size-7 items-center justify-center rounded-lg bg-white/[0.05] hover:bg-white/[0.1] text-foreground transition-all active:scale-95 border border-white/10"
+              title="Mes siguiente"
+            >
+              <ChevronRight className="size-3.5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Cabecera de días de la semana */}
+        <div className="grid grid-cols-7 gap-1 text-center mb-1">
+          {dayFullNames.map((d, idx) => (
+            <div
+              key={idx}
+              className="py-0.5 text-[11px] text-slate-400 font-medium tracking-wide"
+            >
+              {d}
             </div>
-          )
-        })}
+          ))}
+        </div>
+
+        {/* Cuadrícula de Días Mensual Compacta (h-10 md:h-11) */}
+        <div className="grid grid-cols-7 gap-1">
+          {calendarCells.map((dayNum, idx) => {
+            if (dayNum === null) {
+              return <div key={idx} className="h-10 md:h-11 rounded-lg opacity-0" />
+            }
+
+            const dateISO = `${year}-${String(month + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`
+            const isToday = dateISO === todayISO
+            const isPast = dateISO < todayISO
+            const isSelected = dateISO === selectedDateISO
+            const dayItems = itemsByDate.get(dateISO) || []
+            const hasActivities = dayItems.length > 0
+
+            // Check activity types for colored dots
+            const hasEvent = dayItems.some((it) => it.kind === 'event')
+            const hasTask = dayItems.some((it) => it.kind === 'task')
+            const hasReminder = dayItems.some((it) => it.kind === 'reminder')
+            const hasMeal = dayItems.some((it) => it.kind === 'meal')
+
+            return (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => {
+                  if (isPast && !hasActivities) {
+                    toast('No se pueden programar actividades en fechas pasadas', 'ℹ️')
+                    return
+                  }
+                  setSelectedDateISO(dateISO)
+                  setSelectedDayModalISO(dateISO)
+                }}
+                disabled={isPast && !hasActivities}
+                className={cn(
+                  'group relative h-10 md:h-11 w-full rounded-lg p-0.5 flex flex-col items-center justify-center gap-0.5 transition-all duration-150 border text-center',
+                  isPast && !hasActivities
+                    ? 'opacity-35 cursor-not-allowed bg-white/[0.01] hover:bg-white/[0.01] text-slate-500 border-white/[0.02]'
+                    : isPast && hasActivities
+                    ? 'opacity-70 bg-white/[0.02] border-white/5 hover:bg-white/[0.06] hover:border-white/15 cursor-pointer active:scale-95'
+                    : isSelected
+                    ? 'border-purple-500 bg-purple-500/20 shadow-sm ring-1 ring-purple-500/40 active:scale-95'
+                    : isToday
+                    ? 'border-purple-500/40 bg-purple-500/10 active:scale-95'
+                    : 'border-white/5 bg-white/[0.02] hover:bg-white/[0.06] hover:border-white/15 active:scale-95'
+                )}
+              >
+                {/* Número del día */}
+                <span
+                  className={cn(
+                    'text-xs font-medium transition-all leading-none',
+                    isToday
+                      ? 'w-5 h-5 text-[11px] flex items-center justify-center rounded-full bg-purple-600 font-bold text-white shadow-sm'
+                      : isSelected
+                      ? 'font-bold text-purple-400'
+                      : isPast
+                      ? 'text-slate-500'
+                      : 'text-foreground/90 group-hover:text-purple-400'
+                  )}
+                >
+                  {dayNum}
+                </span>
+
+                {/* Puntos de colores por tipo de actividad */}
+                <div className="flex items-center justify-center gap-0.5 h-1">
+                  {hasEvent && (
+                    <span title="Evento" className="size-1 rounded-full bg-purple-500" />
+                  )}
+                  {hasTask && (
+                    <span title="Tarea" className="size-1 rounded-full bg-blue-500" />
+                  )}
+                  {hasReminder && (
+                    <span title="Recordatorio" className="size-1 rounded-full bg-orange-500" />
+                  )}
+                  {hasMeal && (
+                    <span title="Comida / Menú" className="size-1 rounded-full bg-emerald-500" />
+                  )}
+                </div>
+              </button>
+            )
+          })}
+        </div>
+      </Card>
+
+      {/* ── BARRA INFERIOR DE FILTROS POR CAPAS ── */}
+      <Card className="p-2.5 sm:p-3 bg-[#0e0d1d]/60 border border-purple-500/15 rounded-2xl backdrop-blur-xl flex flex-wrap items-center justify-between gap-2 shadow-sm">
+        <div className="flex items-center gap-1.5">
+          <Layers className="size-3.5 text-purple-400" />
+          <span className="text-[11px] font-black uppercase text-foreground tracking-wider">
+            Capas:
+          </span>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-1.5">
+          {(Object.keys(kindConfig) as (keyof typeof layers)[]).map((kind) => {
+            const cfg = kindConfig[kind]
+            const isChecked = layers[kind]
+            const count = allItems.filter((i) => i.kind === kind).length
+
+            return (
+              <button
+                key={kind}
+                type="button"
+                onClick={() => toggleLayer(kind)}
+                className={cn(
+                  'flex items-center gap-1.5 rounded-lg px-2 py-1 text-[11px] font-bold transition-all border',
+                  isChecked
+                    ? 'border-white/20 bg-white/[0.08] text-foreground shadow-sm'
+                    : 'border-white/5 bg-transparent text-muted-foreground/50 opacity-50 hover:opacity-75'
+                )}
+              >
+                <span className={cn('size-1.5 rounded-full', cfg.dot)} />
+                <span>{cfg.label}</span>
+                <span className="rounded bg-white/[0.08] px-1 py-0.2 text-[9px] font-black text-muted-foreground">
+                  {count}
+                </span>
+              </button>
+            )
+          })}
+        </div>
+      </Card>
+
+      {/* ── MODAL DE DETALLE DEL DÍA SELECCIONADO ── */}
+      {selectedDayModalISO && (
+        <DayDetailModal
+          dateISO={selectedDayModalISO}
+          items={selectedDayItems}
+          onClose={() => setSelectedDayModalISO(null)}
+          getMember={getMemberById}
+          onQuickAdd={(type) => {
+            setSelectedDayModalISO(null)
+            openQuickAdd(type as any, { hideTabs: true })
+          }}
+          onToggleTask={(taskId, title) => {
+            const res = toggleTask(taskId)
+            if (res.pointsAwarded > 0) {
+              toast(`¡Tarea completada! +${res.pointsAwarded} pts`)
+            }
+          }}
+          onDeleteTask={(id) => {
+            deleteTask(id)
+            toast('Tarea eliminada')
+          }}
+          onDeleteEvent={(id) => {
+            deleteEvent(id)
+            toast('Evento eliminado')
+          }}
+          onDeleteReminder={(id) => {
+            deleteReminder(id)
+            toast('Recordatorio eliminado')
+          }}
+        />
+      )}
+    </div>
+  )
+}
+
+// ──────────────────────────────────────────────────────────
+// ── MODAL DE DETALLE Y ACCIÓN DIRECTA DEL DÍA
+// ──────────────────────────────────────────────────────────
+
+function DayDetailModal({
+  dateISO,
+  items,
+  onClose,
+  getMember,
+  onQuickAdd,
+  onToggleTask,
+  onDeleteTask,
+  onDeleteEvent,
+  onDeleteReminder,
+}: {
+  dateISO: string
+  items: CalendarItem[]
+  onClose: () => void
+  getMember: (id: string) => any
+  onQuickAdd: (type: 'evento' | 'tarea' | 'recordatorio') => void
+  onToggleTask: (taskId: string, title: string) => void
+  onDeleteTask: (id: string) => void
+  onDeleteEvent: (id: string) => void
+  onDeleteReminder: (id: string) => void
+}) {
+  const today = getTodayISO()
+  const isToday = dateISO === today
+  const isPast = dateISO < today
+
+  // Format date header (e.g. "Lunes, 24 de Agosto de 2026")
+  const dateObj = new Date(dateISO + 'T00:00:00')
+  const dateFormatted = dateObj.toLocaleDateString('es-ES', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  })
+  const dateCapitalized = dateFormatted.charAt(0).toUpperCase() + dateFormatted.slice(1)
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-in fade-in duration-200">
+      {/* Backdrop click to close */}
+      <div className="absolute inset-0" onClick={onClose} />
+
+      <div className="relative w-full max-w-lg rounded-3xl bg-[#131127]/95 border border-white/15 p-5 sm:p-6 shadow-2xl backdrop-blur-2xl flex flex-col gap-4 max-h-[85vh] overflow-hidden z-10 animate-in zoom-in-95 duration-150">
+        {/* Cabecera del modal */}
+        <div className="flex items-center justify-between pb-3 border-b border-white/10">
+          <div className="flex items-center gap-2.5">
+            <div className="flex size-9 items-center justify-center rounded-xl bg-primary/20 text-primary">
+              <CalendarIcon className="size-4" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm sm:text-base font-black text-foreground">
+                  {dateCapitalized}
+                </h3>
+                {isToday && (
+                  <span className="rounded-full bg-primary/20 px-2 py-0.5 text-[10px] font-extrabold text-primary border border-primary/30">
+                    Hoy
+                  </span>
+                )}
+                {isPast && (
+                  <span className="rounded-full bg-slate-500/20 px-2 py-0.5 text-[10px] font-extrabold text-slate-400 border border-slate-500/30">
+                    Pasado · Solo lectura
+                  </span>
+                )}
+              </div>
+              <p className="text-[11px] font-semibold text-muted-foreground">
+                {items.length === 0
+                  ? 'Sin actividades planificadas'
+                  : `${items.length} ${items.length === 1 ? 'actividad' : 'actividades'} registradas`}
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={onClose}
+            className="flex size-8 items-center justify-center rounded-full bg-white/[0.05] hover:bg-white/[0.1] text-muted-foreground hover:text-foreground transition-all"
+          >
+            <X className="size-4" />
+          </button>
+        </div>
+
+        {/* Lista de actividades o estado vacío */}
+        <div className="flex-1 overflow-y-auto pr-1 space-y-2.5 min-h-[160px] max-h-[380px]">
+          {items.length === 0 ? (
+            <div className="py-8 px-4 flex flex-col items-center justify-center text-center gap-3 rounded-2xl bg-white/[0.02] border border-white/5">
+              <div className="flex size-12 items-center justify-center rounded-2xl bg-secondary text-2xl">
+                📅
+              </div>
+              <div className="space-y-0.5">
+                <p className="text-sm font-bold text-foreground">Día despejado</p>
+                <p className="text-xs text-muted-foreground max-w-xs">
+                  No hay eventos ni tareas registradas para esta fecha. ¡Crea uno a continuación!
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {items.map((item) => {
+                const cfg = kindConfig[item.kind]
+                const Icon = cfg.icon
+                const assigned = item.memberIds.map((id) => getMember(id)).filter(Boolean)
+
+                return (
+                  <div
+                    key={item.id}
+                    className="p-3 rounded-2xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/10 flex items-center justify-between gap-3 transition-all"
+                  >
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      {/* Icono del tipo */}
+                      <div
+                        className={cn(
+                          'flex size-9 items-center justify-center rounded-xl shrink-0 border',
+                          cfg.bg,
+                          cfg.border
+                        )}
+                      >
+                        <Icon className="size-4" />
+                      </div>
+
+                      {/* Detalles */}
+                      <div className="min-w-0 flex-1">
+                        <p
+                          className={cn(
+                            'text-xs sm:text-sm font-bold text-foreground truncate',
+                            item.completed && 'line-through opacity-60'
+                          )}
+                        >
+                          {item.title}
+                        </p>
+                        <div className="flex flex-wrap items-center gap-2 mt-0.5">
+                          <span className="text-[11px] font-semibold text-muted-foreground flex items-center gap-1">
+                            <Clock className="size-3" />
+                            {item.time}
+                          </span>
+                          <span
+                            className={cn(
+                              'rounded-full px-2 py-0.2 text-[9px] font-black uppercase tracking-wider',
+                              cfg.bg
+                            )}
+                          >
+                            {cfg.label}
+                          </span>
+                          {item.location && (
+                            <span className="text-[10px] text-muted-foreground/80 flex items-center gap-0.5 truncate">
+                              <MapPin className="size-2.5" />
+                              {item.location}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Acciones y Avatares */}
+                    <div className="flex items-center gap-2 shrink-0">
+                      {assigned.length > 0 && (
+                        <div className="flex -space-x-1">
+                          {assigned.slice(0, 2).map((m: any) => (
+                            <MemberAvatar key={m.id} member={m} size="xs" ring />
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Toggle completado si es tarea */}
+                      {item.kind === 'task' && (
+                        <button
+                          onClick={() => onToggleTask(item.rawId, item.title)}
+                          className={cn(
+                            'flex size-7 items-center justify-center rounded-lg transition-all',
+                            item.completed
+                              ? 'bg-blue-500 text-white'
+                              : 'bg-white/[0.06] text-muted-foreground hover:text-foreground'
+                          )}
+                          title={item.completed ? 'Marcar incompleta' : 'Completar tarea'}
+                        >
+                          <Check className="size-3.5 stroke-[3]" />
+                        </button>
+                      )}
+
+                      {/* Botón eliminar */}
+                      <button
+                        onClick={() => {
+                          if (item.kind === 'event') onDeleteEvent(item.rawId)
+                          else if (item.kind === 'task') onDeleteTask(item.rawId)
+                          else if (item.kind === 'reminder') onDeleteReminder(item.rawId)
+                        }}
+                        className="flex size-7 items-center justify-center rounded-lg bg-white/[0.04] text-muted-foreground hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+                        title="Eliminar actividad"
+                      >
+                        <Trash2 className="size-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Botones de acción rápida al pie o aviso de fecha pasada */}
+        {isPast ? (
+          <div className="pt-3 border-t border-white/10 flex items-center justify-between gap-2">
+            <span className="text-[11px] font-semibold text-slate-400">
+              Fecha pasada (modo solo lectura)
+            </span>
+            <span className="text-[10px] text-slate-500 italic">
+              No se pueden programar actividades en fechas anteriores
+            </span>
+          </div>
+        ) : (
+          <div className="pt-3 border-t border-white/10 flex flex-wrap items-center justify-between gap-2">
+            <span className="text-[11px] font-bold text-muted-foreground">
+              Añadir a esta fecha:
+            </span>
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => onQuickAdd('evento')}
+                className="flex items-center gap-1 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/30 px-2.5 py-1.5 text-xs font-bold transition-all active:scale-95"
+              >
+                <Plus className="size-3" />
+                <span>Evento</span>
+              </button>
+              <button
+                onClick={() => onQuickAdd('tarea')}
+                className="flex items-center gap-1 rounded-xl bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 border border-blue-500/30 px-2.5 py-1.5 text-xs font-bold transition-all active:scale-95"
+              >
+                <Plus className="size-3" />
+                <span>Tarea</span>
+              </button>
+              <button
+                onClick={() => onQuickAdd('recordatorio')}
+                className="flex items-center gap-1 rounded-xl bg-orange-500/20 hover:bg-orange-500/30 text-orange-300 border border-orange-500/30 px-2.5 py-1.5 text-xs font-bold transition-all active:scale-95"
+              >
+                <Plus className="size-3" />
+                <span>Recordatorio</span>
+              </button>
+            </div>
+          </div>
+        )}
       </div>
-    </Card>
+    </div>
   )
 }
