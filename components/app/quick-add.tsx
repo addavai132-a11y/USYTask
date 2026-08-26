@@ -14,7 +14,20 @@ import { getTodayISO } from '@/lib/date-utils'
 import { cn } from '@/lib/utils'
 
 export function QuickAdd() {
-  const { quickAddOpen, quickAddTab, quickAddHideTabs, quickAddDefaultSection, taskCategories, closeQuickAdd, members, addTask, addEvent, addReminder, addMember } = useApp()
+  const {
+    quickAddOpen,
+    quickAddTab,
+    quickAddHideTabs,
+    quickAddDefaultSection,
+    quickAddDefaultDate,
+    taskCategories,
+    closeQuickAdd,
+    members,
+    addTask,
+    addEvent,
+    addReminder,
+    addMember,
+  } = useApp()
   const { toast } = useToast()
   const [activeTab, setActiveTab] = useState<AddTab>('tarea')
   const [showErrors, setShowErrors] = useState(false)
@@ -22,8 +35,15 @@ export function QuickAdd() {
   useEffect(() => {
     if (quickAddOpen) {
       setActiveTab(quickAddTab || 'tarea')
+      if (quickAddDefaultDate) {
+        setEventDate(quickAddDefaultDate)
+        setReminderDate(quickAddDefaultDate)
+      } else {
+        setEventDate('')
+        setReminderDate('')
+      }
     }
-  }, [quickAddOpen, quickAddTab])
+  }, [quickAddOpen, quickAddTab, quickAddDefaultDate])
 
   // Filter members available for the selected category
   const activeCategory = taskCategories.find((c) => c.id === quickAddDefaultSection || c.name === quickAddDefaultSection)

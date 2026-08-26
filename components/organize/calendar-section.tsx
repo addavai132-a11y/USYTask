@@ -144,12 +144,12 @@ export function CalendarSection({
         e.key.toLowerCase() === 'c' &&
         !['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName)
       ) {
-        openQuickAdd('evento', { hideTabs: true })
+        openQuickAdd('evento', { hideTabs: true, defaultDate: selectedDateISO })
       }
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [openQuickAdd])
+  }, [openQuickAdd, selectedDateISO])
 
   // Merge all types into CalendarItems
   const allItems: CalendarItem[] = useMemo(() => {
@@ -500,8 +500,9 @@ export function CalendarSection({
           onClose={() => setSelectedDayModalISO(null)}
           getMember={getMemberById}
           onQuickAdd={(type) => {
+            const dateToPass = selectedDayModalISO
             setSelectedDayModalISO(null)
-            openQuickAdd(type as any, { hideTabs: true })
+            openQuickAdd(type as any, { hideTabs: true, defaultDate: dateToPass })
           }}
           onToggleTask={(taskId, title) => {
             const res = toggleTask(taskId)

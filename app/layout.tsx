@@ -16,19 +16,27 @@ export const metadata: Metadata = {
   description:
     'USYTask (Universal System for Tasks) centraliza el calendario, tareas, compra, gastos y recuerdos de tu familia, pareja, compañeros de piso o uso personal. Todo lo importante, en un solo sistema.',
   applicationName: 'USYTask',
-  generator: 'v0.app',
+  generator: 'next',
   manifest: '/manifest.webmanifest',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
     title: 'USYTask',
+    startupImage: '/apple-touch-startup-image.png',
   },
   formatDetection: {
     telephone: false,
   },
   icons: {
-    icon: '/icon.svg',
-    apple: '/icon-192.png',
+    icon: [
+      { url: '/icon.svg', type: 'image/svg+xml', sizes: 'any' },
+      { url: '/icon-192.png', type: 'image/png', sizes: '192x192' },
+      { url: '/icon-512.png', type: 'image/png', sizes: '512x512' },
+    ],
+    apple: [
+      { url: '/apple-icon.png', sizes: '180x180', type: 'image/png' },
+    ],
+    shortcut: '/icon.svg',
   },
 }
 

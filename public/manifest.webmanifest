@@ -1,17 +1,47 @@
 {
   "name": "USYTask — Universal System for Tasks",
   "short_name": "USYTask",
-  "description": "Universal System for Tasks — El sistema centralizado para organizar tareas, calendario, compras, hogar y proyectos compartidos.",
+  "description": "USYTask centraliza el calendario, tareas, compra, gastos y recuerdos de tu familia, pareja o uso personal.",
   "start_url": "/app",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#4f7d5e",
+  "orientation": "portrait",
+  "background_color": "#05050a",
+  "theme_color": "#05050a",
+  "categories": ["productivity", "lifestyle"],
+  "lang": "es",
   "icons": [
     {
       "src": "/icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
-  ]
+  ],
+  "screenshots": [],
+  "prefer_related_applications": false
 }

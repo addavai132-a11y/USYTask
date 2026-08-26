@@ -123,7 +123,8 @@ interface AppState {
   quickAddTab: AddTab
   quickAddHideTabs: boolean
   quickAddDefaultSection?: string
-  openQuickAdd: (tab?: AddTab, options?: { hideTabs?: boolean; defaultSection?: string }) => void
+  openQuickAdd: (tab?: AddTab, options?: { hideTabs?: boolean; defaultSection?: string; defaultDate?: string }) => void
+  quickAddDefaultDate?: string
   closeQuickAdd: () => void
   notificationsOpen: boolean
   setNotificationsOpen: (v: boolean) => void
@@ -272,6 +273,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [quickAddTab, setQuickAddTab] = useState<AddTab>('tarea')
   const [quickAddHideTabs, setQuickAddHideTabs] = useState(false)
   const [quickAddDefaultSection, setQuickAddDefaultSection] = useState<string | undefined>(undefined)
+  const [quickAddDefaultDate, setQuickAddDefaultDate] = useState<string | undefined>(undefined)
   const [notificationsOpen, setNotificationsOpen] = useState(false)
   const [interactions, setInteractions] = useState(0)
 
@@ -303,10 +305,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     })
   }, [])
 
-  const handleOpenQuickAdd = (targetTab: AddTab = 'tarea', options?: { hideTabs?: boolean; defaultSection?: string }) => {
+  const handleOpenQuickAdd = (targetTab: AddTab = 'tarea', options?: { hideTabs?: boolean; defaultSection?: string; defaultDate?: string }) => {
     setQuickAddTab(targetTab)
     setQuickAddHideTabs(options?.hideTabs ?? false)
     setQuickAddDefaultSection(options?.defaultSection)
+    setQuickAddDefaultDate(options?.defaultDate)
     setQuickAddOpen(true)
   }
 
@@ -314,6 +317,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setQuickAddOpen(false)
     setQuickAddHideTabs(false)
     setQuickAddDefaultSection(undefined)
+    setQuickAddDefaultDate(undefined)
   }
 
   // User name
@@ -1235,6 +1239,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         quickAddTab,
         quickAddHideTabs,
         quickAddDefaultSection,
+        quickAddDefaultDate,
         openQuickAdd: handleOpenQuickAdd,
         closeQuickAdd: handleCloseQuickAdd,
         notificationsOpen,
