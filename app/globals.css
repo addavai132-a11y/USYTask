@@ -159,10 +159,12 @@
   }
   html {
     -webkit-tap-highlight-color: transparent;
+    overflow-x: hidden;
   }
   body {
     @apply bg-background text-foreground min-h-screen antialiased transition-colors duration-300 selection:bg-emerald-500/30 selection:text-emerald-800 dark:selection:bg-purple-500/30 dark:selection:text-purple-200;
     overscroll-behavior-y: none;
+    overflow-x: hidden;
   }
 
   /* Thin scrollbars */

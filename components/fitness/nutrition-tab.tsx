@@ -677,12 +677,12 @@ export function NutritionTab({
         </div>
 
         {/* 3 Barras de Macronutrientes (Proteínas, Carbos, Grasas) */}
-        <div className="grid grid-cols-3 gap-2.5 pt-1">
+        <div className="grid grid-cols-3 gap-1.5 sm:gap-2.5 pt-1">
           {/* Proteína */}
-          <div className="p-3 rounded-2xl bg-rose-500/10 border border-rose-500/20 space-y-1.5">
-            <div className="flex items-center justify-between text-[11px] font-bold">
-              <span className="text-rose-300">Proteína</span>
-              <span className="text-rose-400 font-mono">{totals.protein}g / {nutritionGoal.targetProtein}g</span>
+          <div className="p-2 sm:p-3 rounded-2xl bg-rose-500/10 border border-rose-500/20 space-y-1.5 min-w-0">
+            <div className="flex items-center justify-between text-[10px] sm:text-[11px] font-bold">
+              <span className="text-rose-300 truncate">Proteína</span>
+              <span className="text-rose-400 font-mono text-[9px] sm:text-[11px] shrink-0">{totals.protein}g / {nutritionGoal.targetProtein}g</span>
             </div>
             <div className="h-1.5 w-full bg-white/[0.08] rounded-full overflow-hidden">
               <div className="h-full bg-rose-500 rounded-full transition-all duration-500" style={{ width: `${proPercent}%` }} />
@@ -690,10 +690,10 @@ export function NutritionTab({
           </div>
 
           {/* Carbohidratos */}
-          <div className="p-3 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 space-y-1.5">
-            <div className="flex items-center justify-between text-[11px] font-bold">
-              <span className="text-cyan-300">Carbos</span>
-              <span className="text-cyan-400 font-mono">{totals.carbs}g / {nutritionGoal.targetCarbs}g</span>
+          <div className="p-2 sm:p-3 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 space-y-1.5 min-w-0">
+            <div className="flex items-center justify-between text-[10px] sm:text-[11px] font-bold">
+              <span className="text-cyan-300 truncate">Carbos</span>
+              <span className="text-cyan-400 font-mono text-[9px] sm:text-[11px] shrink-0">{totals.carbs}g / {nutritionGoal.targetCarbs}g</span>
             </div>
             <div className="h-1.5 w-full bg-white/[0.08] rounded-full overflow-hidden">
               <div className="h-full bg-cyan-500 rounded-full transition-all duration-500" style={{ width: `${carbPercent}%` }} />
@@ -701,10 +701,10 @@ export function NutritionTab({
           </div>
 
           {/* Grasas */}
-          <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 space-y-1.5">
-            <div className="flex items-center justify-between text-[11px] font-bold">
-              <span className="text-amber-300">Grasas</span>
-              <span className="text-amber-400 font-mono">{totals.fats}g / {nutritionGoal.targetFats}g</span>
+          <div className="p-2 sm:p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 space-y-1.5 min-w-0">
+            <div className="flex items-center justify-between text-[10px] sm:text-[11px] font-bold">
+              <span className="text-amber-300 truncate">Grasas</span>
+              <span className="text-amber-400 font-mono text-[9px] sm:text-[11px] shrink-0">{totals.fats}g / {nutritionGoal.targetFats}g</span>
             </div>
             <div className="h-1.5 w-full bg-white/[0.08] rounded-full overflow-hidden">
               <div className="h-full bg-amber-500 rounded-full transition-all duration-500" style={{ width: `${fatPercent}%` }} />

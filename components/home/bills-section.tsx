@@ -174,8 +174,8 @@ export function BillsSection() {
 
   return (
     <div className="w-full max-w-2xl mx-auto space-y-4">
-      {/* ── Sub-navegación: Facturas vs Comparativa de Consumos ── */}
-      <div className="w-fit mx-auto flex items-center justify-center p-1.5 bg-white/[0.03] border border-white/10 rounded-2xl backdrop-blur-xl shadow-sm">
+      {/* ── Sub-navegación Superior (Pestañas de Listado / Consumos) ── */}
+      <div className="w-full max-w-full overflow-x-auto no-scrollbar sm:w-fit mx-auto flex items-center justify-start sm:justify-center p-1.5 bg-white/[0.03] border border-white/10 rounded-2xl backdrop-blur-xl shadow-sm">
         <PillTabs<BillsSubTab>
           value={subTab}
           onChange={setSubTab}

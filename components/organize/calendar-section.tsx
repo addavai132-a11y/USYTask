@@ -315,7 +315,7 @@ export function CalendarSection({
               value={month}
               onChange={handleSelectMonth}
               options={monthNames.map((name, idx) => ({ value: idx, label: name }))}
-              className="w-32"
+              className="w-28 sm:w-32 text-xs"
             />
 
             {/* Desplegable de Año */}
@@ -323,7 +323,7 @@ export function CalendarSection({
               value={year}
               onChange={handleSelectYear}
               options={yearsList.map((y) => ({ value: y, label: String(y) }))}
-              className="w-24"
+              className="w-20 sm:w-24 text-xs"
             />
           </div>
 

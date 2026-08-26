@@ -40,7 +40,7 @@ export function BottomNav() {
               )}
             >
               <item.icon className={cn('size-5 transition-transform', active ? 'scale-110 text-white dark:text-purple-300' : 'text-slate-400')} strokeWidth={active ? 2.5 : 2} />
-              <span>{item.label}</span>
+              <span className="truncate max-w-full px-0.5 text-[9.5px] sm:text-[10.5px]">{item.label}</span>
             </button>
           )
         })}

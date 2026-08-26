@@ -187,8 +187,8 @@ export function ConsumptionComparison({ onOpenAddBill }: { onOpenAddBill?: () =>
 
   return (
     <div className="w-full max-w-2xl mx-auto space-y-4 animate-fade-in">
-      {/* ── SELECTOR DE SUMINISTRO (Pill Tabs) ── */}
-      <div className="w-fit mx-auto flex items-center justify-center p-1.5 bg-white/[0.03] border border-white/10 rounded-2xl backdrop-blur-xl shadow-sm">
+      {/* ── SELECTOR DE SUMINISTRO / TIPO DE CONSUMO ── */}
+      <div className="w-full max-w-full overflow-x-auto no-scrollbar sm:w-fit mx-auto flex items-center justify-start sm:justify-center p-1.5 bg-white/[0.03] border border-white/10 rounded-2xl backdrop-blur-xl shadow-sm">
         <PillTabs<UtilityType>
           value={activeUtility}
           onChange={setActiveUtility}

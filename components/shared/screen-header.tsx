@@ -24,11 +24,11 @@ export function ScreenHeader({
         </div>
 
         {/* Título y Subtítulo centrados */}
-        <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-white">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-white">
           {title}
         </h1>
         {subtitle && (
-          <p className="text-sm md:text-base text-slate-400 max-w-xl mx-auto">
+          <p className="text-xs sm:text-sm md:text-base text-slate-400 max-w-xl mx-auto px-2">
             {subtitle}
           </p>
         )}
