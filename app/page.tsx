@@ -122,66 +122,66 @@ export default function LandingPage() {
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {/* Feature 1 - Calendario */}
-              <div className="flex flex-col rounded-3xl border border-emerald-500/30 bg-gradient-to-br from-emerald-100/70 via-emerald-50 to-teal-100/50 dark:from-emerald-950/60 dark:via-emerald-950/40 dark:to-teal-950/40 p-6 shadow-soft shadow-emerald-500/10 transition-transform hover:-translate-y-1">
-                <div className="mb-4 flex size-12 items-center justify-center rounded-2xl bg-emerald-500/20 text-emerald-700 dark:text-emerald-300">
+              <div className="group flex flex-col rounded-3xl border border-border/80 bg-card/80 p-6 shadow-soft transition-all duration-300 hover:border-primary/40 hover:-translate-y-1 hover:shadow-soft-lg">
+                <div className="mb-4 flex size-12 items-center justify-center rounded-2xl bg-primary/10 border border-primary/20 text-primary transition-colors group-hover:bg-primary/20">
                   <Calendar className="size-6" />
                 </div>
-                <h3 className="text-lg font-bold">Calendario compartido</h3>
+                <h3 className="text-lg font-bold text-foreground">Calendario compartido</h3>
                 <p className="mt-2 text-sm font-medium text-muted-foreground leading-relaxed">
                   Eventos, médicos, colegio, deporte y planes de todos en una vista unificada.
                 </p>
               </div>
 
               {/* Feature 2 - Tareas */}
-              <div className="flex flex-col rounded-3xl border border-teal-500/30 bg-gradient-to-br from-teal-100/70 via-emerald-50 to-teal-100/50 dark:from-teal-950/60 dark:via-teal-950/40 dark:to-emerald-950/40 p-6 shadow-soft shadow-teal-500/10 transition-transform hover:-translate-y-1">
-                <div className="mb-4 flex size-12 items-center justify-center rounded-2xl bg-teal-500/20 text-teal-700 dark:text-teal-300">
+              <div className="group flex flex-col rounded-3xl border border-border/80 bg-card/80 p-6 shadow-soft transition-all duration-300 hover:border-primary/40 hover:-translate-y-1 hover:shadow-soft-lg">
+                <div className="mb-4 flex size-12 items-center justify-center rounded-2xl bg-primary/10 border border-primary/20 text-primary transition-colors group-hover:bg-primary/20">
                   <CheckSquare className="size-6" />
                 </div>
-                <h3 className="text-lg font-bold">Tareas</h3>
+                <h3 className="text-lg font-bold text-foreground">Tareas</h3>
                 <p className="mt-2 text-sm font-medium text-muted-foreground leading-relaxed">
                   Reparte tareas del hogar de forma justa y sabe qué queda pendiente en cada momento.
                 </p>
               </div>
 
               {/* Feature 3 - Compra */}
-              <div className="flex flex-col rounded-3xl border border-orange-500/30 bg-gradient-to-br from-orange-100/70 via-orange-50 to-amber-100/50 dark:from-orange-950/60 dark:via-orange-950/40 dark:to-amber-950/40 p-6 shadow-soft shadow-orange-500/10 transition-transform hover:-translate-y-1">
-                <div className="mb-4 flex size-12 items-center justify-center rounded-2xl bg-orange-500/20 text-orange-700 dark:text-orange-300">
+              <div className="group flex flex-col rounded-3xl border border-border/80 bg-card/80 p-6 shadow-soft transition-all duration-300 hover:border-primary/40 hover:-translate-y-1 hover:shadow-soft-lg">
+                <div className="mb-4 flex size-12 items-center justify-center rounded-2xl bg-primary/10 border border-primary/20 text-primary transition-colors group-hover:bg-primary/20">
                   <ShoppingCart className="size-6" />
                 </div>
-                <h3 className="text-lg font-bold">Compra</h3>
+                <h3 className="text-lg font-bold text-foreground">Compra</h3>
                 <p className="mt-2 text-sm font-medium text-muted-foreground leading-relaxed">
                   Una lista compartida en tiempo real que todos pueden actualizar en el supermercado.
                 </p>
               </div>
 
               {/* Feature 4 - Familia y Hogar */}
-              <div className="flex flex-col rounded-3xl border border-cyan-500/30 bg-gradient-to-br from-cyan-100/70 via-teal-50 to-cyan-100/50 dark:from-cyan-950/60 dark:via-teal-950/40 dark:to-cyan-950/40 p-6 shadow-soft shadow-cyan-500/10 transition-transform hover:-translate-y-1">
-                <div className="mb-4 flex size-12 items-center justify-center rounded-2xl bg-cyan-500/20 text-cyan-800 dark:text-cyan-300">
+              <div className="group flex flex-col rounded-3xl border border-border/80 bg-card/80 p-6 shadow-soft transition-all duration-300 hover:border-primary/40 hover:-translate-y-1 hover:shadow-soft-lg">
+                <div className="mb-4 flex size-12 items-center justify-center rounded-2xl bg-primary/10 border border-primary/20 text-primary transition-colors group-hover:bg-primary/20">
                   <Users className="size-6" />
                 </div>
-                <h3 className="text-lg font-bold">Familia y Hogar</h3>
+                <h3 className="text-lg font-bold text-foreground">Familia y Hogar</h3>
                 <p className="mt-2 text-sm font-medium text-muted-foreground leading-relaxed">
                   Toda la información importante de vuestro hogar y miembros centralizada en un solo sitio.
                 </p>
               </div>
 
               {/* Feature 5 - Puntos y recompensas */}
-              <div className="flex flex-col rounded-3xl border border-amber-500/35 bg-gradient-to-br from-amber-100/80 via-yellow-50 to-amber-100/60 dark:from-amber-950/65 dark:via-amber-950/45 dark:to-yellow-950/40 p-6 shadow-soft shadow-amber-500/10 transition-transform hover:-translate-y-1">
-                <div className="mb-4 flex size-12 items-center justify-center rounded-2xl bg-amber-500/20 text-amber-700 dark:text-amber-300">
+              <div className="group flex flex-col rounded-3xl border border-border/80 bg-card/80 p-6 shadow-soft transition-all duration-300 hover:border-primary/40 hover:-translate-y-1 hover:shadow-soft-lg">
+                <div className="mb-4 flex size-12 items-center justify-center rounded-2xl bg-primary/10 border border-primary/20 text-primary transition-colors group-hover:bg-primary/20">
                   <Trophy className="size-6" />
                 </div>
-                <h3 className="text-lg font-bold">Puntos y recompensas</h3>
+                <h3 className="text-lg font-bold text-foreground">Puntos y recompensas</h3>
                 <p className="mt-2 text-sm font-medium text-muted-foreground leading-relaxed">
                   Convierte las tareas diarias en retos divertidos y recompensas motivadoras.
                 </p>
               </div>
 
               {/* Feature 6 - Recordatorios */}
-              <div className="flex flex-col rounded-3xl border border-rose-500/30 bg-gradient-to-br from-rose-100/70 via-rose-50 to-pink-100/50 dark:from-rose-950/60 dark:via-rose-950/40 dark:to-pink-950/40 p-6 shadow-soft shadow-rose-500/10 transition-transform hover:-translate-y-1">
-                <div className="mb-4 flex size-12 items-center justify-center rounded-2xl bg-rose-500/20 text-rose-700 dark:text-rose-300">
+              <div className="group flex flex-col rounded-3xl border border-border/80 bg-card/80 p-6 shadow-soft transition-all duration-300 hover:border-primary/40 hover:-translate-y-1 hover:shadow-soft-lg">
+                <div className="mb-4 flex size-12 items-center justify-center rounded-2xl bg-primary/10 border border-primary/20 text-primary transition-colors group-hover:bg-primary/20">
                   <Bell className="size-6" />
                 </div>
-                <h3 className="text-lg font-bold">Recordatorios</h3>
+                <h3 className="text-lg font-bold text-foreground">Recordatorios</h3>
                 <p className="mt-2 text-sm font-medium text-muted-foreground leading-relaxed">
                   No vuelvas a olvidar citas médicas, facturas o vencimientos de documentos importantes.
                 </p>
@@ -204,33 +204,33 @@ export default function LandingPage() {
 
             <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
               {/* Step 1 */}
-              <div className="relative flex flex-col items-center text-center rounded-3xl border border-emerald-500/30 bg-gradient-to-br from-emerald-100/70 via-emerald-50 to-teal-100/50 dark:from-emerald-950/60 dark:via-emerald-950/40 dark:to-teal-950/40 p-8 shadow-soft shadow-emerald-500/10">
+              <div className="relative flex flex-col items-center text-center rounded-3xl border border-border/80 bg-card/80 p-8 shadow-soft transition-all duration-300 hover:border-primary/40 hover:-translate-y-1">
                 <span className="flex size-14 items-center justify-center rounded-2xl bg-primary text-xl font-black text-primary-foreground mb-6 shadow-soft">
                   1
                 </span>
-                <h3 className="text-xl font-extrabold mb-2">Crea tu espacio</h3>
+                <h3 className="text-xl font-extrabold text-foreground mb-2">Crea tu espacio</h3>
                 <p className="text-sm font-medium text-muted-foreground leading-relaxed">
                   Crea un espacio para tu familia, pareja, compañeros de piso o para ti.
                 </p>
               </div>
 
               {/* Step 2 */}
-              <div className="relative flex flex-col items-center text-center rounded-3xl border border-amber-500/30 bg-gradient-to-br from-amber-100/70 via-amber-50 to-orange-100/50 dark:from-amber-950/60 dark:via-amber-950/40 dark:to-orange-950/40 p-8 shadow-soft shadow-amber-500/10">
+              <div className="relative flex flex-col items-center text-center rounded-3xl border border-border/80 bg-card/80 p-8 shadow-soft transition-all duration-300 hover:border-primary/40 hover:-translate-y-1">
                 <span className="flex size-14 items-center justify-center rounded-2xl bg-primary text-xl font-black text-primary-foreground mb-6 shadow-soft">
                   2
                 </span>
-                <h3 className="text-xl font-extrabold mb-2">Añade lo importante</h3>
+                <h3 className="text-xl font-extrabold text-foreground mb-2">Añade lo importante</h3>
                 <p className="text-sm font-medium text-muted-foreground leading-relaxed">
                   Tareas, eventos, compras, recordatorios y organización diaria.
                 </p>
               </div>
 
               {/* Step 3 */}
-              <div className="relative flex flex-col items-center text-center rounded-3xl border border-teal-500/30 bg-gradient-to-br from-teal-100/70 via-emerald-50 to-teal-100/60 dark:from-teal-950/60 dark:via-teal-950/40 dark:to-emerald-950/40 p-8 shadow-soft shadow-teal-500/10">
+              <div className="relative flex flex-col items-center text-center rounded-3xl border border-border/80 bg-card/80 p-8 shadow-soft transition-all duration-300 hover:border-primary/40 hover:-translate-y-1">
                 <span className="flex size-14 items-center justify-center rounded-2xl bg-primary text-xl font-black text-primary-foreground mb-6 shadow-soft">
                   3
                 </span>
-                <h3 className="text-xl font-extrabold mb-2">Tenlo todo bajo control</h3>
+                <h3 className="text-xl font-extrabold text-foreground mb-2">Tenlo todo bajo control</h3>
                 <p className="text-sm font-medium text-muted-foreground leading-relaxed">
                   Todos los miembros pueden ver y actualizar la información desde un único lugar.
                 </p>
@@ -253,44 +253,44 @@ export default function LandingPage() {
 
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
               {/* Type 1 */}
-              <div className="flex flex-col rounded-3xl border border-emerald-500/30 bg-gradient-to-br from-emerald-100/70 via-emerald-50 to-teal-100/50 dark:from-emerald-950/60 dark:via-emerald-950/40 dark:to-teal-950/40 p-6 shadow-soft shadow-emerald-500/10">
-                <div className="mb-4 flex size-12 items-center justify-center rounded-2xl bg-emerald-500/20 text-emerald-700 dark:text-emerald-300">
+              <div className="group flex flex-col rounded-3xl border border-border/80 bg-card/80 p-6 shadow-soft transition-all duration-300 hover:border-primary/40 hover:-translate-y-1">
+                <div className="mb-4 flex size-12 items-center justify-center rounded-2xl bg-primary/10 border border-primary/20 text-primary transition-colors group-hover:bg-primary/20">
                   <Users className="size-6" />
                 </div>
-                <h3 className="text-xl font-extrabold mb-2">Familia</h3>
+                <h3 className="text-xl font-extrabold text-foreground mb-2">Familia</h3>
                 <p className="text-sm font-medium text-muted-foreground leading-relaxed">
                   Organiza hijos, tareas, calendario y casa.
                 </p>
               </div>
 
               {/* Type 2 */}
-              <div className="flex flex-col rounded-3xl border border-rose-500/30 bg-gradient-to-br from-rose-100/70 via-rose-50 to-amber-100/50 dark:from-rose-950/60 dark:via-rose-950/40 dark:to-amber-950/40 p-6 shadow-soft shadow-rose-500/10">
-                <div className="mb-4 flex size-12 items-center justify-center rounded-2xl bg-rose-500/20 text-rose-700 dark:text-rose-300">
+              <div className="group flex flex-col rounded-3xl border border-border/80 bg-card/80 p-6 shadow-soft transition-all duration-300 hover:border-primary/40 hover:-translate-y-1">
+                <div className="mb-4 flex size-12 items-center justify-center rounded-2xl bg-primary/10 border border-primary/20 text-primary transition-colors group-hover:bg-primary/20">
                   <Heart className="size-6" />
                 </div>
-                <h3 className="text-xl font-extrabold mb-2">Pareja</h3>
+                <h3 className="text-xl font-extrabold text-foreground mb-2">Pareja</h3>
                 <p className="text-sm font-medium text-muted-foreground leading-relaxed">
                   Planes, compras, eventos y vida compartida.
                 </p>
               </div>
 
               {/* Type 3 */}
-              <div className="flex flex-col rounded-3xl border border-amber-500/30 bg-gradient-to-br from-amber-100/70 via-amber-50 to-orange-100/50 dark:from-amber-950/60 dark:via-amber-950/40 dark:to-orange-950/40 p-6 shadow-soft shadow-amber-500/10">
-                <div className="mb-4 flex size-12 items-center justify-center rounded-2xl bg-amber-500/20 text-amber-700 dark:text-amber-300">
+              <div className="group flex flex-col rounded-3xl border border-border/80 bg-card/80 p-6 shadow-soft transition-all duration-300 hover:border-primary/40 hover:-translate-y-1">
+                <div className="mb-4 flex size-12 items-center justify-center rounded-2xl bg-primary/10 border border-primary/20 text-primary transition-colors group-hover:bg-primary/20">
                   <HomeIcon className="size-6" />
                 </div>
-                <h3 className="text-xl font-extrabold mb-2">Compañeros de piso</h3>
+                <h3 className="text-xl font-extrabold text-foreground mb-2">Compañeros de piso</h3>
                 <p className="text-sm font-medium text-muted-foreground leading-relaxed">
                   Tareas, compra, organización y gastos del hogar.
                 </p>
               </div>
 
               {/* Type 4 */}
-              <div className="flex flex-col rounded-3xl border border-teal-500/30 bg-gradient-to-br from-teal-100/70 via-emerald-50 to-teal-100/60 dark:from-teal-950/60 dark:via-teal-950/40 dark:to-emerald-950/40 p-6 shadow-soft shadow-teal-500/10">
-                <div className="mb-4 flex size-12 items-center justify-center rounded-2xl bg-teal-500/20 text-teal-700 dark:text-teal-300">
+              <div className="group flex flex-col rounded-3xl border border-border/80 bg-card/80 p-6 shadow-soft transition-all duration-300 hover:border-primary/40 hover:-translate-y-1">
+                <div className="mb-4 flex size-12 items-center justify-center rounded-2xl bg-primary/10 border border-primary/20 text-primary transition-colors group-hover:bg-primary/20">
                   <User className="size-6" />
                 </div>
-                <h3 className="text-xl font-extrabold mb-2">Personal</h3>
+                <h3 className="text-xl font-extrabold text-foreground mb-2">Personal</h3>
                 <p className="text-sm font-medium text-muted-foreground leading-relaxed">
                   Tus metas, hábitos, calendario y proyectos individuales.
                 </p>
