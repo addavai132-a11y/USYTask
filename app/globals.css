@@ -156,18 +156,61 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
-  }
-  html {
-    -webkit-tap-highlight-color: transparent;
-    overflow-x: hidden;
-  }
-  body {
-    @apply bg-background text-foreground min-h-screen antialiased transition-colors duration-300 selection:bg-emerald-500/30 selection:text-emerald-800 dark:selection:bg-purple-500/30 dark:selection:text-purple-200;
-    overscroll-behavior-y: none;
-    overflow-x: hidden;
+    /* Prevent touch callouts on long-press (iOS) */
+    -webkit-touch-callout: none;
+    /* Smooth momentum-based scrolling inside scroll containers */
+    -webkit-overflow-scrolling: touch;
   }
 
-  /* Thin scrollbars */
+  html {
+    /* Suppress the blue flash on tap (iOS/Android) */
+    -webkit-tap-highlight-color: transparent;
+    /* Block all horizontal scroll at the root level */
+    overflow-x: hidden;
+    width: 100%;
+    /* Lock zoom – reinforces the Viewport export in layout.tsx */
+    touch-action: pan-x pan-y;
+    /* No elastic/rubber-band vertical bounce on the html element */
+    overscroll-behavior: none;
+  }
+
+  body {
+    @apply bg-background text-foreground min-h-screen antialiased transition-colors duration-300 selection:bg-emerald-500/30 selection:text-emerald-800 dark:selection:bg-purple-500/30 dark:selection:text-purple-200;
+    /* No bounce / overscroll effect on the body */
+    overscroll-behavior-y: none;
+    overscroll-behavior-x: none;
+    /* Block horizontal expansion */
+    overflow-x: hidden;
+    width: 100%;
+    /* Limit touch gestures to plain panning (no pinch-zoom propagation) */
+    touch-action: pan-x pan-y;
+  }
+
+  /* ─────────────────────────────────────────────────────────────────────────
+     iOS Safari auto-zoom prevention
+     Safari zooms in automatically whenever a focused <input>/<select>/
+     <textarea> has font-size < 16px. Setting a 16px minimum here prevents
+     that zoom entirely while still allowing custom sizes via component CSS.
+  ───────────────────────────────────────────────────────────────────────── */
+  input,
+  select,
+  textarea {
+    font-size: max(16px, 1rem);
+    /* Opt-out of iOS form-element auto-styling so our design is preserved */
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  /* Restore normal range/checkbox/radio appearance that -webkit-appearance breaks */
+  input[type='range'],
+  input[type='checkbox'],
+  input[type='radio'] {
+    -webkit-appearance: auto;
+    appearance: auto;
+    font-size: inherit;
+  }
+
+  /* Thin, unobtrusive scrollbars on desktop */
   ::-webkit-scrollbar {
     width: 5px;
     height: 5px;
@@ -183,6 +226,7 @@
     background: rgba(147, 51, 234, 0.4);
   }
 }
+
 
 @layer utilities {
   .safe-bottom {
