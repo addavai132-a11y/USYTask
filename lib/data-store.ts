@@ -62,7 +62,7 @@ export function updateMemberPoints(memberId: string, groupId: string, pointsToAd
   }
 }
 
-export function ensureOwnerMember(groupId: string, userName: string): Member {
+export function ensureOwnerMember(groupId: string, userName: string, role?: string): Member {
   const existing = getMembersByGroup(groupId)
   const owner = existing.find((m) => m.isOwner)
   if (owner) return owner
@@ -77,7 +77,7 @@ export function ensureOwnerMember(groupId: string, userName: string): Member {
   const member: Member = {
     id: `member_owner_${groupId}`,
     name: userName,
-    role: 'adult',
+    role: (role as any) || 'adult',
     initials: initials || userName.charAt(0).toUpperCase(),
     colorVar: 'member-marcos',
     avatarColor: 'oklch(0.58 0.12 245)',

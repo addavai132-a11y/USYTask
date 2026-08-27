@@ -190,7 +190,15 @@ export const MEMBER_COLORS = [
   { name: 'Ámbar', var: 'member-c8', value: 'oklch(0.72 0.15 75)' },
 ]
 
-export type ActivityType = 'task_created' | 'task_completed' | 'event_created' | 'reminder_created'
+export type ActivityType =
+  | 'task_created'
+  | 'task_completed'
+  | 'event_created'
+  | 'reminder_created'
+  | 'challenge_completed'
+  | 'reward_claimed'
+  | 'memory_created'
+  | 'shopping_completed'
 
 export interface Activity {
   id: string
@@ -200,7 +208,9 @@ export interface Activity {
   details?: string
   memberId: string // The member associated with the action
   timestamp: string // ISO string for relative time calculation
-  points?: number // If it's a task completion
+  points?: number // If it's a task completion or challenge
+  completedAt?: string
+  data?: any
 }
 
 export type AddTab = 'tarea' | 'evento' | 'recordatorio' | 'miembro'

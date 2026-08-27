@@ -42,6 +42,7 @@ export interface FamilyChallenge {
   status: ChallengeStatus
   endDate?: string
   lastCheckedDate?: string // ISO date YYYY-MM-DD
+  completedAt?: string // ISO timestamp when completed
   createdAt?: string
 }
 
@@ -83,6 +84,7 @@ export interface FamilyMemory {
   title: string
   description: string
   date: string // ISO date YYYY-MM-DD
+  imageUrl?: string // Public URL from Supabase storage or Base64 preview
   imagePlaceholder?: string // Gradient code or CSS style
   tags: string[]
   taggedMemberIds: string[]

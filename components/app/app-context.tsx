@@ -112,6 +112,7 @@ import {
 } from '@/lib/family-store'
 import { getStoredSession } from '@/lib/user-session'
 import { getTodayISO } from '@/lib/date-utils'
+import { deleteMemoryImage } from '@/lib/storage'
 
 export type Tab = 'inicio' | 'organizar' | 'hogar' | 'fitness' | 'familia' | 'perfil'
 export type AddTab = 'tarea' | 'evento' | 'recordatorio' | 'miembro'
@@ -138,7 +139,7 @@ interface AppState {
   activeGroup: Group | null
   groups: Group[]
   switchGroup: (groupId: string) => void
-  createGroup: (name: string, type: GroupType) => Group
+  createGroup: (name: string, type: GroupType, role?: string, customCode?: string) => Group
   deleteGroup: (groupId: string) => void
   updateGroupName: (groupId: string, newName: string) => void
   groupSelectorOpen: boolean
@@ -498,9 +499,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setGroupSelectorOpen(false)
   }
 
-  const handleCreateGroup = (name: string, type: GroupType): Group => {
-    const newGroup = createGroupStore(name, type)
-    ensureOwnerMember(newGroup.id, userName)
+  const handleCreateGroup = (name: string, type: GroupType, role?: string, customCode?: string): Group => {
+    const newGroup = createGroupStore(name, type, customCode)
+    ensureOwnerMember(newGroup.id, userName, role)
     refreshData()
     setCreateGroupModalOpen(false)
     return newGroup
@@ -1199,6 +1200,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const handleDeleteFamilyMemory = (id: string) => {
     if (!activeGroup) return
+    const mem = familyMemories.find((m) => m.id === id)
+    if (mem?.imageUrl) {
+      deleteMemoryImage(mem.imageUrl)
+    }
     deleteMemoryStore(id, activeGroup.id)
     refreshData()
     bump()

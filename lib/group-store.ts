@@ -63,11 +63,20 @@ export function getActiveGroup(): Group | null {
   return groups.find((g) => g.id === activeId) || groups[0] || null
 }
 
-export function createGroup(name: string, type: GroupType): Group {
+export function generateHouseholdCode(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+  let part = ''
+  for (let i = 0; i < 4; i++) {
+    part += chars.charAt(Math.floor(Math.random() * chars.length))
+  }
+  return `HOG-${part}`
+}
+
+export function createGroup(name: string, type: GroupType, customCode?: string): Group {
   const groups = getAllGroups()
   const typeMeta = groupTypeLabels[type] || groupTypeLabels.other
   const newId = `group_${Math.random().toString(36).substring(2, 10)}`
-  const token = generateInvitationToken()
+  const token = customCode || generateHouseholdCode()
 
   const newGroup: Group = {
     id: newId,

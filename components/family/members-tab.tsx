@@ -1,7 +1,24 @@
 'use client'
 
-import { useState } from 'react'
-import { Plus, Settings, PlusCircle, MinusCircle, ShieldCheck, Sparkles, Star, Flame } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import {
+  UserPlus,
+  Link2,
+  Copy,
+  Check,
+  Share2,
+  MessageCircle,
+  QrCode,
+  ShieldCheck,
+  Settings,
+  PlusCircle,
+  MinusCircle,
+  Sparkles,
+  Star,
+  Flame,
+  X,
+} from 'lucide-react'
+import { QRCodeSVG } from 'qrcode.react'
 import { Card } from '@/components/ui/card'
 import { MemberAvatar } from '@/components/ui/member-avatar'
 import { EmptyState } from '@/components/ui/empty-state'
@@ -9,26 +26,38 @@ import { BottomSheet } from '@/components/ui/bottom-sheet'
 import { ProgressBar } from '@/components/ui/progress-bar'
 import { useToast } from '@/components/ui/toast'
 import { useApp } from '@/components/app/app-context'
+import {
+  getActiveInvitation,
+  getInvitationUrl,
+  type HouseholdInvitation,
+} from '@/lib/invitation'
 import { MEMBER_COLORS, type Member } from '@/types'
 import { cn } from '@/lib/utils'
 
 export function MembersTab() {
   const { toast } = useToast()
-  const { members, currentMember, addMember, updateMember, adjustMemberPoints } = useApp()
+  const { members, currentMember, updateMember, adjustMemberPoints, activeGroup } = useApp()
+  const groupName = activeGroup?.name || 'Mi Hogar'
 
   // Modals state
   const [editingMember, setEditingMember] = useState<Member | null>(null)
   const [pointsAdjustMember, setPointsAdjustMember] = useState<Member | null>(null)
-  const [isAddingMember, setIsAddingMember] = useState(false)
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false)
+
+  // Invite state
+  const [invitation, setInvitation] = useState<HouseholdInvitation | null>(null)
+  const [copiedCode, setCopiedCode] = useState(false)
+  const [copiedLink, setCopiedLink] = useState(false)
+  const [showQr, setShowQr] = useState(false)
+
+  useEffect(() => {
+    setInvitation(getActiveInvitation(groupName))
+  }, [groupName])
 
   // Points adjust form state
   const [pointsDelta, setPointsDelta] = useState<number>(50)
   const [pointsReason, setPointsReason] = useState<string>('')
   const [isSubtract, setIsSubtract] = useState<boolean>(false)
-
-  // Add Member form state
-  const [newMemberName, setNewMemberName] = useState('')
-  const [newMemberColorIdx, setNewMemberColorIdx] = useState(0)
 
   // Edit Member form state
   const [editName, setEditName] = useState('')
@@ -80,28 +109,66 @@ export function MembersTab() {
     setEditingMember(null)
   }
 
-  const handleCreateMember = () => {
-    if (!newMemberName.trim()) return
-    addMember(newMemberName.trim(), newMemberColorIdx)
-    toast(`Miembro ${newMemberName} añadido`, '✅')
-    setNewMemberName('')
-    setIsAddingMember(false)
+  const currentInvite = invitation || getActiveInvitation(groupName)
+  const inviteUrl = getInvitationUrl(currentInvite.token)
+  const joinCode = currentInvite.token
+
+  const handleCopyCode = () => {
+    if (typeof navigator !== 'undefined') {
+      navigator.clipboard.writeText(joinCode)
+    }
+    setCopiedCode(true)
+    toast('Código de unión copiado al portapapeles', '🔑')
+    setTimeout(() => setCopiedCode(false), 2000)
+  }
+
+  const handleCopyLink = () => {
+    if (typeof navigator !== 'undefined') {
+      navigator.clipboard.writeText(inviteUrl)
+    }
+    setCopiedLink(true)
+    toast('Enlace de invitación copiado al portapapeles', '📋')
+    setTimeout(() => setCopiedLink(false), 2000)
+  }
+
+  const handleShare = async () => {
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      try {
+        await navigator.share({
+          title: `Invitación a ${groupName}`,
+          text: `Únete a nuestro espacio "${groupName}" en USYTask con el código: ${joinCode}`,
+          url: inviteUrl,
+        })
+        toast('Enlace compartido', '📤')
+        return
+      } catch {
+        // User cancelled share
+      }
+    }
+    handleCopyLink()
+  }
+
+  const handleWhatsApp = () => {
+    const text = encodeURIComponent(
+      `¡Hola! Te invito a unirte a nuestro espacio "${groupName}" en USYTask.\n\n🔑 Código del hogar: ${joinCode}\n🔗 Enlace directo:\n${inviteUrl}`
+    )
+    window.open(`https://wa.me/?text=${text}`, '_blank')
   }
 
   return (
     <div className="w-full max-w-2xl mx-auto space-y-4">
       {/* ── Header Bar ── */}
-      <div className="w-full flex items-center justify-between p-3.5 px-5 bg-white/[0.03] border border-white/10 rounded-2xl backdrop-blur-xl">
+      <div className="w-full flex items-center justify-between p-3.5 px-5 bg-white border border-slate-200 rounded-2xl shadow-sm dark:bg-white/[0.03] dark:border-white/10">
         <div>
-          <span className="text-sm font-bold text-white">Integrantes ({members.length})</span>
-          <p className="text-xs text-slate-400">Roles, progreso y puntos acumulados</p>
+          <span className="text-sm font-bold text-slate-900 dark:text-white">Integrantes ({members.length})</span>
+          <p className="text-xs text-slate-500 dark:text-slate-400">Roles, progreso y puntos acumulados</p>
         </div>
         <button
-          onClick={() => setIsAddingMember(true)}
-          className="flex items-center gap-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white px-3.5 py-1.5 text-xs font-bold transition-all active:scale-95 shadow-sm"
+          onClick={() => setIsInviteModalOpen(true)}
+          className="flex items-center gap-1.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 text-xs font-bold transition-all active:scale-95 shadow-sm dark:bg-purple-600 dark:hover:bg-purple-500"
         >
-          <Plus className="size-3.5" />
-          <span>+ Añadir miembro</span>
+          <UserPlus className="size-3.5" />
+          <span>+ Invitar</span>
         </button>
       </div>
 
@@ -109,8 +176,8 @@ export function MembersTab() {
         <EmptyState
           emoji="👥"
           title="Sin miembros registrados en este espacio."
-          action="+ Añadir primer miembro"
-          onAction={() => setIsAddingMember(true)}
+          action="+ Invitar personas"
+          onAction={() => setIsInviteModalOpen(true)}
         />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -363,43 +430,136 @@ export function MembersTab() {
         )}
       </BottomSheet>
 
-      {/* ── MODAL: AÑADIR MIEMBRO ── */}
-      <BottomSheet
-        open={isAddingMember}
-        onClose={() => setIsAddingMember(false)}
-        title="Añadir nuevo miembro"
-      >
-        <div className="flex flex-col gap-3.5 text-xs">
-          <div className="flex flex-col gap-1">
-            <label className="font-bold text-slate-400">Nombre del integrante <span className="text-red-400">*</span></label>
-            <input
-              type="text"
-              value={newMemberName}
-              onChange={(e) => setNewMemberName(e.target.value)}
-              placeholder="Ej. Sofía, David, Papá..."
-              autoFocus
-              className="w-full rounded-xl border border-white/10 bg-white/[0.04] py-2.5 px-3 text-xs font-medium text-white outline-none focus:border-purple-500"
-            />
-          </div>
+      {/* ── MODAL: CÓDIGO DEL HOGAR E INVITACIÓN ── */}
+      {isInviteModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-md p-3 sm:p-4 animate-fade-in">
+          <div className="relative w-full max-w-md rounded-3xl border border-slate-200 bg-white p-4 sm:p-5 shadow-2xl animate-in zoom-in-95 duration-150 flex flex-col max-h-[92vh] overflow-y-auto no-scrollbar dark:border-purple-500/30 dark:bg-[#100e23] space-y-3">
+            {/* Cabecera del Modal */}
+            <div className="flex items-center justify-between pb-2.5 border-b border-slate-200/80 dark:border-purple-500/20">
+              <div className="flex items-center gap-2.5">
+                <div className="flex size-9 items-center justify-center rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 dark:bg-purple-500/20 dark:border-purple-500/30 dark:text-purple-300 shrink-0">
+                  <UserPlus className="size-4.5" />
+                </div>
+                <div>
+                  <h3 className="text-sm sm:text-base font-black text-slate-900 dark:text-white leading-tight">
+                    Invitar a “{groupName}”
+                  </h3>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    Comparte el código o enlace para que otros se unan
+                  </p>
+                </div>
+              </div>
 
-          <div className="mt-2 flex gap-2 justify-end">
-            <button
-              type="button"
-              onClick={() => setIsAddingMember(false)}
-              className="rounded-xl px-4 py-2 text-xs font-bold text-slate-400 hover:bg-white/10"
-            >
-              Cancelar
-            </button>
-            <button
-              type="button"
-              onClick={handleCreateMember}
-              className="rounded-xl bg-purple-600 hover:bg-purple-500 px-5 py-2 text-xs font-bold text-white shadow-sm transition-all active:scale-95"
-            >
-              Añadir miembro
-            </button>
+              <button
+                type="button"
+                onClick={() => setIsInviteModalOpen(false)}
+                className="rounded-full p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:text-white dark:hover:bg-white/10 transition-colors"
+              >
+                <X className="size-4.5" />
+              </button>
+            </div>
+
+            {/* 1. Tarjeta Destacada con el Código de Unión */}
+            <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 text-center space-y-1.5 dark:bg-white/[0.03] dark:border-white/10">
+              <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-800 dark:text-purple-300">
+                Código del Hogar
+              </span>
+              <div className="py-1.5 px-3 rounded-xl bg-white border border-slate-200 shadow-2xs dark:bg-[#16132f] dark:border-purple-500/30">
+                <span className="font-mono text-base sm:text-lg font-bold tracking-wider break-all text-slate-900 dark:text-white select-all text-center block">
+                  {joinCode}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={handleCopyCode}
+                className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-all active:scale-95 shadow-sm dark:bg-purple-600 dark:hover:bg-purple-500"
+              >
+                {copiedCode ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
+                <span>{copiedCode ? '¡Código copiado!' : 'Copiar código del hogar'}</span>
+              </button>
+            </div>
+
+            {/* 2. Enlace Directo de Invitación */}
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                Enlace directo
+              </label>
+              <div className="flex items-center gap-2 p-1.5 rounded-xl bg-slate-100 border border-slate-200 dark:bg-white/[0.04] dark:border-white/10">
+                <span className="truncate text-xs font-mono font-medium text-slate-700 dark:text-slate-300 flex-1 pl-1">
+                  {inviteUrl}
+                </span>
+                <button
+                  type="button"
+                  onClick={handleCopyLink}
+                  className="p-1.5 rounded-lg bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 shadow-2xs transition-transform active:scale-95 dark:bg-white/10 dark:text-white dark:border-white/10 shrink-0"
+                  title="Copiar enlace"
+                >
+                  {copiedLink ? <Check className="size-3.5 text-emerald-600" /> : <Copy className="size-3.5" />}
+                </button>
+              </div>
+            </div>
+
+            {/* 3. Botones de Compartir (WhatsApp & Nativo) */}
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={handleWhatsApp}
+                className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold text-xs shadow-sm transition-transform active:scale-95"
+              >
+                <MessageCircle className="size-3.5 fill-white" />
+                <span>WhatsApp</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleShare}
+                className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200 font-bold text-xs transition-transform active:scale-95 dark:bg-white/10 dark:hover:bg-white/15 dark:text-white dark:border-white/10"
+              >
+                <Share2 className="size-3.5 text-emerald-600 dark:text-purple-400" />
+                <span>Compartir</span>
+              </button>
+            </div>
+
+            {/* 4. Código QR Desplegable */}
+            <div className="pt-1.5 border-t border-slate-200/80 dark:border-purple-500/20">
+              <button
+                type="button"
+                onClick={() => setShowQr(!showQr)}
+                className="w-full flex items-center justify-between py-1 px-2 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-white/5 transition-colors"
+              >
+                <span className="flex items-center gap-1.5 text-[11px]">
+                  <QrCode className="size-3.5 text-emerald-600 dark:text-purple-400" />
+                  <span>{showQr ? 'Ocultar código QR' : 'Ver código QR para escanear'}</span>
+                </span>
+                <span className="text-[10px] text-emerald-700 dark:text-purple-300">
+                  {showQr ? '▲' : '▼'}
+                </span>
+              </button>
+
+              {showQr && (
+                <div className="mt-1.5 flex flex-col items-center justify-center p-3 bg-slate-50 border border-slate-200 rounded-2xl dark:bg-white/[0.02] dark:border-white/10 animate-fade-in">
+                  <div className="p-2 bg-white rounded-xl border border-slate-200 shadow-sm">
+                    <QRCodeSVG value={inviteUrl} size={130} level="H" includeMargin />
+                  </div>
+                  <p className="mt-1 text-[10px] text-slate-500 dark:text-slate-400 text-center">
+                    Escanea desde la cámara de otro teléfono para unirse
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Botón de Cierre */}
+            <div className="pt-1 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setIsInviteModalOpen(false)}
+                className="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs transition-colors dark:bg-purple-600 dark:hover:bg-purple-500 shadow-sm active:scale-95"
+              >
+                Listo
+              </button>
+            </div>
           </div>
         </div>
-      </BottomSheet>
+      )}
     </div>
   )
 }

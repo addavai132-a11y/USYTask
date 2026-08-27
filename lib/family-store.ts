@@ -30,62 +30,13 @@ function saveArray<T>(key: string, data: T[]): void {
 
 // ---------------- CHALLENGES ----------------
 
-const DEFAULT_CHALLENGES: Omit<FamilyChallenge, 'groupId'>[] = [
-  {
-    id: 'sample_chal_1',
-    title: '30 min de Lectura Diaria',
-    description: 'Leer al menos 30 minutos cada día antes de dormir para cultivar el hábito.',
-    rewardPoints: 150,
-    targetDays: 7,
-    currentDays: 4,
-    category: 'estudio',
-    assignedMemberIds: [],
-    status: 'en_progreso',
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: 'sample_chal_2',
-    title: 'Cocina Limpia tras la Cena',
-    description: 'Dejar la encimera y fregadero recogidos e impecables cada noche.',
-    rewardPoints: 200,
-    targetDays: 5,
-    currentDays: 5,
-    category: 'limpieza',
-    assignedMemberIds: [],
-    status: 'completado',
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: 'sample_chal_3',
-    title: 'Paseo en Familia o Deporte',
-    description: 'Realizar 45 minutos de ejercicio o paseo al aire libre.',
-    rewardPoints: 120,
-    targetDays: 5,
-    currentDays: 2,
-    category: 'deporte',
-    assignedMemberIds: [],
-    status: 'en_progreso',
-    createdAt: new Date().toISOString(),
-  },
-]
-
 export function getAllChallenges(): FamilyChallenge[] {
   return loadArray<FamilyChallenge>(CHALLENGES_KEY)
 }
 
 export function getChallengesByGroup(groupId: string): FamilyChallenge[] {
   const all = getAllChallenges()
-  const groupChallenges = all.filter((c) => c.groupId === groupId)
-  if (groupChallenges.length > 0) return groupChallenges
-
-  // Initialize with sample challenges
-  const defaults: FamilyChallenge[] = DEFAULT_CHALLENGES.map((dc, idx) => ({
-    ...dc,
-    id: `chal_seed_${groupId}_${idx + 1}`,
-    groupId,
-  }))
-  saveArray(CHALLENGES_KEY, [...all, ...defaults])
-  return defaults
+  return all.filter((c) => c.groupId === groupId)
 }
 
 export function addChallenge(challenge: FamilyChallenge): void {
@@ -119,18 +70,16 @@ export function incrementChallengeProgress(
   const chal = all[idx]
   const today = getTodayISO()
 
-  if (chal.lastCheckedDate === today) {
-    return { challenge: chal, completedNow: false, pointsAwarded: 0 }
-  }
-
-  const nextDays = chal.currentDays + 1
-  const isNowCompleted = nextDays >= chal.targetDays && chal.status !== 'completado'
+  const currentStreak = chal.currentDays || 0
+  const targetDays = chal.targetDays || 7
+  const newDays = currentStreak + 1
+  const isNowCompleted = newDays >= targetDays
 
   const updated: FamilyChallenge = {
     ...chal,
-    currentDays: nextDays,
-    lastCheckedDate: today,
-    status: isNowCompleted ? 'completado' : chal.status,
+    currentDays: newDays,
+    status: isNowCompleted ? 'completado' : 'en_progreso',
+    lastProgressDate: today,
   }
 
   all[idx] = updated
@@ -145,70 +94,13 @@ export function incrementChallengeProgress(
 
 // ---------------- REWARDS ----------------
 
-const DEFAULT_REWARDS: Omit<FamilyReward, 'groupId'>[] = [
-  {
-    id: 'sample_rew_1',
-    title: 'Elegir Película del Viernes',
-    description: 'Mando absoluto sobre las palomitas y la peli familiar del fin de semana.',
-    pointCost: 150,
-    icon: '🎬',
-    claimedBy: [],
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: 'sample_rew_2',
-    title: 'Cena o Comida Favorita',
-    description: 'Elegir el menú especial o pedir pizza/hamburguesa para cenar.',
-    pointCost: 300,
-    icon: '🍕',
-    claimedBy: [],
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: 'sample_rew_3',
-    title: 'Tarde Extra de Videojuegos',
-    description: '1 hora adicional de juego o consola sin interrupciones.',
-    pointCost: 200,
-    icon: '🎮',
-    claimedBy: [],
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: 'sample_rew_4',
-    title: 'Salida al Cine o Parque',
-    description: 'Plan especial fuera de casa a elección del canjeador.',
-    pointCost: 500,
-    icon: '🎟️',
-    claimedBy: [],
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: 'sample_rew_5',
-    title: 'Exención de Tarea Doméstica',
-    description: 'Pase libre para librarse de poner la mesa o sacar la basura por 1 día.',
-    pointCost: 250,
-    icon: '🛡️',
-    claimedBy: [],
-    createdAt: new Date().toISOString(),
-  },
-]
-
 export function getAllRewards(): FamilyReward[] {
   return loadArray<FamilyReward>(REWARDS_KEY)
 }
 
 export function getRewardsByGroup(groupId: string): FamilyReward[] {
   const all = getAllRewards()
-  const groupRewards = all.filter((r) => r.groupId === groupId)
-  if (groupRewards.length > 0) return groupRewards
-
-  const defaults: FamilyReward[] = DEFAULT_REWARDS.map((dr, idx) => ({
-    ...dr,
-    id: `rew_seed_${groupId}_${idx + 1}`,
-    groupId,
-  }))
-  saveArray(REWARDS_KEY, [...all, ...defaults])
-  return defaults
+  return all.filter((r) => r.groupId === groupId)
 }
 
 export function addReward(reward: FamilyReward): void {
@@ -248,24 +140,20 @@ export function claimReward(
   if (mIdx < 0) return { success: false, error: 'Miembro no encontrado' }
 
   const member = allMembers[mIdx]
-  if (member.points < reward.pointCost) {
-    return {
-      success: false,
-      error: `Puntos insuficientes. ${member.name} tiene ${member.points} pts y se necesitan ${reward.pointCost} pts.`,
-    }
+  if ((member.points || 0) < reward.pointCost) {
+    return { success: false, error: `Puntos insuficientes. Necesitas ${reward.pointCost} pts.` }
   }
 
-  // Deduct points
+  // Deduct points from member
   allMembers[mIdx] = {
     ...member,
-    points: Math.max(0, member.points - reward.pointCost),
+    points: Math.max(0, (member.points || 0) - reward.pointCost),
   }
   saveArray(MEMBERS_KEY, allMembers)
 
-  // Register claim in reward
+  // Append to claimedBy list
   const updatedClaimedBy = reward.claimedBy || []
   updatedClaimedBy.unshift({
-    id: `claim_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
     memberId,
     date: new Date().toISOString(),
     rewardTitle: reward.title,
@@ -286,45 +174,13 @@ export function claimReward(
 
 // ---------------- MEMORIES ----------------
 
-const DEFAULT_MEMORIES: Omit<FamilyMemory, 'groupId'>[] = [
-  {
-    id: 'sample_mem_1',
-    title: 'Excursión a la Sierra de Guadarrama',
-    description: 'Día fantástico de senderismo y picnic bajo los pinos. ¡Hicimos más de 12 km juntos!',
-    date: getTodayISO(),
-    imagePlaceholder: 'linear-gradient(135deg, #059669 0%, #10b981 50%, #34d399 100%)',
-    tags: ['Naturaleza', 'Deporte', 'FinDeSemana'],
-    taggedMemberIds: [],
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: 'sample_mem_2',
-    title: 'Noche de Juegos de Mesa y Pizza Casera',
-    description: 'Partida épica de Catan con masa de pizza hecha en casa con masa madre.',
-    date: getTodayISO(),
-    imagePlaceholder: 'linear-gradient(135deg, #7c3aed 0%, #a855f7 50%, #ec4899 100%)',
-    tags: ['Juegos', 'Cena', 'Risas'],
-    taggedMemberIds: [],
-    createdAt: new Date().toISOString(),
-  },
-]
-
 export function getAllMemories(): FamilyMemory[] {
   return loadArray<FamilyMemory>(MEMORIES_KEY)
 }
 
 export function getMemoriesByGroup(groupId: string): FamilyMemory[] {
   const all = getAllMemories()
-  const groupMemories = all.filter((m) => m.groupId === groupId)
-  if (groupMemories.length > 0) return groupMemories
-
-  const defaults: FamilyMemory[] = DEFAULT_MEMORIES.map((dm, idx) => ({
-    ...dm,
-    id: `mem_seed_${groupId}_${idx + 1}`,
-    groupId,
-  }))
-  saveArray(MEMORIES_KEY, [...all, ...defaults])
-  return defaults
+  return all.filter((m) => m.groupId === groupId)
 }
 
 export function addMemory(memory: FamilyMemory): void {
