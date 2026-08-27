@@ -60,19 +60,21 @@ export function ChallengesTab() {
       description: description.trim(),
       category,
       targetDays,
+      currentDays: 0,
       rewardPoints,
       assignedMemberIds,
+      status: 'en_progreso',
     })
     setIsCreating(false)
-    toast('¡Reto familiar creado!', '🎯')
+    toast('Reto familiar creado', '🎯')
   }
 
   const handleCheckIn = (challenge: FamilyChallenge) => {
     const result = checkInFamilyChallenge(challenge.id)
     if (result.completedNow) {
-      toast(`🏆 ¡Reto "${challenge.title}" completado! +${result.pointsAwarded} pts para todos`, '🎉')
+      toast(`¡Reto "${challenge.title}" completado! +${result.pointsAwarded} pts`, '🎉')
     } else {
-      toast('¡Día completado! Racha aumentada 🔥', '💪')
+      toast('Día completado para el reto', '✨')
     }
   }
 
@@ -90,17 +92,17 @@ export function ChallengesTab() {
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      {/* Top Controls: Filter Pills & + Crear Reto */}
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex rounded-2xl bg-secondary/60 p-1 border border-border">
+    <div className="w-full max-w-2xl mx-auto space-y-4">
+      {/* ── Top Header Controls ── */}
+      <div className="w-full flex items-center justify-between p-3.5 px-5 bg-white/[0.03] border border-white/10 rounded-2xl backdrop-blur-xl">
+        <div className="flex items-center gap-1.5 p-1 bg-white/[0.04] border border-white/10 rounded-xl">
           <button
             onClick={() => setFilter('activos')}
             className={cn(
-              'rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all',
+              'rounded-lg px-3 py-1 text-xs font-bold transition-all',
               filter === 'activos'
-                ? 'bg-primary text-primary-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground'
+                ? 'bg-purple-600 text-white shadow-sm'
+                : 'text-slate-400 hover:text-white'
             )}
           >
             Activos ({activeChallenges.length})
@@ -108,10 +110,10 @@ export function ChallengesTab() {
           <button
             onClick={() => setFilter('completados')}
             className={cn(
-              'rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all',
+              'rounded-lg px-3 py-1 text-xs font-bold transition-all',
               filter === 'completados'
-                ? 'bg-primary text-primary-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground'
+                ? 'bg-purple-600 text-white shadow-sm'
+                : 'text-slate-400 hover:text-white'
             )}
           >
             Completados ({completedChallenges.length})
@@ -120,32 +122,27 @@ export function ChallengesTab() {
 
         <button
           onClick={handleOpenCreateModal}
-          className="flex items-center gap-1.5 rounded-xl bg-primary text-primary-foreground px-3.5 py-2 text-xs font-bold shadow-soft transition-transform active:scale-95 hover:opacity-90 dark:bg-gradient-to-r dark:from-purple-600 dark:to-indigo-600"
+          className="flex items-center gap-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white px-3.5 py-1.5 text-xs font-bold transition-all active:scale-95 shadow-sm"
         >
-          <Plus className="size-4 stroke-[2.5]" />
-          <span>Nuevo reto</span>
+          <Plus className="size-3.5" />
+          <span>+ Nuevo reto</span>
         </button>
       </div>
 
-      {/* Challenges List */}
+      {/* ── Challenges List ── */}
       {displayedChallenges.length === 0 ? (
         <EmptyState
-          emoji={filter === 'activos' ? '🏆' : '🏅'}
+          emoji={filter === 'activos' ? '🎯' : '✅'}
           title={
             filter === 'activos'
-              ? 'Sin retos activos en este momento'
-              : 'Aún no hay retos completados'
-          }
-          description={
-            filter === 'activos'
-              ? 'Crea un desafío para motivar a la familia con hábitos saludables, deporte o tareas del hogar.'
-              : 'Completa tus retos diarios para desbloquear recompensas y logros.'
+              ? 'Sin retos activos en este momento.'
+              : 'Aún no hay retos completados.'
           }
           action={filter === 'activos' ? '+ Crear primer reto' : undefined}
           onAction={filter === 'activos' ? handleOpenCreateModal : undefined}
         />
       ) : (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {displayedChallenges.map((c) => {
             const catInfo = CHALLENGE_CATEGORIES.find((cat) => cat.id === c.category) || CHALLENGE_CATEGORIES[0]
             const isCheckedToday = c.lastCheckedDate === today
@@ -157,26 +154,24 @@ export function ChallengesTab() {
               <Card
                 key={c.id}
                 className={cn(
-                  'relative flex flex-col justify-between p-4 transition-all hover:border-primary/40',
-                  isCompleted && 'opacity-85 border-emerald-500/30'
+                  'p-4 bg-white/[0.03] border border-white/10 hover:border-purple-500/30 transition-all rounded-2xl flex flex-col justify-between gap-3 shadow-sm',
+                  isCompleted && 'opacity-75 border-purple-500/20'
                 )}
               >
                 <div>
                   {/* Category & Points header */}
                   <div className="flex items-center justify-between gap-2 mb-2">
-                    <span className="flex items-center gap-1 rounded-full bg-secondary px-2.5 py-1 text-[11px] font-bold text-foreground border border-border">
-                      <span>{catInfo.icon}</span>
-                      <span>{catInfo.label}</span>
+                    <span className="text-[10px] font-semibold text-slate-300 uppercase tracking-wider px-2 py-0.5 rounded bg-white/[0.04] border border-white/5">
+                      {catInfo.label}
                     </span>
 
                     <div className="flex items-center gap-2">
-                      <span className="flex items-center gap-1 rounded-full bg-amber-500/15 border border-amber-500/30 px-2.5 py-0.5 text-xs font-black text-amber-600 dark:text-amber-400">
-                        <Sparkles className="size-3 fill-amber-500" />
+                      <span className="text-xs font-bold text-purple-300 px-2 py-0.5 rounded-full bg-purple-500/10 border border-purple-500/20 tabular-nums">
                         +{c.rewardPoints} pts
                       </span>
                       <button
                         onClick={() => handleDelete(c.id, c.title)}
-                        className="rounded-lg p-1 text-muted-foreground/60 hover:bg-rose-500/10 hover:text-rose-500 transition-colors"
+                        className="rounded-lg p-1 text-slate-400 hover:bg-white/10 hover:text-white transition-colors"
                         title="Eliminar reto"
                       >
                         <Trash2 className="size-3.5" />
@@ -185,81 +180,57 @@ export function ChallengesTab() {
                   </div>
 
                   {/* Title & Description */}
-                  <h4 className="font-extrabold text-base text-foreground tracking-tight leading-snug">
+                  <h4 className="font-bold text-sm text-white tracking-tight leading-snug">
                     {c.title}
                   </h4>
                   {c.description && (
-                    <p className="mt-1 text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+                    <p className="mt-1 text-xs text-slate-400 line-clamp-2 leading-relaxed">
                       {c.description}
                     </p>
                   )}
-
-                  {/* Assigned Members */}
-                  {assignedMembers.length > 0 && (
-                    <div className="mt-3 flex items-center gap-1.5">
-                      <div className="flex -space-x-1.5">
-                        {assignedMembers.slice(0, 4).map((m: any) => (
-                          <MemberAvatar key={m.id} member={m} size="xs" ring />
-                        ))}
-                      </div>
-                      <span className="text-[11px] font-semibold text-muted-foreground">
-                        {assignedMembers.length === 1
-                          ? assignedMembers[0]?.name
-                          : `${assignedMembers.length} participantes`}
-                      </span>
-                    </div>
-                  )}
                 </div>
 
-                {/* Progress & Action Bottom */}
-                <div className="mt-4 pt-3 border-t border-border/50">
-                  <div className="flex items-center justify-between text-xs font-bold mb-1.5">
-                    <span className="text-muted-foreground flex items-center gap-1">
-                      <Flame className="size-3.5 text-orange-500" />
-                      Día {c.currentDays} de {c.targetDays}
+                {/* Progress & Actions Footer */}
+                <div className="space-y-2 pt-2 border-t border-white/5">
+                  <div className="flex items-center justify-between text-[11px] font-medium text-slate-400">
+                    <span>
+                      Progreso: <strong className="text-white">{c.currentDays}</strong> de {c.targetDays} días
                     </span>
-                    <span className={cn(isCompleted ? 'text-emerald-500' : 'text-primary')}>
-                      {pct}%
-                    </span>
+                    <span className="font-bold text-purple-300">{pct}%</span>
                   </div>
 
-                  <ProgressBar
-                    value={c.currentDays}
-                    max={c.targetDays}
-                    className="h-2 mb-3"
-                    barClassName={isCompleted ? 'bg-emerald-500' : 'bg-primary'}
-                  />
+                  <div className="w-full bg-white/[0.05] rounded-full h-1.5 overflow-hidden">
+                    <div
+                      className="h-full bg-purple-500 rounded-full transition-all duration-300"
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
 
-                  {/* Daily Check-in Button */}
-                  {!isCompleted ? (
-                    <button
-                      onClick={() => handleCheckIn(c)}
-                      disabled={isCheckedToday}
-                      className={cn(
-                        'w-full flex items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-bold transition-all shadow-sm active:scale-95',
-                        isCheckedToday
-                          ? 'bg-secondary text-muted-foreground cursor-default opacity-80 border border-border'
-                          : 'bg-primary text-primary-foreground hover:opacity-90 dark:bg-gradient-to-r dark:from-purple-600 dark:to-indigo-600'
-                      )}
-                    >
-                      {isCheckedToday ? (
-                        <>
-                          <CheckCircle2 className="size-4 text-emerald-500" />
-                          <span>¡Completado por hoy!</span>
-                        </>
-                      ) : (
-                        <>
-                          <Flame className="size-4 text-orange-400" />
-                          <span>Marcar día completado hoy</span>
-                        </>
-                      )}
-                    </button>
-                  ) : (
-                    <div className="flex items-center justify-center gap-1.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 py-2 text-xs font-extrabold text-emerald-600 dark:text-emerald-400">
-                      <CheckCircle2 className="size-4" />
-                      <span>¡Reto superado con éxito!</span>
+                  <div className="flex items-center justify-between gap-2 pt-1">
+                    <div className="flex items-center -space-x-1.5">
+                      {assignedMembers.map((m) => (
+                        <div key={m!.id} title={m!.name}>
+                          <MemberAvatar member={m!} size="sm" ring />
+                        </div>
+                      ))}
                     </div>
-                  )}
+
+                    {!isCompleted && (
+                      <button
+                        onClick={() => handleCheckIn(c)}
+                        disabled={isCheckedToday}
+                        className={cn(
+                          'flex items-center gap-1 rounded-xl px-3 py-1.5 text-xs font-bold transition-all',
+                          isCheckedToday
+                            ? 'bg-white/[0.04] text-slate-400 border border-white/5 cursor-not-allowed'
+                            : 'bg-purple-600 hover:bg-purple-500 text-white shadow-sm active:scale-95'
+                        )}
+                      >
+                        <CheckCircle2 className="size-3.5" />
+                        <span>{isCheckedToday ? 'Cumplido hoy' : 'Completar día'}</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
               </Card>
             )
@@ -267,107 +238,104 @@ export function ChallengesTab() {
         </div>
       )}
 
-      {/* MODAL: CREAR RETO */}
+      {/* ── MODAL: CREAR RETO ── */}
       <BottomSheet
         open={isCreating}
         onClose={() => setIsCreating(false)}
         title="Crear nuevo reto familiar"
       >
-        <div className="flex flex-col gap-4">
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-bold text-muted-foreground">Título del reto</label>
+        <div className="flex flex-col gap-3.5 text-xs">
+          <div className="flex flex-col gap-1">
+            <label className="font-bold text-slate-400">Título del reto <span className="text-red-400">*</span></label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Ej. 30 min de Lectura diaria, Recoger la mesa..."
+              placeholder="Ej. Caminar 30 min, Leer 10 páginas, Ordenar habitación..."
               autoFocus
-              className="w-full rounded-xl border border-border bg-secondary/50 py-2.5 px-3 text-sm font-bold text-foreground outline-none focus:border-primary focus:bg-card"
+              className="w-full rounded-xl border border-white/10 bg-white/[0.04] py-2.5 px-3 text-xs font-medium text-white outline-none focus:border-purple-500"
             />
           </div>
 
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-bold text-muted-foreground">Descripción (opcional)</label>
+          <div className="flex flex-col gap-1">
+            <label className="font-bold text-slate-400">Descripción / Reglas (opcional)</label>
             <textarea
+              rows={2}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              rows={2}
-              placeholder="Detalles sobre cómo y cuándo cumplirlo..."
-              className="w-full rounded-xl border border-border bg-secondary/50 py-2 px-3 text-xs font-semibold text-foreground outline-none focus:border-primary focus:bg-card resize-none"
+              placeholder="Detalles sobre cómo conseguirlo..."
+              className="w-full rounded-xl border border-white/10 bg-white/[0.04] py-2 px-3 text-xs font-medium text-white outline-none focus:border-purple-500 resize-none"
             />
           </div>
 
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-bold text-muted-foreground">Categoría</label>
-            <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="flex flex-col gap-1">
+              <label className="font-bold text-slate-400">Días objetivo</label>
+              <input
+                type="number"
+                min={1}
+                max={365}
+                value={targetDays}
+                onChange={(e) => setTargetDays(Math.max(1, parseInt(e.target.value, 10) || 1))}
+                className="w-full rounded-xl border border-white/10 bg-white/[0.04] py-2 px-3 text-xs font-medium text-white outline-none focus:border-purple-500"
+              />
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <label className="font-bold text-slate-400">Puntos de recompensa</label>
+              <input
+                type="number"
+                min={10}
+                step={10}
+                value={rewardPoints}
+                onChange={(e) => setRewardPoints(Math.max(10, parseInt(e.target.value, 10) || 10))}
+                className="w-full rounded-xl border border-white/10 bg-white/[0.04] py-2 px-3 text-xs font-medium text-white outline-none focus:border-purple-500"
+              />
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="font-bold text-slate-400">Categoría</label>
+            <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5">
               {CHALLENGE_CATEGORIES.map((cat) => (
                 <button
                   key={cat.id}
                   type="button"
                   onClick={() => setCategory(cat.id)}
                   className={cn(
-                    'flex items-center justify-center gap-1.5 rounded-xl py-2 px-2 text-xs font-bold transition-all border',
+                    'rounded-xl py-2 text-xs font-bold border transition-all truncate text-center',
                     category === cat.id
-                      ? 'border-primary bg-primary text-primary-foreground shadow-sm'
-                      : 'border-border bg-secondary/40 text-muted-foreground hover:bg-secondary'
+                      ? 'border-purple-500/50 bg-purple-500/20 text-purple-200'
+                      : 'border-white/10 bg-white/[0.02] text-slate-400 hover:bg-white/[0.06] hover:text-white'
                   )}
                 >
-                  <span>{cat.icon}</span>
-                  <span className="truncate">{cat.label}</span>
+                  {cat.label}
                 </button>
               ))}
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-bold text-muted-foreground">Duración (días)</label>
-              <input
-                type="number"
-                min={1}
-                max={365}
-                value={targetDays || ''}
-                onChange={(e) => setTargetDays(Number(e.target.value))}
-                className="w-full rounded-xl border border-border bg-secondary/50 py-2 px-3 text-sm font-bold text-foreground outline-none focus:border-primary focus:bg-card"
-              />
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-bold text-muted-foreground">Recompensa (pts)</label>
-              <input
-                type="number"
-                min={10}
-                max={5000}
-                value={rewardPoints || ''}
-                onChange={(e) => setRewardPoints(Number(e.target.value))}
-                className="w-full rounded-xl border border-border bg-secondary/50 py-2 px-3 text-sm font-bold text-foreground outline-none focus:border-primary focus:bg-card"
-              />
-            </div>
-          </div>
-
-          {/* Member assignment */}
           <MemberMultiSelect
             members={members}
             selectedIds={assignedMemberIds}
             onChange={setAssignedMemberIds}
-            label="Participantes asignados"
+            label="Integrantes participantes"
           />
 
           <div className="mt-2 flex gap-2 justify-end">
             <button
               type="button"
               onClick={() => setIsCreating(false)}
-              className="rounded-xl px-4 py-2.5 text-xs font-bold text-muted-foreground hover:bg-secondary"
+              className="rounded-xl px-4 py-2 text-xs font-bold text-slate-400 hover:bg-white/10"
             >
               Cancelar
             </button>
             <button
               type="button"
               onClick={handleCreateChallenge}
-              disabled={!title.trim()}
-              className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-xs font-bold shadow-soft transition-transform active:scale-95 disabled:opacity-50"
+              className="rounded-xl bg-purple-600 hover:bg-purple-500 px-5 py-2 text-xs font-bold text-white shadow-sm transition-all active:scale-95"
             >
-              Crear reto
+              Guardar reto
             </button>
           </div>
         </div>

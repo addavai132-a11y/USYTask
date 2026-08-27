@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Trophy, Star, Flame, Award, Gift, Camera, Users, Sparkles } from 'lucide-react'
+import { Trophy, Star, Flame, Award } from 'lucide-react'
 import { PillTabs } from '@/components/ui/pill-tabs'
 import { Card } from '@/components/ui/card'
 import { ScreenHeader } from '@/components/shared/screen-header'
@@ -11,13 +11,12 @@ import { ChallengesTab } from './challenges-tab'
 import { RewardsTab } from './rewards-tab'
 import { AchievementsTab } from './achievements-tab'
 import { MemoriesTab } from './memories-tab'
-import { cn } from '@/lib/utils'
 
 type Section = 'miembros' | 'retos' | 'recompensas' | 'logros' | 'recuerdos'
 
 export function FamilyScreen() {
   const [section, setSection] = useState<Section>('miembros')
-  const { members, familyChallenges, familyAchievements, familyRewards, familyMemories } = useApp()
+  const { members, familyChallenges, familyAchievements } = useApp()
 
   // Calculate high-level family gamification stats
   const totalPoints = members.reduce((acc, m) => acc + (m.points || 0), 0)
@@ -26,96 +25,102 @@ export function FamilyScreen() {
   const unlockedAchievementsCount = familyAchievements.filter((a) => a.isUnlocked).length
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4 w-full max-w-6xl mx-auto">
       <ScreenHeader
         title="Familia"
-        subtitle="Puntos, retos, recompensas y recuerdos compartidos"
+        subtitle="Organización compartida, retos, recompensas y recuerdos del hogar"
+        centered
       />
 
-      {/* Overview Gamification Card */}
-      <Card className="relative overflow-hidden p-3.5 sm:p-4 bg-gradient-to-r from-purple-500/10 via-indigo-500/10 to-emerald-500/10 border-primary/20">
+      {/* ── Overview Minimalist Stats Banner ── */}
+      <Card className="p-4 sm:p-5 bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 rounded-2xl backdrop-blur-xl shadow-sm">
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {/* Total Points */}
-          <div className="flex items-center gap-2.5">
-            <div className="flex size-9 sm:size-10 items-center justify-center rounded-xl bg-amber-500/20 text-amber-500 shrink-0">
-              <Star className="size-5 fill-amber-500" />
+          <div className="flex items-center gap-3">
+            <div className="flex size-10 items-center justify-center rounded-xl bg-purple-50 text-purple-600 dark:bg-purple-500/10 dark:text-purple-400 shrink-0 border border-purple-200 dark:border-purple-500/20">
+              <Star className="size-4" />
             </div>
             <div>
-              <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-muted-foreground leading-none">
+              <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 leading-none">
                 Puntos Totales
               </p>
-              <p className="text-base sm:text-lg font-black text-foreground mt-0.5 tabular-nums">
-                {totalPoints} pts
+              <p className="text-base sm:text-lg font-bold text-slate-900 dark:text-white mt-1 tabular-nums">
+                {totalPoints} <span className="text-xs font-normal text-slate-500 dark:text-slate-400">pts</span>
               </p>
             </div>
           </div>
 
           {/* Top Streak */}
-          <div className="flex items-center gap-2.5">
-            <div className="flex size-9 sm:size-10 items-center justify-center rounded-xl bg-orange-500/20 text-orange-500 shrink-0">
-              <Flame className="size-5 fill-orange-500" />
+          <div className="flex items-center gap-3">
+            <div className="flex size-10 items-center justify-center rounded-xl bg-purple-50 text-purple-600 dark:bg-purple-500/10 dark:text-purple-400 shrink-0 border border-purple-200 dark:border-purple-500/20">
+              <Flame className="size-4" />
             </div>
             <div>
-              <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-muted-foreground leading-none">
+              <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 leading-none">
                 Mejor Racha
               </p>
-              <p className="text-base sm:text-lg font-black text-foreground mt-0.5 tabular-nums">
-                {maxStreak} días
+              <p className="text-base sm:text-lg font-bold text-slate-900 dark:text-white mt-1 tabular-nums">
+                {maxStreak} <span className="text-xs font-normal text-slate-500 dark:text-slate-400">días</span>
               </p>
             </div>
           </div>
 
           {/* Active Challenges */}
-          <div className="flex items-center gap-2.5">
-            <div className="flex size-9 sm:size-10 items-center justify-center rounded-xl bg-blue-500/20 text-blue-500 shrink-0">
-              <Trophy className="size-5" />
+          <div className="flex items-center gap-3">
+            <div className="flex size-10 items-center justify-center rounded-xl bg-purple-50 text-purple-600 dark:bg-purple-500/10 dark:text-purple-400 shrink-0 border border-purple-200 dark:border-purple-500/20">
+              <Trophy className="size-4" />
             </div>
             <div>
-              <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-muted-foreground leading-none">
+              <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 leading-none">
                 Retos Activos
               </p>
-              <p className="text-base sm:text-lg font-black text-foreground mt-0.5 tabular-nums">
+              <p className="text-base sm:text-lg font-bold text-slate-900 dark:text-white mt-1 tabular-nums">
                 {activeChallengesCount}
               </p>
             </div>
           </div>
 
           {/* Unlocked Badges */}
-          <div className="flex items-center gap-2.5">
-            <div className="flex size-9 sm:size-10 items-center justify-center rounded-xl bg-purple-500/20 text-purple-500 shrink-0">
-              <Award className="size-5" />
+          <div className="flex items-center gap-3">
+            <div className="flex size-10 items-center justify-center rounded-xl bg-purple-50 text-purple-600 dark:bg-purple-500/10 dark:text-purple-400 shrink-0 border border-purple-200 dark:border-purple-500/20">
+              <Award className="size-4" />
             </div>
             <div>
-              <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-muted-foreground leading-none">
+              <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 leading-none">
                 Logros
               </p>
-              <p className="text-base sm:text-lg font-black text-foreground mt-0.5 tabular-nums">
-                {unlockedAchievementsCount} / {familyAchievements.length}
+              <p className="text-base sm:text-lg font-bold text-slate-900 dark:text-white mt-1 tabular-nums">
+                {unlockedAchievementsCount} <span className="text-xs font-normal text-slate-500 dark:text-slate-400">/ {familyAchievements.length}</span>
               </p>
             </div>
           </div>
         </div>
       </Card>
 
-      {/* Main Suite Tabs */}
-      <PillTabs<Section>
-        value={section}
-        onChange={setSection}
-        tabs={[
-          { id: 'miembros', label: 'Miembros' },
-          { id: 'retos', label: 'Retos' },
-          { id: 'recompensas', label: 'Recompensas' },
-          { id: 'logros', label: 'Logros' },
-          { id: 'recuerdos', label: 'Recuerdos' },
-        ]}
-      />
+      {/* ── Main Suite Navigation Tabs ── */}
+      <div className="w-full max-w-full overflow-x-auto no-scrollbar sm:w-fit mx-auto flex items-center justify-start sm:justify-center p-1.5 bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 rounded-2xl backdrop-blur-xl shadow-sm">
+        <PillTabs<Section>
+          value={section}
+          onChange={setSection}
+          showScrollArrows={false}
+          tabs={[
+            { id: 'miembros', label: 'Miembros' },
+            { id: 'retos', label: 'Retos' },
+            { id: 'recompensas', label: 'Recompensas' },
+            { id: 'logros', label: 'Logros' },
+            { id: 'recuerdos', label: 'Recuerdos' },
+          ]}
+        />
+      </div>
 
-      {/* Tab Contents */}
-      {section === 'miembros' && <MembersTab />}
-      {section === 'retos' && <ChallengesTab />}
-      {section === 'recompensas' && <RewardsTab />}
-      {section === 'logros' && <AchievementsTab />}
-      {section === 'recuerdos' && <MemoriesTab />}
+      {/* ── Tab Contents ── */}
+      <div className="w-full transition-all duration-200">
+        {section === 'miembros' && <MembersTab />}
+        {section === 'retos' && <ChallengesTab />}
+        {section === 'recompensas' && <RewardsTab />}
+        {section === 'logros' && <AchievementsTab />}
+        {section === 'recuerdos' && <MemoriesTab />}
+      </div>
     </div>
   )
 }

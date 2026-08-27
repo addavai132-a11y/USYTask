@@ -50,7 +50,7 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
-  --font-sans: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-sans), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -63,37 +63,37 @@
 :root,
 .light {
   color-scheme: light;
-  /* Original Clean White + Emerald Light System */
+  /* Clean High-Contrast Light System with Unified Purple Brand */
   --background: #f8fafc;
   --foreground: #0f172a;
   --card: #ffffff;
   --card-foreground: #0f172a;
   --popover: #ffffff;
   --popover-foreground: #0f172a;
-  --primary: #059669; /* Emerald 600 */
+  --primary: #7c3aed; /* Purple 600 */
   --primary-foreground: #ffffff;
   --secondary: #f1f5f9;
-  --secondary-foreground: #334155;
+  --secondary-foreground: #1e293b;
   --muted: #f8fafc;
-  --muted-foreground: #64748b;
-  --accent: #059669;
+  --muted-foreground: #475569;
+  --accent: #7c3aed;
   --accent-foreground: #ffffff;
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
-  --success: #059669;
+  --success: #10b981;
   --success-foreground: #ffffff;
   --warning: #d97706;
   --warning-foreground: #ffffff;
   --border: #e2e8f0;
   --input: #e2e8f0;
-  --ring: #059669;
+  --ring: #7c3aed;
 
   --member-marcos: #2563eb;
   --member-marieli: #db2777;
   --member-adrian: #ea580c;
   --member-celia: #9333ea;
 
-  --chart-1: #059669;
+  --chart-1: #7c3aed;
   --chart-2: #2563eb;
   --chart-3: #d97706;
   --chart-4: #9333ea;
@@ -103,12 +103,12 @@
 
   --sidebar: #ffffff;
   --sidebar-foreground: #0f172a;
-  --sidebar-primary: #059669;
+  --sidebar-primary: #7c3aed;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #f1f5f9;
-  --sidebar-accent-foreground: #0f172a;
+  --sidebar-accent: #f3e8ff;
+  --sidebar-accent-foreground: #6b21a8;
   --sidebar-border: #e2e8f0;
-  --sidebar-ring: #059669;
+  --sidebar-ring: #7c3aed;
 }
 
 .dark {
@@ -178,10 +178,14 @@
     touch-action: pan-x pan-y;
     /* No elastic/rubber-band vertical bounce on the html element */
     overscroll-behavior: none;
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
   }
 
   body {
-    @apply bg-background text-foreground min-h-screen antialiased transition-colors duration-300 selection:bg-emerald-500/30 selection:text-emerald-800 dark:selection:bg-purple-500/30 dark:selection:text-purple-200;
+    @apply bg-background text-foreground min-h-screen antialiased transition-colors duration-300 selection:bg-purple-500/25 selection:text-purple-900 dark:selection:bg-purple-500/35 dark:selection:text-purple-200;
     /* No bounce / overscroll effect on the body */
     overscroll-behavior-y: none;
     overscroll-behavior-x: none;
@@ -190,6 +194,21 @@
     width: 100%;
     /* Limit touch gestures to plain panning (no pinch-zoom propagation) */
     touch-action: pan-x pan-y;
+    font-family: var(--font-sans);
+    letter-spacing: -0.012em;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11', 'tnum';
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    letter-spacing: -0.025em;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  }
+
+  .tabular-nums,
+  [class*='tabular-nums'] {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum';
+    letter-spacing: -0.01em;
   }
 
   /* ─────────────────────────────────────────────────────────────────────────
@@ -441,6 +460,122 @@ select option:checked {
 }
 .dropdown-scroll::-webkit-scrollbar-thumb:hover {
   background: rgba(168, 85, 247, 0.7);
+}
+
+/* =========================================================================
+   LIGHT MODE DESIGN SYSTEM ENHANCEMENTS
+   Ensures crystal-clear contrast, crisp card borders, and legible typography
+   ========================================================================= */
+
+.light {
+  /* Ensure clean text contrast on standard elements */
+  color: #0f172a;
+}
+
+/* Light mode card and glassmorphic container conversions */
+.light [class*='bg-white/['],
+.light [class*='bg-white/5'],
+.light [class*='bg-white/10'] {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+}
+
+/* Specific translucent overlays in light mode */
+.light .backdrop-blur-xl,
+.light .backdrop-blur-2xl {
+  background-color: rgba(255, 255, 255, 0.92) !important;
+  border-color: #e2e8f0 !important;
+}
+
+/* Translucent borders in light mode */
+.light [class*='border-white/'] {
+  border-color: #e2e8f0 !important;
+}
+
+/* Headings and primary text in light mode (except inside solid dark/colored buttons) */
+.light h1:not([class*='text-']),
+.light h2:not([class*='text-']),
+.light h3:not([class*='text-']),
+.light h4:not([class*='text-']),
+.light h5:not([class*='text-']) {
+  color: #0f172a;
+}
+
+/* Convert text-white on neutral elements in light mode to deep dark text */
+.light .text-white:not(button):not([class*='bg-purple']):not([class*='bg-emerald']):not([class*='bg-rose']):not([class*='bg-amber']):not([class*='bg-primary']) {
+  color: #0f172a !important;
+}
+
+/* Keep buttons with solid dark backgrounds legible with white text */
+.light button[class*='bg-purple-600'],
+.light button[class*='bg-purple-700'],
+.light button[class*='bg-primary'],
+.light button[class*='bg-emerald-600'],
+.light button[class*='bg-rose-600'],
+.light .bg-purple-600,
+.light .bg-primary {
+  color: #ffffff !important;
+}
+
+.light button[class*='bg-purple-600'] *,
+.light button[class*='bg-primary'] * {
+  color: #ffffff !important;
+}
+
+/* Secondary muted text in light mode */
+.light .text-slate-400 {
+  color: #64748b !important;
+}
+
+.light .text-slate-500 {
+  color: #475569 !important;
+}
+
+.light .text-slate-300 {
+  color: #334155 !important;
+}
+
+/* Purple accent text contrast adjustment in light mode */
+.light .text-purple-300,
+.light .text-purple-200 {
+  color: #6d28d9 !important; /* purple-700 for optimal WCAG AAA contrast */
+}
+
+.light .text-purple-400 {
+  color: #7c3aed !important; /* purple-600 */
+}
+
+/* Purple subtle container backgrounds in light mode */
+.light [class*='bg-purple-500/5'],
+.light [class*='bg-purple-500/10'],
+.light [class*='bg-purple-500/15'],
+.light [class*='bg-purple-500/20'] {
+  background-color: #f5f3ff !important;
+  border-color: #ddd6fe !important;
+}
+
+/* Light mode dropdown and popover crisp shadows */
+.light .bg-card,
+.light .bg-popover {
+  background-color: #ffffff;
+  border-color: #e2e8f0;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.08), 0 2px 6px -1px rgba(0, 0, 0, 0.04);
+}
+
+/* Form controls in light mode */
+.light input:not([type='checkbox']):not([type='radio']):not([type='range']),
+.light textarea,
+.light select {
+  background-color: #ffffff;
+  color: #0f172a;
+  border-color: #cbd5e1;
+}
+
+.light input:not([type='checkbox']):not([type='radio']):not([type='range']):focus,
+.light textarea:focus,
+.light select:focus {
+  border-color: #7c3aed;
+  background-color: #ffffff;
 }
 
 

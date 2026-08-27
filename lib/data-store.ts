@@ -1,7 +1,7 @@
 // USYTask — Data store: CRUD for tasks, events, reminders, members (per group)
 // All data is scoped by groupId and persisted in localStorage.
 
-import type { Task, CalendarEvent, Reminder, Member, Activity, TaskCategory, EventPoll, DailyMenu, WeeklyMenu, Income, Expense, BillSubscription, Budget, PiggyBankConfig } from '@/types'
+import type { Task, CalendarEvent, Reminder, Member, Activity, TaskCategory, EventPoll, DailyMenu, WeeklyMenu, Income, Expense, BillSubscription, Budget, PiggyBankConfig, AppNotification } from '@/types'
 import { daysUntil } from './date-utils'
 
 const TASKS_KEY = 'usytask_tasks'

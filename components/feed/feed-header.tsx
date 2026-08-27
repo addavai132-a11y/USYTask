@@ -12,7 +12,7 @@ export function FeedHeader() {
       <div className="flex items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900 dark:text-white">
-            {getGreeting()}, {userName} <span aria-hidden="true">👋</span>
+            {getGreeting()}, {userName}
           </h1>
           <p className="mt-0.5 text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-400">{getTodayLabel()}</p>
         </div>

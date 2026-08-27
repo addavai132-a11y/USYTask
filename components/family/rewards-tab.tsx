@@ -11,8 +11,6 @@ import { useApp } from '@/components/app/app-context'
 import type { FamilyReward, Member } from '@/types'
 import { cn } from '@/lib/utils'
 
-const POPULAR_ICONS = ['🎬', '🍕', '🎮', '🎟️', '🛡️', '🍦', '🎡', '💶', '📚', '🏖️', '🍔', '🎁']
-
 export function RewardsTab() {
   const { toast } = useToast()
   const {
@@ -35,7 +33,6 @@ export function RewardsTab() {
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [pointCost, setPointCost] = useState<number>(200)
-  const [icon, setIcon] = useState('🎁')
   const [stock, setStock] = useState<string>('')
 
   const handleOpenClaim = (r: FamilyReward) => {
@@ -48,10 +45,10 @@ export function RewardsTab() {
     const res = claimFamilyReward(claimingReward.id, selectedMemberId)
     if (res.success) {
       const member = getMemberById(selectedMemberId)
-      toast(`¡"${claimingReward.title}" canjeado con éxito para ${member?.name}!`, '🎉')
+      toast(`Recompensa "${claimingReward.title}" canjeada para ${member?.name}`, '✅')
       setClaimingReward(null)
     } else {
-      toast(res.error || 'Error al canjear recompensa', '⚠️')
+      toast(res.error || 'Puntos insuficientes', '❌')
     }
   }
 
@@ -59,7 +56,6 @@ export function RewardsTab() {
     setTitle('')
     setDescription('')
     setPointCost(200)
-    setIcon('🎁')
     setStock('')
     setIsCreating(true)
   }
@@ -70,11 +66,11 @@ export function RewardsTab() {
       title: title.trim(),
       description: description.trim(),
       pointCost: Math.max(10, pointCost),
-      icon,
+      icon: '🎁',
       stock: stock ? parseInt(stock, 10) : undefined,
       claimedBy: [],
     })
-    toast(`Recompensa "${title.trim()}" añadida a la tienda`, '🎁')
+    toast(`Recompensa "${title.trim()}" añadida al catálogo`, '✅')
     setIsCreating(false)
   }
 
@@ -82,7 +78,7 @@ export function RewardsTab() {
     confirmDelete({
       title: '¿Eliminar recompensa?',
       itemName: rewardTitle,
-      description: 'Esta recompensa desaparecerá de la tienda familiar.',
+      description: 'Esta recompensa desaparecerá del catálogo familiar.',
       confirmText: 'Eliminar Recompensa',
       onConfirm: () => {
         deleteFamilyReward(id)
@@ -96,77 +92,74 @@ export function RewardsTab() {
     (r.claimedBy || []).map((c) => ({
       ...c,
       rewardTitle: r.title,
-      rewardIcon: r.icon,
     }))
   ).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
 
   return (
-    <div className="flex flex-col gap-4">
-      {/* Header controls */}
-      <div className="flex items-center justify-between gap-3">
+    <div className="w-full max-w-2xl mx-auto space-y-4">
+      {/* ── Top Header Controls ── */}
+      <div className="w-full flex items-center justify-between p-3.5 px-5 bg-white/[0.03] border border-white/10 rounded-2xl backdrop-blur-xl">
         <div>
-          <h3 className="text-base font-extrabold tracking-tight text-foreground">Tienda de Recompensas</h3>
-          <p className="text-xs text-muted-foreground font-medium">Canjea tus puntos por premios y privilegios familiares</p>
+          <span className="text-sm font-bold text-white">Catálogo de Recompensas ({familyRewards.length})</span>
+          <p className="text-xs text-slate-400">Canjea puntos por privilegios y premios</p>
         </div>
 
         <div className="flex items-center gap-2">
           {allClaims.length > 0 && (
             <button
               onClick={() => setShowHistory(true)}
-              className="flex items-center gap-1.5 rounded-xl bg-secondary px-3 py-2 text-xs font-bold text-foreground border border-border hover:bg-secondary/80 transition-all"
+              className="flex items-center gap-1.5 rounded-xl bg-white/[0.04] px-3 py-1.5 text-xs font-bold text-slate-300 border border-white/10 hover:bg-white/[0.08] transition-all"
               title="Historial de canjes"
             >
-              <History className="size-3.5 text-muted-foreground" />
+              <History className="size-3.5 text-purple-400" />
               <span className="hidden sm:inline">Historial</span>
             </button>
           )}
 
           <button
             onClick={handleOpenCreateModal}
-            className="flex items-center gap-1.5 rounded-xl bg-primary text-primary-foreground px-3.5 py-2 text-xs font-bold shadow-soft transition-transform active:scale-95 hover:opacity-90 dark:bg-gradient-to-r dark:from-purple-600 dark:to-indigo-600"
+            className="flex items-center gap-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white px-3.5 py-1.5 text-xs font-bold transition-all active:scale-95 shadow-sm"
           >
-            <Plus className="size-4 stroke-[2.5]" />
-            <span>Nueva recompensa</span>
+            <Plus className="size-3.5" />
+            <span>+ Nueva recompensa</span>
           </button>
         </div>
       </div>
 
-      {/* Rewards Grid */}
+      {/* ── Rewards Grid ── */}
       {familyRewards.length === 0 ? (
         <EmptyState
           emoji="🎁"
-          title="Sin recompensas en la tienda familiar"
-          description="Crea premios motivadores como elegir peli, tarde de videojuegos o salidas especiales."
+          title="Sin recompensas en el catálogo familiar."
           action="+ Añadir primera recompensa"
           onAction={handleOpenCreateModal}
         />
       ) : (
-        <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {familyRewards.map((r) => {
             const hasStock = r.stock === undefined || r.stock > 0
             return (
               <Card
                 key={r.id}
                 className={cn(
-                  'relative flex flex-col justify-between p-4 transition-all hover:border-primary/40',
+                  'p-4 bg-white/[0.03] border border-white/10 hover:border-purple-500/30 transition-all rounded-2xl flex flex-col justify-between gap-3 shadow-sm',
                   !hasStock && 'opacity-60'
                 )}
               >
                 <div>
-                  {/* Top Icon & Cost */}
-                  <div className="flex items-start justify-between gap-2 mb-2.5">
-                    <div className="flex size-12 items-center justify-center rounded-2xl bg-secondary/80 text-2xl shadow-inner border border-border">
-                      {r.icon}
+                  {/* Top: Icon & Cost */}
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div className="flex size-9 items-center justify-center rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/20">
+                      <Gift className="size-4" />
                     </div>
 
                     <div className="flex items-center gap-1.5">
-                      <span className="flex items-center gap-1 rounded-full bg-amber-500/15 border border-amber-500/30 px-2.5 py-1 text-xs font-black text-amber-600 dark:text-amber-400">
-                        <Star className="size-3.5 fill-amber-500" />
+                      <span className="flex items-center gap-1 rounded-full bg-purple-500/10 border border-purple-500/20 px-2.5 py-0.5 text-xs font-bold text-purple-300 tabular-nums">
                         {r.pointCost} pts
                       </span>
                       <button
                         onClick={() => handleDelete(r.id, r.title)}
-                        className="rounded-lg p-1 text-muted-foreground/60 hover:bg-rose-500/10 hover:text-rose-500 transition-colors"
+                        className="rounded-lg p-1 text-slate-400 hover:bg-white/10 hover:text-white transition-colors"
                         title="Eliminar recompensa"
                       >
                         <Trash2 className="size-3.5" />
@@ -175,36 +168,33 @@ export function RewardsTab() {
                   </div>
 
                   {/* Title & Description */}
-                  <h4 className="font-black text-base text-foreground tracking-tight leading-snug">
+                  <h4 className="font-bold text-sm text-white tracking-tight leading-snug">
                     {r.title}
                   </h4>
                   {r.description && (
-                    <p className="mt-1 text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+                    <p className="mt-1 text-xs text-slate-400 line-clamp-2 leading-relaxed">
                       {r.description}
                     </p>
                   )}
-
-                  {/* Stock tag */}
-                  {r.stock !== undefined && (
-                    <div className="mt-2 text-[11px] font-bold text-muted-foreground">
-                      {r.stock > 0 ? (
-                        <span>Disponibles: <strong className="text-foreground">{r.stock}</strong></span>
-                      ) : (
-                        <span className="text-rose-500 font-extrabold">Agotado</span>
-                      )}
-                    </div>
-                  )}
                 </div>
 
-                {/* Claim Button */}
-                <div className="mt-4 pt-3 border-t border-border/50">
+                {/* Bottom Row: Stock & Canjear Button */}
+                <div className="flex items-center justify-between gap-2 pt-2 border-t border-white/5 text-xs">
+                  <span className="text-[11px] text-slate-400">
+                    {r.stock !== undefined ? `${r.stock} disponibles` : 'Ilimitado'}
+                  </span>
+
                   <button
                     onClick={() => handleOpenClaim(r)}
                     disabled={!hasStock}
-                    className="w-full flex items-center justify-center gap-2 rounded-xl bg-primary text-primary-foreground py-2.5 text-xs font-black shadow-soft transition-all active:scale-95 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gradient-to-r dark:from-purple-600 dark:to-indigo-600"
+                    className={cn(
+                      'rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all',
+                      hasStock
+                        ? 'bg-purple-600 hover:bg-purple-500 text-white shadow-sm active:scale-95'
+                        : 'bg-white/[0.04] text-slate-500 border border-white/5 cursor-not-allowed'
+                    )}
                   >
-                    <Sparkles className="size-4" />
-                    <span>Canjear por {r.pointCost} pts</span>
+                    Canjear
                   </button>
                 </div>
               </Card>
@@ -213,54 +203,48 @@ export function RewardsTab() {
         </div>
       )}
 
-      {/* MODAL: CANJEAR RECOMPENSA */}
+      {/* ── MODAL: CANJEAR RECOMPENSA ── */}
       <BottomSheet
         open={Boolean(claimingReward)}
         onClose={() => setClaimingReward(null)}
-        title="Canjear Recompensa"
+        title={claimingReward ? `Canjear · ${claimingReward.title}` : ''}
       >
         {claimingReward && (
-          <div className="flex flex-col gap-4">
-            <div className="flex items-center gap-3 rounded-2xl bg-secondary/50 p-3.5 border border-border">
-              <div className="flex size-11 items-center justify-center rounded-xl bg-card text-2xl border border-border">
-                {claimingReward.icon}
-              </div>
-              <div className="flex-1 min-w-0">
-                <h4 className="font-extrabold text-sm text-foreground truncate">{claimingReward.title}</h4>
-                <p className="text-xs font-bold text-amber-600 dark:text-amber-400 mt-0.5">
-                  Coste: {claimingReward.pointCost} pts
-                </p>
-              </div>
+          <div className="flex flex-col gap-4 text-xs">
+            <div className="p-3.5 rounded-2xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-between">
+              <span className="font-bold text-purple-200">Coste de la recompensa:</span>
+              <span className="text-base font-black text-purple-300">{claimingReward.pointCost} pts</span>
             </div>
 
-            <div className="flex flex-col gap-2">
-              <label className="text-xs font-bold text-muted-foreground">¿Quién canjea este premio?</label>
+            <div className="flex flex-col gap-1.5">
+              <label className="font-bold text-slate-400">Selecciona el miembro que canjea</label>
               <div className="flex flex-col gap-1.5 max-h-48 overflow-y-auto">
                 {members.map((m) => {
-                  const isSelected = selectedMemberId === m.id
-                  const hasEnough = (m.points || 0) >= claimingReward.pointCost
+                  const canAfford = (m.points || 0) >= claimingReward.pointCost
                   return (
                     <button
                       key={m.id}
                       type="button"
                       onClick={() => setSelectedMemberId(m.id)}
                       className={cn(
-                        'flex items-center justify-between rounded-xl p-2.5 transition-all border text-left',
-                        isSelected
-                          ? 'border-primary bg-primary/10 text-foreground shadow-sm'
-                          : 'border-border bg-secondary/30 text-muted-foreground hover:bg-secondary'
+                        'flex items-center justify-between p-2.5 rounded-xl border transition-all text-left',
+                        selectedMemberId === m.id
+                          ? 'border-purple-500/50 bg-purple-500/20'
+                          : 'border-white/10 bg-white/[0.02] hover:bg-white/[0.05]'
                       )}
                     >
-                      <div className="flex items-center gap-2.5">
+                      <div className="flex items-center gap-2">
                         <MemberAvatar member={m} size="sm" />
                         <div>
-                          <p className="text-xs font-bold text-foreground">{m.name}</p>
-                          <p className={cn('text-[11px] font-bold', hasEnough ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500')}>
-                            Saldo: {m.points || 0} pts {!hasEnough && '(Insuficiente)'}
+                          <p className="font-bold text-white text-xs">{m.name}</p>
+                          <p className={cn('text-[10px]', canAfford ? 'text-purple-300' : 'text-slate-500')}>
+                            Saldo actual: {m.points || 0} pts
                           </p>
                         </div>
                       </div>
-                      {isSelected && <CheckCircle2 className="size-4 text-primary" />}
+                      {!canAfford && (
+                        <span className="text-[10px] text-slate-500 font-semibold">Puntos insuficientes</span>
+                      )}
                     </button>
                   )
                 })}
@@ -271,15 +255,14 @@ export function RewardsTab() {
               <button
                 type="button"
                 onClick={() => setClaimingReward(null)}
-                className="rounded-xl px-4 py-2.5 text-xs font-bold text-muted-foreground hover:bg-secondary"
+                className="rounded-xl px-4 py-2 text-xs font-bold text-slate-400 hover:bg-white/10"
               >
                 Cancelar
               </button>
               <button
                 type="button"
                 onClick={handleConfirmClaim}
-                disabled={!selectedMemberId}
-                className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-xs font-bold shadow-soft transition-transform active:scale-95 disabled:opacity-50"
+                className="rounded-xl bg-purple-600 hover:bg-purple-500 px-5 py-2 text-xs font-bold text-white shadow-sm transition-all active:scale-95"
               >
                 Confirmar canje
               </button>
@@ -288,117 +271,58 @@ export function RewardsTab() {
         )}
       </BottomSheet>
 
-      {/* MODAL: HISTORIAL DE CANJES */}
-      <BottomSheet
-        open={showHistory}
-        onClose={() => setShowHistory(false)}
-        title="Historial de Canjes de Recompensas"
-      >
-        <div className="flex flex-col gap-2.5 max-h-80 overflow-y-auto">
-          {allClaims.length === 0 ? (
-            <p className="text-center text-xs text-muted-foreground py-4">No hay canjes registrados aún.</p>
-          ) : (
-            allClaims.map((claim, idx) => {
-              const member = getMemberById(claim.memberId)
-              return (
-                <div
-                  key={claim.id || idx}
-                  className="flex items-center justify-between rounded-xl bg-secondary/40 p-2.5 border border-border/50 text-xs"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <span className="text-lg">{claim.rewardIcon || '🎁'}</span>
-                    <div>
-                      <p className="font-bold text-foreground">{claim.rewardTitle}</p>
-                      <p className="text-[10px] text-muted-foreground">
-                        {member?.name || 'Miembro'} · {new Date(claim.date).toLocaleDateString('es-ES')}
-                      </p>
-                    </div>
-                  </div>
-                  {claim.pointCost && (
-                    <span className="font-extrabold text-amber-600 dark:text-amber-400 tabular-nums">
-                      -{claim.pointCost} pts
-                    </span>
-                  )}
-                </div>
-              )
-            })
-          )}
-        </div>
-      </BottomSheet>
-
-      {/* MODAL: CREAR RECOMPENSA */}
+      {/* ── MODAL: CREAR RECOMPENSA ── */}
       <BottomSheet
         open={isCreating}
         onClose={() => setIsCreating(false)}
-        title="Nueva recompensa familiar"
+        title="Nueva recompensa para la tienda"
       >
-        <div className="flex flex-col gap-4">
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-bold text-muted-foreground">Título del premio</label>
+        <div className="flex flex-col gap-3.5 text-xs">
+          <div className="flex flex-col gap-1">
+            <label className="font-bold text-slate-400">Título del premio <span className="text-red-400">*</span></label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Ej. Elegir peli del viernes, Tarde de consola..."
+              placeholder="Ej. Elegir película del viernes, Tarde de videojuegos..."
               autoFocus
-              className="w-full rounded-xl border border-border bg-secondary/50 py-2.5 px-3 text-sm font-bold text-foreground outline-none focus:border-primary focus:bg-card"
+              className="w-full rounded-xl border border-white/10 bg-white/[0.04] py-2.5 px-3 text-xs font-medium text-white outline-none focus:border-purple-500"
             />
           </div>
 
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-bold text-muted-foreground">Descripción (opcional)</label>
+          <div className="flex flex-col gap-1">
+            <label className="font-bold text-slate-400">Descripción / Detalles (opcional)</label>
             <textarea
+              rows={2}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              rows={2}
-              placeholder="Detalles o condiciones del premio..."
-              className="w-full rounded-xl border border-border bg-secondary/50 py-2 px-3 text-xs font-semibold text-foreground outline-none focus:border-primary focus:bg-card resize-none"
+              placeholder="Condiciones para disfrutar del premio..."
+              className="w-full rounded-xl border border-white/10 bg-white/[0.04] py-2 px-3 text-xs font-medium text-white outline-none focus:border-purple-500 resize-none"
             />
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-bold text-muted-foreground">Icono temático</label>
-            <div className="flex flex-wrap gap-2 p-1">
-              {POPULAR_ICONS.map((emoji) => (
-                <button
-                  key={emoji}
-                  type="button"
-                  onClick={() => setIcon(emoji)}
-                  className={cn(
-                    'size-9 rounded-xl text-lg flex items-center justify-center transition-transform border',
-                    icon === emoji
-                      ? 'border-primary bg-primary/20 scale-110 shadow-sm'
-                      : 'border-border bg-secondary/40 hover:bg-secondary'
-                  )}
-                >
-                  {emoji}
-                </button>
-              ))}
-            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-bold text-muted-foreground">Coste en puntos</label>
+            <div className="flex flex-col gap-1">
+              <label className="font-bold text-slate-400">Coste en puntos</label>
               <input
                 type="number"
                 min={10}
-                max={10000}
-                value={pointCost || ''}
-                onChange={(e) => setPointCost(Number(e.target.value))}
-                className="w-full rounded-xl border border-border bg-secondary/50 py-2 px-3 text-sm font-bold text-foreground outline-none focus:border-primary focus:bg-card"
+                step={10}
+                value={pointCost}
+                onChange={(e) => setPointCost(Math.max(10, parseInt(e.target.value, 10) || 10))}
+                className="w-full rounded-xl border border-white/10 bg-white/[0.04] py-2 px-3 text-xs font-medium text-white outline-none focus:border-purple-500"
               />
             </div>
 
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-bold text-muted-foreground">Stock (opcional)</label>
+            <div className="flex flex-col gap-1">
+              <label className="font-bold text-slate-400">Stock (dejar vacío = ilimitado)</label>
               <input
                 type="number"
                 min={1}
-                placeholder="Ilimitado"
                 value={stock}
                 onChange={(e) => setStock(e.target.value)}
-                className="w-full rounded-xl border border-border bg-secondary/50 py-2 px-3 text-sm font-bold text-foreground outline-none focus:border-primary focus:bg-card"
+                placeholder="Ilimitado"
+                className="w-full rounded-xl border border-white/10 bg-white/[0.04] py-2 px-3 text-xs font-medium text-white outline-none focus:border-purple-500"
               />
             </div>
           </div>
@@ -407,19 +331,58 @@ export function RewardsTab() {
             <button
               type="button"
               onClick={() => setIsCreating(false)}
-              className="rounded-xl px-4 py-2.5 text-xs font-bold text-muted-foreground hover:bg-secondary"
+              className="rounded-xl px-4 py-2 text-xs font-bold text-slate-400 hover:bg-white/10"
             >
               Cancelar
             </button>
             <button
               type="button"
               onClick={handleCreateReward}
-              disabled={!title.trim()}
-              className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-xs font-bold shadow-soft transition-transform active:scale-95 disabled:opacity-50"
+              className="rounded-xl bg-purple-600 hover:bg-purple-500 px-5 py-2 text-xs font-bold text-white shadow-sm transition-all active:scale-95"
             >
-              Crear recompensa
+              Guardar recompensa
             </button>
           </div>
+        </div>
+      </BottomSheet>
+
+      {/* ── MODAL: HISTORIAL DE CANJES ── */}
+      <BottomSheet
+        open={showHistory}
+        onClose={() => setShowHistory(false)}
+        title="Historial de canjes"
+      >
+        <div className="flex flex-col gap-2 text-xs max-h-72 overflow-y-auto">
+          {allClaims.length === 0 ? (
+            <p className="text-slate-400 text-center py-6">No hay canjes registrados aún.</p>
+          ) : (
+            allClaims.map((claim, idx) => {
+              const member = getMemberById(claim.memberId)
+              return (
+                <div
+                  key={idx}
+                  className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.02] border border-white/5"
+                >
+                  <div className="flex items-center gap-2">
+                    {member ? (
+                      <MemberAvatar member={member} size="sm" />
+                    ) : (
+                      <div className="size-7 rounded-full bg-white/10" />
+                    )}
+                    <div>
+                      <p className="font-bold text-white text-xs">{claim.rewardTitle}</p>
+                      <p className="text-[10px] text-slate-400">
+                        Canjeado por {member?.name || 'Miembro'} · {new Date(claim.date).toLocaleDateString('es-ES')}
+                      </p>
+                    </div>
+                  </div>
+                  {claim.pointCost && (
+                    <span className="font-bold text-purple-300 text-xs">-{claim.pointCost} pts</span>
+                  )}
+                </div>
+              )
+            })
+          )}
         </div>
       </BottomSheet>
     </div>

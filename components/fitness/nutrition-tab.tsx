@@ -525,7 +525,7 @@ export function NutritionTab({
 
     let targetListId = shoppingLists[0]?.id
     if (!targetListId) {
-      addShoppingList('🛒 Supermercado / Fitness', 'purple')
+      addShoppingList('🛒 Supermercado / Fitness')
       toast('Se creó una lista de compras para tus ingredientes', '📝')
     }
 

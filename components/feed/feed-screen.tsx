@@ -164,13 +164,13 @@ export function FeedScreen() {
         <Card className="p-4 sm:p-5 bg-white border border-slate-200 rounded-3xl shadow-sm space-y-3.5 dark:bg-gradient-to-b dark:from-purple-950/40 dark:to-[#121026]/90 dark:border-purple-500/30 dark:shadow-2xl">
           <div className="flex items-center justify-between pb-2.5 border-b border-slate-200/80 dark:border-purple-500/20">
             <div className="flex items-center gap-2.5">
-              <div className="flex size-9 items-center justify-center rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 dark:bg-purple-500/20 dark:border-purple-500/30 dark:text-purple-300 shrink-0">
+              <div className="flex size-9 items-center justify-center rounded-xl bg-purple-50 border border-purple-200 text-purple-700 dark:bg-purple-500/20 dark:border-purple-500/30 dark:text-purple-300 shrink-0">
                 <Calendar className="size-4.5" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
                   <h3 className="text-sm sm:text-base font-black text-slate-900 dark:text-white">Hoy en vuestro día</h3>
-                  <span className="rounded-full bg-emerald-100 border border-emerald-200 px-2 py-0.5 text-[10px] font-black text-emerald-800 uppercase tracking-wider dark:bg-purple-500/25 dark:border-purple-500/40 dark:text-purple-300">
+                  <span className="rounded-full bg-purple-100 border border-purple-200 px-2 py-0.5 text-[10px] font-black text-purple-800 uppercase tracking-wider dark:bg-purple-500/25 dark:border-purple-500/40 dark:text-purple-300">
                     {todayEvents.length + todayReminders.length} para hoy
                   </span>
                 </div>
@@ -180,7 +180,7 @@ export function FeedScreen() {
 
             <button
               onClick={() => setTab('organizar')}
-              className="flex items-center gap-1 text-xs font-bold text-emerald-700 hover:text-emerald-900 dark:text-purple-300 dark:hover:text-white transition-colors"
+              className="flex items-center gap-1 text-xs font-bold text-purple-700 hover:text-purple-900 dark:text-purple-300 dark:hover:text-white transition-colors"
             >
               <span>Ver todo</span>
               <ChevronRight className="size-3.5" />
@@ -195,7 +195,7 @@ export function FeedScreen() {
                 className="flex items-center justify-between gap-3 p-2.5 rounded-2xl bg-slate-50 hover:bg-slate-100/80 border border-slate-200 transition-all group dark:bg-white/[0.04] dark:hover:bg-white/[0.07] dark:border-purple-500/20"
               >
                 <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                  <div className="flex size-8 items-center justify-center rounded-xl bg-emerald-100 text-emerald-800 shrink-0 text-xs font-mono font-bold dark:bg-purple-500/20 dark:text-purple-300">
+                  <div className="flex size-8 items-center justify-center rounded-xl bg-purple-100 text-purple-800 shrink-0 text-xs font-mono font-bold dark:bg-purple-500/20 dark:text-purple-300">
                     {e.time || '📅'}
                   </div>
                   <div className="min-w-0 flex-1">
@@ -217,7 +217,7 @@ export function FeedScreen() {
                 <div className="flex items-center gap-2 shrink-0">
                   {getEventMemberIds(e).map((mId) => {
                     const m = getMemberById(mId)
-                    return m ? <MemberAvatar key={m.id} member={m} size="xs" ring /> : null
+                    return m ? <MemberAvatar key={m.id} member={m} size="sm" ring /> : null
                   })}
                   <button
                     onClick={() => deleteEvent(e.id)}
@@ -264,7 +264,7 @@ export function FeedScreen() {
         {/* Cabecera con Título y Botón Invitar */}
         <div className="flex items-center justify-between pb-2.5 border-b border-slate-200/80 dark:border-purple-500/15">
           <div className="flex items-center gap-2.5">
-            <div className="flex size-9 items-center justify-center rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 dark:bg-purple-500/15 dark:border-purple-500/30 dark:text-purple-400 shrink-0">
+            <div className="flex size-9 items-center justify-center rounded-xl bg-purple-50 border border-purple-200 text-purple-700 dark:bg-purple-500/15 dark:border-purple-500/30 dark:text-purple-400 shrink-0">
               <Users className="size-4.5" />
             </div>
             <div>
@@ -275,7 +275,7 @@ export function FeedScreen() {
 
           <button
             onClick={() => openQuickAdd('miembro', { hideTabs: true })}
-            className="flex items-center gap-1.5 rounded-full bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3.5 py-1.5 text-xs font-bold text-emerald-800 transition-all active:scale-95 shadow-sm dark:bg-purple-600/20 dark:hover:bg-purple-600/35 dark:border-purple-500/30 dark:text-purple-200"
+            className="flex items-center gap-1.5 rounded-full bg-purple-50 hover:bg-purple-100 border border-purple-200 px-3.5 py-1.5 text-xs font-bold text-purple-800 transition-all active:scale-95 shadow-sm dark:bg-purple-600/20 dark:hover:bg-purple-600/35 dark:border-purple-500/30 dark:text-purple-200"
           >
             <UserPlus className="size-3.5" />
             <span>Invitar</span>
@@ -301,7 +301,7 @@ export function FeedScreen() {
                   className={cn(
                     'flex items-center justify-between gap-3 p-2.5 rounded-2xl border transition-all',
                     isCurrent
-                      ? 'bg-emerald-50/80 border-emerald-300 shadow-2xs dark:bg-purple-600/15 dark:border-purple-500/40 dark:ring-1 dark:ring-purple-500/30'
+                      ? 'bg-purple-50/80 border-purple-300 shadow-2xs dark:bg-purple-600/15 dark:border-purple-500/40 dark:ring-1 dark:ring-purple-500/30'
                       : 'bg-slate-50 border-slate-200 hover:bg-slate-100/80 dark:bg-white/[0.02] dark:border-white/5 dark:hover:bg-white/[0.05]'
                   )}
                 >
@@ -311,7 +311,7 @@ export function FeedScreen() {
                       <MemberAvatar member={m} size="sm" ring />
                       {m.isOwner && (
                         <span
-                          className="absolute -bottom-1 -right-1 flex size-3.5 items-center justify-center rounded-full bg-emerald-600 text-white ring-1 ring-white dark:bg-purple-600 dark:ring-[#121026]"
+                          className="absolute -bottom-1 -right-1 flex size-3.5 items-center justify-center rounded-full bg-purple-600 text-white ring-1 ring-white dark:bg-purple-600 dark:ring-[#121026]"
                           title="Propietario"
                         >
                           <ShieldCheck className="size-2.5" />
@@ -323,7 +323,7 @@ export function FeedScreen() {
                       <div className="flex items-center gap-1.5">
                         <span className="text-xs font-bold text-slate-900 dark:text-white truncate">{m.name}</span>
                         {isCurrent && (
-                          <span className="text-[9px] font-bold text-emerald-800 bg-emerald-100 px-1.5 py-0.2 rounded-full dark:text-purple-300 dark:bg-purple-500/20">
+                          <span className="text-[9px] font-bold text-purple-800 bg-purple-100 px-1.5 py-0.2 rounded-full dark:text-purple-300 dark:bg-purple-500/20">
                             Tú
                           </span>
                         )}
@@ -337,7 +337,7 @@ export function FeedScreen() {
                               ? 'bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-500/15 dark:text-blue-300 dark:border-blue-500/20'
                               : isChild
                               ? 'bg-pink-50 text-pink-700 border border-pink-200 dark:bg-pink-500/15 dark:text-pink-300 dark:border-pink-500/20'
-                              : 'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-300 dark:border-emerald-500/20'
+                              : 'bg-purple-50 text-purple-700 border border-purple-200 dark:bg-purple-500/15 dark:text-purple-300 dark:border-purple-500/20'
                           )}
                         >
                           {isAdult ? 'Adulto' : isChild ? 'Hijo/a' : 'Miembro'}
@@ -354,9 +354,9 @@ export function FeedScreen() {
                   </div>
 
                   {/* Puntos / Estrellas */}
-                  <div className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-amber-50 border border-amber-200 shrink-0 dark:bg-amber-500/10 dark:border-amber-500/20">
-                    <Star className="size-3 fill-amber-500 text-amber-500" />
-                    <span className="text-xs font-black text-amber-800 dark:text-amber-300 font-mono">
+                  <div className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-purple-50 border border-purple-200 shrink-0 dark:bg-purple-500/10 dark:border-purple-500/20">
+                    <Star className="size-3 fill-purple-500 text-purple-500" />
+                    <span className="text-xs font-black text-purple-900 dark:text-purple-300 font-mono">
                       {m.points || 0}
                     </span>
                   </div>
@@ -377,12 +377,12 @@ export function FeedScreen() {
         <Card className="p-4 bg-white border border-slate-200 rounded-3xl shadow-sm space-y-3 dark:bg-[#121026]/90 dark:border-purple-500/20 dark:shadow-lg">
           <div className="flex items-center justify-between pb-2 border-b border-slate-200/80 dark:border-purple-500/15">
             <div className="flex items-center gap-2">
-              <Clock className="size-4 text-emerald-600 dark:text-purple-400" />
+              <Clock className="size-4 text-purple-600 dark:text-purple-400" />
               <h3 className="text-xs sm:text-sm font-black text-slate-900 dark:text-white">Próximos eventos y recordatorios</h3>
             </div>
             <button
               onClick={() => setTab('organizar')}
-              className="text-xs font-bold text-emerald-700 hover:text-emerald-900 dark:text-purple-300 dark:hover:text-white transition-colors"
+              className="text-xs font-bold text-purple-700 hover:text-purple-900 dark:text-purple-300 dark:hover:text-white transition-colors"
             >
               Ver calendario
             </button>
@@ -399,7 +399,7 @@ export function FeedScreen() {
                     className={cn(
                       'flex size-7 items-center justify-center rounded-xl shrink-0',
                       item.type === 'event'
-                        ? 'bg-emerald-100 text-emerald-800 border border-emerald-200 dark:bg-purple-500/15 dark:text-purple-400 dark:border-purple-500/25'
+                        ? 'bg-purple-100 text-purple-800 border border-purple-200 dark:bg-purple-500/15 dark:text-purple-400 dark:border-purple-500/25'
                         : 'bg-orange-100 text-orange-800 border border-orange-200 dark:bg-orange-500/15 dark:text-orange-400 dark:border-orange-500/25'
                     )}
                   >
@@ -409,7 +409,7 @@ export function FeedScreen() {
                   <div className="min-w-0 flex-1">
                     <p className="font-bold text-slate-900 dark:text-white truncate">{item.title}</p>
                     <div className="flex items-center gap-2 text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
-                      <span className="font-semibold text-emerald-800 dark:text-purple-300">
+                      <span className="font-semibold text-purple-800 dark:text-purple-300">
                         {formatDaysBadge(item.daysLeft, item.date)}
                       </span>
                       {item.time && <span>· {item.time}</span>}
@@ -421,7 +421,7 @@ export function FeedScreen() {
                 <div className="flex items-center gap-1.5 shrink-0">
                   {item.memberIds.map((mId) => {
                     const m = getMemberById(mId)
-                    return m ? <MemberAvatar key={m.id} member={m} size="xs" ring /> : null
+                    return m ? <MemberAvatar key={m.id} member={m} size="sm" ring /> : null
                   })}
                 </div>
               </div>
@@ -437,12 +437,12 @@ export function FeedScreen() {
         <Card className="p-4 bg-white border border-slate-200 rounded-3xl shadow-sm space-y-3 dark:bg-[#121026]/90 dark:border-purple-500/20 dark:shadow-lg">
           <div className="flex items-center justify-between pb-2 border-b border-slate-200/80 dark:border-purple-500/15">
             <div className="flex items-center gap-2">
-              <ListTodo className="size-4 text-emerald-600 dark:text-emerald-400" />
+              <ListTodo className="size-4 text-purple-600 dark:text-purple-400" />
               <h3 className="text-xs sm:text-sm font-black text-slate-900 dark:text-white">Tareas pendientes ({pendingTasks.length})</h3>
             </div>
             <button
               onClick={() => setTab('organizar')}
-              className="text-xs font-bold text-emerald-700 hover:text-emerald-900 dark:text-purple-300 dark:hover:text-white transition-colors"
+              className="text-xs font-bold text-purple-700 hover:text-purple-900 dark:text-purple-300 dark:hover:text-white transition-colors"
             >
               Ver todas
             </button>

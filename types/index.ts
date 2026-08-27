@@ -203,6 +203,8 @@ export interface Activity {
   points?: number // If it's a task completion
 }
 
+export type AddTab = 'tarea' | 'evento' | 'recordatorio' | 'miembro'
+
 export interface AppNotification {
   id: string
   groupId: string

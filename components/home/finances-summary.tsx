@@ -1,11 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { TrendingUp, TrendingDown, Wallet, PiggyBank, AlertTriangle, AlertCircle, PieChart, Users, X, Edit3, Plus, Sparkles } from 'lucide-react'
+import { TrendingUp, TrendingDown, Wallet, PiggyBank, AlertCircle, PieChart, Edit3 } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { useApp } from '@/components/app/app-context'
 import { formatCurrency, EXPENSE_CATEGORIES, expenseCategoryMeta, formatMonthLabel, getPreviousMonthISO } from '@/types/finances'
-import { MemberAvatar } from '@/components/ui/member-avatar'
 import { useToast } from '@/components/ui/toast'
 import { cn } from '@/lib/utils'
 
@@ -16,8 +15,6 @@ export function FinancesSummary() {
     expenses,
     bills,
     budgets,
-    members,
-    getMemberById,
     selectedMonthISO,
     initialPiggyBankBalance,
     saveInitialPiggyBankBalance,
@@ -59,7 +56,6 @@ export function FinancesSummary() {
   const savingsRate = totalIncomes > 0 ? Math.max(0, (netBalance / totalIncomes) * 100) : 0
 
   // 2. Compute Cumulative Savings (Hucha) up to selectedMonthISO
-  // Collect all months from earliest recorded item date up to selectedMonthISO
   const monthList: string[] = []
   let curr = selectedMonthISO
   for (let i = 0; i < 12; i++) {
@@ -74,7 +70,6 @@ export function FinancesSummary() {
     return { monthISO: mISO, incomes: incSum, expenses: expSum, net }
   })
 
-  // Total Accumulated Piggy Bank Balance = Base + sum of net balances of past & current months
   const totalAccumulatedSavings = initialPiggyBankBalance + historyBreakdown.reduce((sum, item) => sum + item.net, 0)
 
   // 3. Category spent map for selectedMonthISO
@@ -89,27 +84,6 @@ export function FinancesSummary() {
     }
   })
 
-  // 4. Member Breakdown for selectedMonthISO
-  const memberStats = members.map((m) => {
-    const memberInc = incomes.reduce((sum, i) => {
-      const isForMember = i.memberIds && i.memberIds.length > 0 ? i.memberIds.includes(m.id) : i.memberId === m.id
-      if (!isForMember) return sum
-      if (i.frequency === 'mensual') return sum + i.amount
-      if (i.frequency === 'quincenal') return sum + i.amount * 2
-      if (i.frequency === 'puntual' && i.date && i.date.startsWith(selectedMonthISO)) return sum + i.amount
-      return sum
-    }, 0)
-
-    const memberExp = expenses.reduce((sum, e) => {
-      const isForMember = e.paidByMemberIds && e.paidByMemberIds.length > 0 ? e.paidByMemberIds.includes(m.id) : e.paidByMemberId === m.id
-      if (!isForMember) return sum
-      if (e.isRecurring || (e.date && e.date.startsWith(selectedMonthISO))) return sum + e.amount
-      return sum
-    }, 0)
-
-    return { member: m, incomes: memberInc, expenses: memberExp }
-  })
-
   function handleSaveBaseBalance() {
     const val = parseFloat(baseBalanceInput)
     if (isNaN(val)) {
@@ -117,177 +91,158 @@ export function FinancesSummary() {
       return
     }
     saveInitialPiggyBankBalance(val)
-    toast('Saldo base de la hucha guardado', '🐷')
+    toast('Saldo base de la hucha guardado', '✅')
     setIsHuchaModalOpen(false)
   }
 
   return (
     <div className="w-full max-w-2xl mx-auto space-y-4">
-      {/* Piggy Bank Highlighted Banner */}
+      {/* ── Piggy Bank Highlighted Banner (Minimalist & Compact) ── */}
       <Card
         onClick={() => {
           setBaseBalanceInput(initialPiggyBankBalance.toString())
           setIsHuchaModalOpen(true)
         }}
-        className="p-5 bg-gradient-to-r from-emerald-500/15 via-teal-500/10 to-primary/10 border border-emerald-500/40 cursor-pointer hover:shadow-md transition-all group"
+        className="p-4 sm:p-5 bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 hover:border-purple-500/30 cursor-pointer transition-all rounded-2xl shadow-sm group"
       >
         <div className="flex items-center justify-between gap-3 flex-wrap sm:flex-nowrap">
-          <div className="flex items-center gap-3.5">
-            <div className="flex size-12 items-center justify-center rounded-2xl bg-emerald-500 text-white font-black text-2xl shadow-soft group-hover:scale-110 transition-transform">
-              🐷
+          <div className="flex items-center gap-3">
+            <div className="flex size-10 items-center justify-center rounded-xl bg-purple-50 text-purple-600 dark:bg-purple-500/10 dark:text-purple-400 shrink-0 border border-purple-200 dark:border-purple-500/20">
+              <PiggyBank className="size-5" />
             </div>
             <div>
-              <span className="text-xs font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                Ahorro Total Acumulado (Hucha Familiar) <Sparkles className="size-3.5" />
-              </span>
-              <p className="text-3xl font-black text-foreground tracking-tight">
+              <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                Ahorro Total Acumulado
+              </p>
+              <p className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight mt-0.5 tabular-nums">
                 {formatCurrency(totalAccumulatedSavings)}
               </p>
-              <p className="text-xs font-semibold text-muted-foreground mt-0.5">
-                Fondo base ({formatCurrency(initialPiggyBankBalance)}) + Acumulado histórico sobrante
+              <p className="text-[11px] text-slate-400 dark:text-slate-500">
+                Fondo base: {formatCurrency(initialPiggyBankBalance)} · Acumulado con sobrantes
               </p>
             </div>
           </div>
 
-          <button className="flex items-center gap-1.5 rounded-2xl bg-card border border-border px-3.5 py-2 text-xs font-bold text-foreground shadow-soft group-hover:border-primary transition-colors">
-            <Edit3 className="size-3.5 text-primary" />
-            <span>Ver Hucha / Ajustar Saldo</span>
+          <button className="flex items-center gap-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] border border-slate-200 dark:border-white/10 px-3 py-1.5 text-xs font-bold text-slate-700 dark:text-slate-300 transition-colors shrink-0">
+            <Edit3 className="size-3.5 text-purple-600 dark:text-purple-400" />
+            <span>Ajustar fondo</span>
           </button>
         </div>
       </Card>
 
-      {/* 4 Metric Cards for Selected Month */}
+      {/* ── 4 Metric Cards for Selected Month (Clean, Balanced & Compact) ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        {/* Ingresos */}
-        <Card className="p-4 bg-gradient-to-br from-emerald-500/10 via-background to-emerald-500/5 border-emerald-500/30">
-          <div className="flex items-center justify-between gap-2 mb-2">
-            <span className="text-xs font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-              <TrendingUp className="size-4" /> Ingresos ({formatMonthLabel(selectedMonthISO)})
-            </span>
-            <div className="flex size-8 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-600">
-              💶
-            </div>
+        {/* 1. Ingresos */}
+        <Card className="p-3.5 sm:p-4 bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 hover:border-purple-500/30 transition-all rounded-2xl flex flex-col justify-between gap-2 shadow-sm">
+          <div className="flex items-center justify-between gap-1 text-slate-500 dark:text-slate-400">
+            <span className="text-[11px] font-semibold uppercase tracking-wider">Ingresos</span>
+            <TrendingUp className="size-3.5 text-purple-600 dark:text-purple-400" />
           </div>
-          <p className="text-2xl font-black text-foreground tracking-tight">
-            {formatCurrency(totalIncomes)}
-          </p>
-          <p className="text-[11px] font-semibold text-muted-foreground mt-1">
-            Fijos/Recurrentes + Puntuales de este mes
-          </p>
+          <div>
+            <p className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white tracking-tight tabular-nums">
+              {formatCurrency(totalIncomes)}
+            </p>
+            <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
+              {formatMonthLabel(selectedMonthISO)}
+            </p>
+          </div>
         </Card>
 
-        {/* Gastos */}
-        <Card className="p-4 bg-gradient-to-br from-rose-500/10 via-background to-rose-500/5 border-rose-500/30">
-          <div className="flex items-center justify-between gap-2 mb-2">
-            <span className="text-xs font-black uppercase tracking-wider text-rose-600 dark:text-rose-400 flex items-center gap-1">
-              <TrendingDown className="size-4" /> Gastos ({formatMonthLabel(selectedMonthISO)})
-            </span>
-            <div className="flex size-8 items-center justify-center rounded-xl bg-rose-500/20 text-rose-600">
-              💸
-            </div>
+        {/* 2. Gastos */}
+        <Card className="p-3.5 sm:p-4 bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 hover:border-purple-500/30 transition-all rounded-2xl flex flex-col justify-between gap-2 shadow-sm">
+          <div className="flex items-center justify-between gap-1 text-slate-500 dark:text-slate-400">
+            <span className="text-[11px] font-semibold uppercase tracking-wider">Gastos</span>
+            <TrendingDown className="size-3.5 text-purple-600 dark:text-purple-400" />
           </div>
-          <p className="text-2xl font-black text-foreground tracking-tight">
-            {formatCurrency(totalExpenses)}
-          </p>
-          <p className="text-[11px] font-semibold text-muted-foreground mt-1">
-            Gastos fijos arrastrados + Puntuales del mes
-          </p>
+          <div>
+            <p className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white tracking-tight tabular-nums">
+              {formatCurrency(totalExpenses)}
+            </p>
+            <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
+              Fijos y variables
+            </p>
+          </div>
         </Card>
 
-        {/* Balance Neto */}
-        <Card className={cn(
-          "p-4 bg-gradient-to-br via-background border transition-all",
-          netBalance >= 0
-            ? "from-primary/10 to-primary/5 border-primary/30"
-            : "from-rose-500/15 to-rose-500/10 border-rose-500/40"
-        )}>
-          <div className="flex items-center justify-between gap-2 mb-2">
-            <span className="text-xs font-black uppercase tracking-wider text-primary flex items-center gap-1">
-              <Wallet className="size-4" /> Balance Neto Mes
-            </span>
-            <div className="flex size-8 items-center justify-center rounded-xl bg-primary/20 text-primary">
-              ⚖️
-            </div>
+        {/* 3. Balance Neto Mes */}
+        <Card className="p-3.5 sm:p-4 bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 hover:border-purple-500/30 transition-all rounded-2xl flex flex-col justify-between gap-2 shadow-sm">
+          <div className="flex items-center justify-between gap-1 text-slate-500 dark:text-slate-400">
+            <span className="text-[11px] font-semibold uppercase tracking-wider">Balance Neto</span>
+            <Wallet className="size-3.5 text-purple-600 dark:text-purple-400" />
           </div>
-          <p className={cn("text-2xl font-black tracking-tight", netBalance < 0 && "text-rose-500")}>
-            {formatCurrency(netBalance)}
-          </p>
-          <p className="text-[11px] font-semibold text-muted-foreground mt-1">
-            {netBalance >= 0 ? "Suma al ahorro de la hucha" : "Déficit mensual"}
-          </p>
+          <div>
+            <p className="text-lg sm:text-xl font-bold text-purple-600 dark:text-purple-300 tracking-tight tabular-nums">
+              {formatCurrency(netBalance)}
+            </p>
+            <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
+              {netBalance >= 0 ? 'Suma al ahorro' : 'Déficit mensual'}
+            </p>
+          </div>
         </Card>
 
-        {/* Tasa de Ahorro */}
-        <Card className="p-4 bg-gradient-to-br from-indigo-500/10 via-background to-indigo-500/5 border-indigo-500/30">
-          <div className="flex items-center justify-between gap-2 mb-2">
-            <span className="text-xs font-black uppercase tracking-wider text-indigo-600 dark:text-indigo-400 flex items-center gap-1">
-              <PiggyBank className="size-4" /> Tasa de Ahorro
-            </span>
-            <div className="flex size-8 items-center justify-center rounded-xl bg-indigo-500/20 text-indigo-600">
-              📊
-            </div>
+        {/* 4. Tasa de Ahorro */}
+        <Card className="p-3.5 sm:p-4 bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 hover:border-purple-500/30 transition-all rounded-2xl flex flex-col justify-between gap-2 shadow-sm">
+          <div className="flex items-center justify-between gap-1 text-slate-500 dark:text-slate-400">
+            <span className="text-[11px] font-semibold uppercase tracking-wider">Tasa Ahorro</span>
+            <PiggyBank className="size-3.5 text-purple-600 dark:text-purple-400" />
           </div>
-          <p className="text-2xl font-black text-foreground tracking-tight">
-            {savingsRate.toFixed(1)}%
-          </p>
-          <p className="text-[11px] font-semibold text-muted-foreground mt-1">
-            Porcentaje ahorrado del periodo
-          </p>
+          <div>
+            <p className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white tracking-tight tabular-nums">
+              {savingsRate.toFixed(1)}%
+            </p>
+            <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
+              Del total ingresado
+            </p>
+          </div>
         </Card>
       </div>
 
-      {/* Grid: Progreso de Presupuesto & Distribución del Gasto */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      {/* ── Grid: Progreso de Presupuesto & Distribución del Gasto ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
         {/* Progreso de Presupuesto */}
-        <Card className="p-5 border border-border">
-          <h4 className="text-base font-black tracking-tight text-foreground mb-1 flex items-center gap-2">
-            <PiggyBank className="size-5 text-primary" />
-            <span>Progreso de Presupuestos ({formatMonthLabel(selectedMonthISO)})</span>
-          </h4>
-          <p className="text-xs text-muted-foreground font-semibold mb-4">
-            Monitoreo de techos de gasto asignados
-          </p>
+        <Card className="p-4 bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 rounded-2xl shadow-sm space-y-3">
+          <div className="flex items-center justify-between">
+            <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">
+              Presupuestos ({formatMonthLabel(selectedMonthISO)})
+            </h4>
+            <span className="text-[11px] text-slate-400">{budgets.length} límites</span>
+          </div>
 
           {budgets.length === 0 ? (
-            <div className="py-8 text-center bg-secondary/30 rounded-2xl border border-dashed border-border/80">
-              <p className="text-xs font-bold text-muted-foreground">No has fijado techos de presupuesto aún.</p>
+            <div className="py-6 text-center bg-slate-50 dark:bg-white/[0.02] rounded-xl border border-slate-200 dark:border-white/5">
+              <p className="text-xs text-slate-400">Sin techos de presupuesto fijados.</p>
             </div>
           ) : (
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-2">
               {budgets.map((b) => {
                 const meta = expenseCategoryMeta[b.category] || { icon: '✨', label: b.category }
                 const spent = categorySpentMap[b.category] || 0
                 const percent = b.monthlyLimit > 0 ? Math.min(100, (spent / b.monthlyLimit) * 100) : 0
                 const isOverLimit = spent > b.monthlyLimit
-                const isWarning = percent >= 85 && !isOverLimit
 
                 return (
-                  <div key={b.id} className="flex flex-col gap-1.5 bg-secondary/30 p-3 rounded-2xl border border-border/60">
-                    <div className="flex items-center justify-between text-xs font-bold">
-                      <span className="flex items-center gap-1.5 text-foreground">
-                        <span>{meta.icon}</span>
-                        <span className="capitalize">{meta.label}</span>
+                  <div key={b.id} className="p-2.5 rounded-xl bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/5 space-y-1.5">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-semibold text-slate-800 dark:text-slate-200 capitalize">
+                        {meta.label}
                       </span>
-                      <div className="flex items-center gap-2">
-                        <span>{formatCurrency(spent)} / {formatCurrency(b.monthlyLimit)}</span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-bold text-purple-700 dark:text-purple-300 tabular-nums">
+                          {formatCurrency(spent)} / {formatCurrency(b.monthlyLimit)}
+                        </span>
                         {isOverLimit && (
-                          <span className="flex items-center gap-0.5 rounded-full bg-rose-500/20 px-2 py-0.5 text-[10px] font-black text-rose-500">
-                            <AlertCircle className="size-3" /> Excedido
-                          </span>
-                        )}
-                        {isWarning && (
-                          <span className="flex items-center gap-0.5 rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-black text-amber-500">
-                            <AlertTriangle className="size-3" /> 85%+
+                          <span className="text-[9px] font-bold text-rose-600 dark:text-rose-400">
+                            Excedido
                           </span>
                         )}
                       </div>
                     </div>
 
-                    <div className="w-full bg-secondary rounded-full h-2.5 overflow-hidden">
+                    <div className="w-full bg-slate-200 dark:bg-white/[0.05] rounded-full h-1.5 overflow-hidden">
                       <div
                         className={cn(
-                          'h-full transition-all duration-300',
-                          isOverLimit ? 'bg-rose-500' : isWarning ? 'bg-amber-500' : 'bg-primary'
+                          'h-full rounded-full transition-all duration-300',
+                          isOverLimit ? 'bg-rose-500' : 'bg-purple-500'
                         )}
                         style={{ width: `${percent}%` }}
                       />
@@ -300,21 +255,20 @@ export function FinancesSummary() {
         </Card>
 
         {/* Distribución del Gasto por Categoría */}
-        <Card className="p-5 border border-border">
-          <h4 className="text-base font-black tracking-tight text-foreground mb-1 flex items-center gap-2">
-            <PieChart className="size-5 text-primary" />
-            <span>Distribución del Gasto ({formatMonthLabel(selectedMonthISO)})</span>
-          </h4>
-          <p className="text-xs text-muted-foreground font-semibold mb-4">
-            Desglose del consumo del mes seleccionado
-          </p>
+        <Card className="p-4 bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 rounded-2xl shadow-sm space-y-3">
+          <div className="flex items-center justify-between">
+            <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">
+              Distribución de Gasto
+            </h4>
+            <span className="text-[11px] text-slate-400">{formatMonthLabel(selectedMonthISO)}</span>
+          </div>
 
           {totalExpenses === 0 ? (
-            <div className="py-8 text-center bg-secondary/30 rounded-2xl border border-dashed border-border/80">
-              <p className="text-xs font-bold text-muted-foreground">Sin gastos en este mes.</p>
+            <div className="py-6 text-center bg-slate-50 dark:bg-white/[0.02] rounded-xl border border-slate-200 dark:border-white/5">
+              <p className="text-xs text-slate-400">Sin gastos registrados este mes.</p>
             </div>
           ) : (
-            <div className="flex flex-col gap-2.5">
+            <div className="flex flex-col gap-1.5">
               {EXPENSE_CATEGORIES.map((cat) => {
                 const spent = categorySpentMap[cat] || 0
                 if (spent === 0) return null
@@ -322,17 +276,20 @@ export function FinancesSummary() {
                 const sharePercent = totalExpenses > 0 ? (spent / totalExpenses) * 100 : 0
 
                 return (
-                  <div key={cat} className="flex items-center justify-between gap-3 p-2.5 rounded-2xl bg-secondary/30 border border-border/40">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span className="text-base">{meta.icon}</span>
-                      <span className="text-xs font-bold text-foreground capitalize truncate">{meta.label}</span>
-                    </div>
-                    <div className="flex items-center gap-3 shrink-0">
-                      <div className="w-24 bg-secondary rounded-full h-2 overflow-hidden hidden sm:block">
-                        <div className="h-full bg-primary" style={{ width: `${sharePercent}%` }} />
+                  <div key={cat} className="flex items-center justify-between gap-2 p-2 rounded-xl bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/5 text-xs">
+                    <span className="font-semibold text-slate-800 dark:text-slate-200 capitalize truncate">
+                      {meta.label}
+                    </span>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <div className="w-16 bg-slate-200 dark:bg-white/[0.05] rounded-full h-1.5 overflow-hidden hidden sm:block">
+                        <div className="h-full bg-purple-500 rounded-full" style={{ width: `${sharePercent}%` }} />
                       </div>
-                      <span className="text-xs font-black text-foreground">{formatCurrency(spent)}</span>
-                      <span className="text-[10px] font-bold text-muted-foreground w-10 text-end">{sharePercent.toFixed(0)}%</span>
+                      <span className="font-bold text-purple-700 dark:text-purple-300 tabular-nums">
+                        {formatCurrency(spent)}
+                      </span>
+                      <span className="text-[10px] text-slate-400 tabular-nums w-7 text-right">
+                        {sharePercent.toFixed(0)}%
+                      </span>
                     </div>
                   </div>
                 )
@@ -342,115 +299,47 @@ export function FinancesSummary() {
         </Card>
       </div>
 
-      {/* Desglose por Miembro */}
-      <Card className="p-5 border border-border">
-        <h4 className="text-base font-black tracking-tight text-foreground mb-1 flex items-center gap-2">
-          <Users className="size-5 text-primary" />
-          <span>Aportaciones y Gastos por Miembro ({formatMonthLabel(selectedMonthISO)})</span>
-        </h4>
-        <p className="text-xs text-muted-foreground font-semibold mb-4">
-          Comparativa de aportaciones e ingresos asignados vs gastos asumidos en este mes
-        </p>
-
-        {memberStats.length === 0 ? (
-          <div className="py-8 text-center bg-secondary/30 rounded-2xl border border-dashed border-border/80">
-            <p className="text-xs font-bold text-muted-foreground">Sin miembros registrados.</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {memberStats.map(({ member, incomes: inc, expenses: exp }) => (
-              <div key={member.id} className="flex flex-col gap-2 p-3.5 rounded-2xl bg-secondary/30 border border-border/60">
-                <div className="flex items-center gap-2.5">
-                  <MemberAvatar member={member} size="sm" />
-                  <div>
-                    <h5 className="text-sm font-extrabold text-foreground">{member.name}</h5>
-                    <p className="text-[10px] font-semibold text-muted-foreground">Miembro del grupo</p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 mt-1 pt-2 border-t border-border/40 text-xs">
-                  <div className="flex flex-col">
-                    <span className="text-[10px] font-bold text-muted-foreground uppercase">Ingresos</span>
-                    <span className="font-black text-emerald-600 dark:text-emerald-400">{formatCurrency(inc)}</span>
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-[10px] font-bold text-muted-foreground uppercase">Gastos Pagados</span>
-                    <span className="font-black text-rose-500">{formatCurrency(exp)}</span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </Card>
-
-      {/* Modal Hucha / Ahorro Acumulado */}
+      {/* ── MODAL: AJUSTAR FONDO DE LA HUCHA ── */}
       {isHuchaModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="w-full max-w-md rounded-3xl border border-border bg-card p-6 shadow-2xl animate-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <span className="text-2xl">🐷</span>
-                <h3 className="text-lg font-black tracking-tight">Fondo de Reserva / Hucha Familiar</h3>
-              </div>
-              <button onClick={() => setIsHuchaModalOpen(false)} className="rounded-full p-1 text-muted-foreground hover:bg-secondary">
-                <X className="size-5" />
-              </button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 dark:bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="w-full max-w-sm rounded-2xl border border-slate-200 dark:border-purple-500/20 bg-white dark:bg-[#0e0d1d] p-5 shadow-2xl space-y-4">
+            <div>
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                Fondo Base de la Hucha
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                Configura el saldo inicial acumulado antes del seguimiento mensual.
+              </p>
             </div>
 
-            <div className="flex flex-col gap-4 text-xs">
-              <div className="flex flex-col gap-1 p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30">
-                <span className="text-[11px] font-black uppercase text-emerald-600 dark:text-emerald-400">
-                  Total Patrimonio Guardado
-                </span>
-                <span className="text-3xl font-black text-foreground">{formatCurrency(totalAccumulatedSavings)}</span>
-              </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-500 dark:text-slate-400">Importe (€)</label>
+              <input
+                type="number"
+                step="any"
+                value={baseBalanceInput}
+                onChange={(e) => setBaseBalanceInput(e.target.value)}
+                placeholder="0.00"
+                autoFocus
+                className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-white/[0.04] py-2 px-3 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-purple-500"
+              />
+            </div>
 
-              <div className="flex flex-col gap-1">
-                <label className="font-bold text-muted-foreground">Saldo Base Inicial / Aportación Base (€)</label>
-                <input
-                  type="number"
-                  step="50"
-                  value={baseBalanceInput}
-                  onChange={(e) => setBaseBalanceInput(e.target.value)}
-                  placeholder="Ej. 1000"
-                  className="w-full rounded-2xl border border-border bg-secondary/50 py-3 px-4 text-sm font-semibold outline-none focus:border-primary"
-                />
-                <p className="text-[11px] text-muted-foreground">
-                  Introduce el dinero acumulado previo o colchón financiero inicial.
-                </p>
-              </div>
-
-              <div className="flex flex-col gap-2 border-t border-border/40 pt-3">
-                <h5 className="font-black text-foreground text-xs">Histórico Reciente Mes a Mes</h5>
-                <div className="flex flex-col gap-1.5 max-h-48 overflow-y-auto p-0.5">
-                  {historyBreakdown.map((item) => (
-                    <div key={item.monthISO} className="flex items-center justify-between p-2 rounded-xl bg-secondary/30 border border-border/40 text-xs">
-                      <span className="font-bold text-foreground">{formatMonthLabel(item.monthISO)}</span>
-                      <span className={cn('font-black', item.net >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500')}>
-                        {item.net >= 0 ? `+${formatCurrency(item.net)}` : formatCurrency(item.net)}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="mt-2 flex gap-2 justify-end">
-                <button
-                  type="button"
-                  onClick={() => setIsHuchaModalOpen(false)}
-                  className="rounded-2xl px-4 py-2.5 text-xs font-bold text-muted-foreground hover:bg-secondary"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="button"
-                  onClick={handleSaveBaseBalance}
-                  className="rounded-2xl bg-emerald-500 px-5 py-2.5 text-xs font-bold text-white shadow-soft transition-transform active:scale-95 hover:bg-emerald-600"
-                >
-                  Guardar saldo base
-                </button>
-              </div>
+            <div className="flex gap-2 justify-end pt-2">
+              <button
+                type="button"
+                onClick={() => setIsHuchaModalOpen(false)}
+                className="rounded-xl px-4 py-2 text-xs font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-white/10"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveBaseBalance}
+                className="rounded-xl bg-purple-600 hover:bg-purple-500 px-4 py-2 text-xs font-bold text-white shadow-sm transition-all active:scale-95"
+              >
+                Guardar
+              </button>
             </div>
           </div>
         </div>

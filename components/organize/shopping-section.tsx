@@ -560,8 +560,7 @@ export function ShoppingSection({
       {currentItems.length === 0 ? (
         <EmptyState
           emoji="🧺"
-          title="Esta lista está vacía"
-          description="Escribe arriba para añadir productos organizados automáticamente por pasillos."
+          title="Esta lista está vacía. Escribe arriba para añadir productos."
         />
       ) : (
         <div className="flex flex-col gap-4">

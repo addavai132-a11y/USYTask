@@ -40,7 +40,7 @@ import { getTodayISO } from '@/lib/date-utils'
 type FitnessSubTab = 'rutinas' | 'live' | 'progreso' | 'nutricion'
 
 export function FitnessScreen() {
-  const { activeGroup, addActivity, addEvent } = useApp()
+  const { activeGroup, addEvent } = useApp()
   const todayISO = getTodayISO()
 
   const [subTab, setSubTab] = useState<FitnessSubTab>('rutinas')
@@ -168,7 +168,7 @@ export function FitnessScreen() {
       />
 
       {/* ── Sub-barra Superior de Pestañas (Segmented Control) ── */}
-      <div className="w-full max-w-full overflow-x-auto no-scrollbar sm:w-fit mx-auto flex items-center justify-start sm:justify-center p-1.5 bg-white/[0.03] border border-white/10 rounded-2xl backdrop-blur-xl shadow-sm">
+      <div className="w-full max-w-full overflow-x-auto no-scrollbar sm:w-fit mx-auto flex items-center justify-start sm:justify-center p-1.5 bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 rounded-2xl backdrop-blur-xl shadow-sm">
         <PillTabs<FitnessSubTab>
           value={subTab}
           onChange={setSubTab}

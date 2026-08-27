@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Plus, TrendingUp, Trash2, Edit2, X, Calendar, User, Wallet } from 'lucide-react'
+import { Plus, Trash2, Edit2, X, Wallet, User } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { CustomSelect } from '@/components/ui/custom-select'
 import { PillTabs } from '@/components/ui/pill-tabs'
@@ -103,7 +103,7 @@ export function IncomesSection() {
         customCategory: customCat,
         date,
       })
-      toast('Ingreso registrado', '💶')
+      toast('Ingreso registrado', '✅')
     }
 
     setIsModalOpen(false)
@@ -112,14 +112,14 @@ export function IncomesSection() {
   return (
     <div className="w-full max-w-2xl mx-auto space-y-4">
       {/* ── Sub-navegación Superior (Pestañas de Listado / Comparativa) ── */}
-      <div className="w-full max-w-full overflow-x-auto no-scrollbar sm:w-fit mx-auto flex items-center justify-start sm:justify-center p-1.5 bg-white/[0.03] border border-white/10 rounded-2xl backdrop-blur-xl shadow-sm">
+      <div className="w-full max-w-full overflow-x-auto no-scrollbar sm:w-fit mx-auto flex items-center justify-start sm:justify-center p-1.5 bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 rounded-2xl backdrop-blur-xl shadow-sm">
         <PillTabs<IncomesSubTab>
           value={subTab}
           onChange={setSubTab}
           showScrollArrows={false}
           tabs={[
-            { id: 'historial', label: '💶 Historial de Ingresos' },
-            { id: 'comparativa', label: '📈 Comparativa de Ingresos' },
+            { id: 'historial', label: 'Historial de Ingresos' },
+            { id: 'comparativa', label: 'Comparativa' },
           ]}
         />
       </div>
@@ -129,14 +129,16 @@ export function IncomesSection() {
       ) : (
         <>
           {/* ── Barra Resumen Superior Glassmorphism ── */}
-          <div className="w-full flex items-center justify-between p-3.5 px-5 bg-white/[0.03] border border-white/10 rounded-2xl backdrop-blur-xl">
-            <div className="flex items-center gap-3">
-              <span className="text-xl font-bold text-white tabular-nums">{formatCurrency(totalMonthlyIncome)}</span>
-              <span className="text-xs text-slate-400">ingresos mensuales ({incomes.length})</span>
+          <div className="w-full flex items-center justify-between p-3.5 px-5 bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 rounded-2xl backdrop-blur-xl shadow-sm">
+            <div>
+              <span className="text-base sm:text-lg font-bold text-slate-900 dark:text-white tabular-nums">
+                {formatCurrency(totalMonthlyIncome)}
+              </span>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Total mensual ({incomes.length} ingresos)</p>
             </div>
             <button
               onClick={handleOpenCreate}
-              className="flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 py-1.5 text-xs font-bold transition-all active:scale-95 shadow-sm"
+              className="flex items-center gap-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white px-3.5 py-1.5 text-xs font-bold transition-all active:scale-95 shadow-sm"
             >
               <Plus className="size-3.5" />
               <span>+ Registrar ingreso</span>
@@ -145,18 +147,12 @@ export function IncomesSection() {
 
           {/* Incomes List */}
           {incomes.length === 0 ? (
-            <div className="w-full min-h-[220px] p-6 flex flex-col items-center justify-center gap-3 bg-white/[0.02] border border-white/10 rounded-2xl text-center">
-              <div className="flex size-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-400 text-lg">
-                💶
-              </div>
-              <p className="text-xs text-slate-400 max-w-xs">No hay ingresos ni nóminas registradas.</p>
-              <button
-                onClick={handleOpenCreate}
-                className="mt-1 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 text-xs font-bold transition-all active:scale-95 shadow-sm"
-              >
-                + Registrar ingreso / nómina
-              </button>
-            </div>
+            <EmptyState
+              emoji="💼"
+              title="Sin ingresos ni nóminas registradas."
+              action="+ Registrar ingreso / nómina"
+              onAction={handleOpenCreate}
+            />
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {incomes.map((inc) => {
@@ -165,13 +161,16 @@ export function IncomesSection() {
                 const displayCat = inc.category === 'otros' && inc.customCategory ? inc.customCategory : inc.category
 
                 return (
-                  <Card key={inc.id} className="p-4 border border-border/80 bg-card hover:bg-secondary/20 transition-all flex flex-col justify-between gap-3 shadow-soft group">
+                  <Card
+                    key={inc.id}
+                    className="p-3.5 sm:p-4 border border-slate-200 dark:border-white/10 bg-white dark:bg-white/[0.03] hover:border-purple-500/30 transition-all flex flex-col justify-between gap-3 shadow-sm rounded-2xl"
+                  >
                     <div className="flex items-start justify-between gap-2">
                       <div>
-                        <h4 className="text-base font-extrabold text-foreground group-hover:text-primary transition-colors">
+                        <h4 className="text-sm font-bold text-slate-900 dark:text-white tracking-tight leading-snug">
                           {inc.title}
                         </h4>
-                        <span className="inline-block mt-1 px-2 py-0.5 rounded-full bg-secondary text-[10px] font-bold capitalize text-secondary-foreground">
+                        <span className="inline-block mt-1 px-2 py-0.5 rounded bg-slate-100 dark:bg-white/[0.04] border border-slate-200 dark:border-white/5 text-[10px] font-semibold capitalize text-slate-600 dark:text-slate-400">
                           {displayCat} · {inc.frequency}
                         </span>
                       </div>
@@ -179,7 +178,7 @@ export function IncomesSection() {
                       <div className="flex items-center gap-1">
                         <button
                           onClick={() => handleOpenEdit(inc)}
-                          className="p-1.5 rounded-full text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
+                          className="p-1 rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white transition-colors"
                           title="Editar"
                         >
                           <Edit2 className="size-3.5" />
@@ -197,7 +196,7 @@ export function IncomesSection() {
                               },
                             })
                           }}
-                          className="p-1.5 rounded-full text-muted-foreground hover:bg-rose-500/10 hover:text-rose-500 transition-colors"
+                          className="p-1 rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-rose-600 transition-colors"
                           title="Eliminar"
                         >
                           <Trash2 className="size-3.5" />
@@ -205,22 +204,22 @@ export function IncomesSection() {
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between gap-2 pt-2 border-t border-border/40">
+                    <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-white/5 text-xs">
                       <div className="flex items-center gap-1.5">
                         {memberList.length > 0 ? (
                           <div className="flex items-center -space-x-1.5">
                             {memberList.map((m) => (
-                              <MemberAvatar key={m!.id} member={m!} size="sm" className="size-5 text-[10px]" />
+                              <MemberAvatar key={m!.id} member={m!} size="sm" />
                             ))}
                           </div>
                         ) : (
-                          <User className="size-4 text-muted-foreground" />
+                          <User className="size-3.5 text-slate-400" />
                         )}
-                        <span className="text-xs text-muted-foreground font-semibold">
-                          {memberList.map((m) => m!.name).join(', ')}
+                        <span className="text-xs text-slate-500 dark:text-slate-400 font-medium truncate max-w-[120px]">
+                          {memberList.map((m) => m!.name).join(', ') || 'General'}
                         </span>
                       </div>
-                      <span className="text-base font-black text-emerald-600 dark:text-emerald-400 tabular-nums">
+                      <span className="text-sm font-bold text-purple-700 dark:text-purple-300 tabular-nums">
                         {formatCurrency(inc.amount)}
                       </span>
                     </div>
@@ -232,118 +231,118 @@ export function IncomesSection() {
         </>
       )}
 
-      {/* Modal Creador / Editor */}
+      {/* ── MODAL CREADOR / EDITOR ── */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="w-full max-w-md rounded-3xl border border-border bg-card p-6 shadow-2xl animate-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-black tracking-tight">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 dark:bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="w-full max-w-md rounded-2xl border border-slate-200 dark:border-purple-500/20 bg-white dark:bg-[#0e0d1d] p-5 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">
                 {editingId ? 'Editar Ingreso' : 'Registrar Ingreso / Nómina'}
               </h3>
-              <button onClick={() => setIsModalOpen(false)} className="rounded-full p-1 text-muted-foreground hover:bg-secondary">
-                <X className="size-5" />
+              <button onClick={() => setIsModalOpen(false)} className="rounded-full p-1 text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10">
+                <X className="size-4" />
               </button>
             </div>
 
-            <div className="flex flex-col gap-3.5 text-xs">
+            <div className="flex flex-col gap-3 text-xs">
               <div className="flex flex-col gap-1">
-                <label className="font-bold text-muted-foreground">Concepto / Título <span className="text-red-500">*</span></label>
+                <label className="font-semibold text-slate-500 dark:text-slate-400">Concepto / Título <span className="text-red-500">*</span></label>
                 <input
+                  type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Ej. Nómina Dav, Trabajo Extra..."
-                  autoFocus
-                  className="w-full rounded-2xl border border-border bg-secondary/50 py-3 px-4 text-sm font-semibold outline-none focus:border-primary focus:bg-card"
+                  placeholder="Ej: Nómina Adrian, Extra freelance..."
+                  className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-white/[0.04] py-2 px-3 text-xs font-medium text-slate-900 dark:text-white outline-none focus:border-purple-500"
                 />
               </div>
 
-              <div className="flex gap-3">
-                <div className="flex-1 flex flex-col gap-1">
-                  <label className="font-bold text-muted-foreground">Importe (€) <span className="text-red-500">*</span></label>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="flex flex-col gap-1">
+                  <label className="font-semibold text-slate-500 dark:text-slate-400">Importe (€) <span className="text-red-500">*</span></label>
                   <input
                     type="number"
-                    step="0.01"
+                    step="any"
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
                     placeholder="0.00"
-                    className="w-full rounded-2xl border border-border bg-secondary/50 py-3 px-4 text-sm font-semibold outline-none focus:border-primary focus:bg-card"
+                    className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-white/[0.04] py-2 px-3 text-xs font-medium text-slate-900 dark:text-white outline-none focus:border-purple-500"
                   />
                 </div>
-                <div className="flex-1 flex flex-col gap-1">
-                  <label className="font-bold text-muted-foreground text-xs">Frecuencia</label>
+
+                <div className="flex flex-col gap-1">
+                  <label className="font-semibold text-slate-500 dark:text-slate-400">Frecuencia</label>
                   <CustomSelect<IncomeFrequency>
                     value={frequency}
-                    onChange={setFrequency}
+                    onChange={(val) => setFrequency(val)}
                     options={[
                       { value: 'mensual', label: 'Mensual' },
                       { value: 'quincenal', label: 'Quincenal' },
                       { value: 'puntual', label: 'Puntual' },
                     ]}
-                    className="w-full"
                   />
                 </div>
               </div>
 
-              {/* Multi-Member Selection */}
-              <MemberMultiSelect
-                members={members}
-                selectedIds={selectedMemberIds}
-                onChange={setSelectedMemberIds}
-                label="Miembros perceptores"
-              />
+              <div className="grid grid-cols-2 gap-2">
+                <div className="flex flex-col gap-1">
+                  <label className="font-semibold text-slate-500 dark:text-slate-400">Categoría</label>
+                  <CustomSelect<IncomeCategory>
+                    value={category}
+                    onChange={(val) => setCategory(val)}
+                    options={[
+                      { value: 'nómina', label: 'Nómina' },
+                      { value: 'inversiones', label: 'Inversiones' },
+                      { value: 'alquiler', label: 'Alquiler' },
+                      { value: 'otros', label: 'Otros' },
+                    ]}
+                  />
+                </div>
 
-              <div className="flex flex-col gap-1">
-                <label className="font-bold text-muted-foreground text-xs">Categoría</label>
-                <CustomSelect<IncomeCategory>
-                  value={category}
-                  onChange={setCategory}
-                  options={[
-                    { value: 'nómina', label: 'Nómina' },
-                    { value: 'inversiones', label: 'Inversiones' },
-                    { value: 'alquiler', label: 'Alquiler' },
-                    { value: 'otros', label: 'Otros' },
-                  ]}
-                  className="w-full"
-                />
+                <div className="flex flex-col gap-1">
+                  <label className="font-semibold text-slate-500 dark:text-slate-400">Fecha de cobro</label>
+                  <input
+                    type="date"
+                    value={date}
+                    onChange={(e) => setDate(e.target.value)}
+                    className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-white/[0.04] py-2 px-3 text-xs font-medium text-slate-900 dark:text-white outline-none focus:border-purple-500"
+                  />
+                </div>
               </div>
 
-              {/* Custom Category Input if "Otros" */}
               {category === 'otros' && (
-                <div className="flex flex-col gap-1 animate-fade-in">
-                  <label className="font-bold text-muted-foreground">Especifica la categoría/concepto <span className="text-red-500">*</span></label>
+                <div className="flex flex-col gap-1">
+                  <label className="font-semibold text-slate-500 dark:text-slate-400">Especificar categoría</label>
                   <input
+                    type="text"
                     value={customCategoryInput}
                     onChange={(e) => setCustomCategoryInput(e.target.value)}
-                    placeholder="Escribe la categoría personalizada..."
-                    className="w-full rounded-2xl border border-border bg-card py-2.5 px-3 text-xs font-semibold outline-none focus:border-primary"
+                    placeholder="Ej: Beca, Reembolso..."
+                    className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-white/[0.04] py-2 px-3 text-xs font-medium text-slate-900 dark:text-white outline-none focus:border-purple-500"
                   />
                 </div>
               )}
 
-              <div className="flex flex-col gap-1">
-                <label className="font-bold text-muted-foreground">Fecha de cobro</label>
-                <input
-                  type="date"
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                  className="w-full rounded-2xl border border-border bg-secondary/50 py-2.5 px-3 text-xs font-semibold outline-none focus:border-primary"
-                />
-              </div>
+              <MemberMultiSelect
+                members={members}
+                selectedIds={selectedMemberIds}
+                onChange={setSelectedMemberIds}
+                label="Asignar integrantes perceptores"
+              />
 
-              <div className="mt-2 flex gap-2 justify-end">
+              <div className="flex gap-2 justify-end pt-2">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="rounded-2xl px-4 py-2.5 text-xs font-bold text-muted-foreground hover:bg-secondary"
+                  className="rounded-xl px-4 py-2 text-xs font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-white/10"
                 >
                   Cancelar
                 </button>
                 <button
                   type="button"
                   onClick={handleSave}
-                  className="rounded-2xl bg-emerald-500 px-5 py-2.5 text-xs font-bold text-white shadow-soft transition-transform active:scale-95 hover:bg-emerald-600"
+                  className="rounded-xl bg-purple-600 hover:bg-purple-500 px-4 py-2 text-xs font-bold text-white shadow-sm transition-all active:scale-95"
                 >
-                  Guardar ingreso
+                  Guardar
                 </button>
               </div>
             </div>

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Plus, Receipt, CheckCircle2, Clock, AlertTriangle, Trash2, Edit2, X, Sparkles, RefreshCw, Zap, Droplets, Flame, Fuel, Gauge } from 'lucide-react'
+import { Plus, Receipt, CheckCircle2, Clock, AlertTriangle, Trash2, Edit2, X, RefreshCw, Zap, Droplets, Flame, Fuel } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { CustomSelect } from '@/components/ui/custom-select'
 import { PillTabs } from '@/components/ui/pill-tabs'
@@ -114,44 +114,40 @@ export function BillsSection() {
 
   function handleSave() {
     if (!name.trim()) {
-      toast('Por favor, introduce un nombre para la factura o servicio', '❌')
+      toast('Introduce el nombre o servicio de la factura', '❌')
       return
     }
     const numAmount = parseFloat(amount)
     if (isNaN(numAmount) || numAmount <= 0) {
-      toast('Por favor, introduce un importe válido', '❌')
+      toast('Introduce un importe válido', '❌')
       return
     }
 
-    const dayNum = parseInt(dueDay, 10)
-    const validDay = isNaN(dayNum) ? 1 : Math.max(1, Math.min(31, dayNum))
-    const customCat = category === 'otros' && customCategoryInput.trim() ? customCategoryInput.trim() : undefined
+    const numDueDay = parseInt(dueDay, 10) || 1
 
     let consumptionData: ConsumptionData | undefined = undefined
     if (hasConsumption && parsedUnits > 0) {
       consumptionData = {
         utilityType,
-        consumptionUnit: unitLabel,
         consumptionValue: parsedUnits,
-        kilometers: parsedKm > 0 ? parsedKm : undefined,
+        consumptionUnit: unitLabel,
         unitPrice: calculatedUnitPrice,
+        kilometers: parsedKm > 0 ? parsedKm : undefined,
       }
     }
 
     if (editingId) {
-      const existing = bills.find((b) => b.id === editingId)
       updateBill({
         id: editingId,
         groupId: '',
         name: name.trim(),
         amount: numAmount,
         billingCycle,
-        dueDay: validDay,
+        dueDay: numDueDay,
         autopay,
         category,
-        customCategory: customCat,
-        status: existing?.status || 'pendiente',
-        lastPaidDate: existing?.lastPaidDate,
+        customCategory: category === 'otros' && customCategoryInput.trim() ? customCategoryInput.trim() : undefined,
+        status: 'pendiente',
         consumption: consumptionData,
       })
       toast('Factura actualizada', '✅')
@@ -160,29 +156,45 @@ export function BillsSection() {
         name: name.trim(),
         amount: numAmount,
         billingCycle,
-        dueDay: validDay,
+        dueDay: numDueDay,
         autopay,
         category,
-        customCategory: customCat,
+        customCategory: category === 'otros' && customCategoryInput.trim() ? customCategoryInput.trim() : undefined,
+        status: 'pendiente',
         consumption: consumptionData,
       })
-      toast('Factura / Suscripción guardada', '📄')
+      toast('Factura añadida', '✅')
     }
 
     setIsModalOpen(false)
   }
 
+  const getUtilityIcon = (type?: UtilityType) => {
+    switch (type) {
+      case 'electricidad':
+        return <Zap className="size-3.5 text-purple-400" />
+      case 'agua':
+        return <Droplets className="size-3.5 text-blue-400" />
+      case 'gas':
+        return <Flame className="size-3.5 text-orange-400" />
+      case 'combustible':
+        return <Fuel className="size-3.5 text-emerald-400" />
+      default:
+        return <Receipt className="size-3.5 text-purple-400" />
+    }
+  }
+
   return (
     <div className="w-full max-w-2xl mx-auto space-y-4">
-      {/* ── Sub-navegación Superior (Pestañas de Listado / Consumos) ── */}
-      <div className="w-full max-w-full overflow-x-auto no-scrollbar sm:w-fit mx-auto flex items-center justify-start sm:justify-center p-1.5 bg-white/[0.03] border border-white/10 rounded-2xl backdrop-blur-xl shadow-sm">
+      {/* ── Sub-navegación Superior (Pestañas de Facturas / Consumos) ── */}
+      <div className="w-full max-w-full overflow-x-auto no-scrollbar sm:w-fit mx-auto flex items-center justify-start sm:justify-center p-1.5 bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 rounded-2xl backdrop-blur-xl shadow-sm">
         <PillTabs<BillsSubTab>
           value={subTab}
           onChange={setSubTab}
           showScrollArrows={false}
           tabs={[
-            { id: 'listado', label: '📄 Facturas y Suscripciones' },
-            { id: 'consumos', label: '📊 Comparativa de Consumos' },
+            { id: 'listado', label: 'Listado de Facturas' },
+            { id: 'consumos', label: 'Consumos y Tarifas' },
           ]}
         />
       </div>
@@ -192,10 +204,12 @@ export function BillsSection() {
       ) : (
         <>
           {/* ── Barra Resumen Superior Glassmorphism ── */}
-          <div className="w-full flex items-center justify-between p-3.5 px-5 bg-white/[0.03] border border-white/10 rounded-2xl backdrop-blur-xl">
-            <div className="flex items-center gap-3">
-              <span className="text-xl font-bold text-white tabular-nums">{formatCurrency(totalMonthlyBillsSum)}</span>
-              <span className="text-xs text-slate-400">suministros y servicios ({bills.length})</span>
+          <div className="w-full flex items-center justify-between p-3.5 px-5 bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 rounded-2xl backdrop-blur-xl shadow-sm">
+            <div>
+              <span className="text-base sm:text-lg font-bold text-slate-900 dark:text-white tabular-nums">
+                {formatCurrency(totalMonthlyBillsSum)}
+              </span>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Total mensual ({bills.length} facturas)</p>
             </div>
             <button
               onClick={handleOpenCreate}
@@ -206,81 +220,64 @@ export function BillsSection() {
             </button>
           </div>
 
-          {/* 5-day Upcoming Due Alert Banner */}
+          {/* ── Upcoming Due Bills Alert (Compact) ── */}
           {upcomingBills.length > 0 && (
-            <div className="p-3.5 px-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-3 animate-fade-in">
-              <AlertTriangle className="size-4 text-amber-400 shrink-0 mt-0.5" />
-              <div>
-                <h4 className="text-xs font-bold text-amber-300">
-                  ¡Facturas con vencimiento próximo! ({upcomingBills.length})
-                </h4>
-                <p className="text-[11px] text-amber-400/80 font-medium mt-0.5">
-                  Suministros o servicios a cobrar en los próximos 5 días:{' '}
-                  <strong>{upcomingBills.map((b) => `${b.name} (Día ${b.dueDay})`).join(', ')}</strong>.
-                </p>
+            <div className="flex items-center gap-3 p-3 rounded-2xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 text-xs">
+              <AlertTriangle className="size-4 text-amber-600 dark:text-amber-400 shrink-0" />
+              <div className="flex-1">
+                <span className="font-bold text-amber-900 dark:text-amber-200">
+                  {upcomingBills.length} factura{upcomingBills.length > 1 ? 's' : ''} vence{upcomingBills.length > 1 ? 'n' : ''} pronto:
+                </span>{' '}
+                <span className="text-amber-800 dark:text-amber-300">
+                  {upcomingBills.map((b) => `${b.name} (día ${b.dueDay})`).join(', ')}
+                </span>
               </div>
             </div>
           )}
 
           {/* Bills List */}
           {bills.length === 0 ? (
-            <div className="w-full min-h-[220px] p-6 flex flex-col items-center justify-center gap-3 bg-white/[0.02] border border-white/10 rounded-2xl text-center">
-              <div className="flex size-10 items-center justify-center rounded-xl bg-purple-500/10 text-purple-400 text-lg">
-                📄
-              </div>
-              <p className="text-xs text-slate-400 max-w-xs">Sin facturas ni suscripciones registradas.</p>
-              <button
-                onClick={handleOpenCreate}
-                className="mt-1 rounded-xl bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 text-xs font-bold transition-all active:scale-95 shadow-sm"
-              >
-                + Añadir factura o suscripción
-              </button>
-            </div>
+            <EmptyState
+              emoji="🧾"
+              title="Sin facturas ni suscripciones registradas."
+              action="+ Añadir primera factura"
+              onAction={handleOpenCreate}
+            />
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {bills.map((bill) => {
                 const isPaid = bill.status === 'pagado'
-                const daysLeft = bill.dueDay - currentDay
-                const isDueSoon = !isPaid && daysLeft >= 0 && daysLeft <= 5
 
                 return (
                   <Card
                     key={bill.id}
                     className={cn(
-                      'p-4 border transition-all flex flex-col justify-between gap-3 shadow-soft relative group',
-                      isPaid
-                        ? 'bg-emerald-500/5 border-emerald-500/30'
-                        : isDueSoon
-                        ? 'bg-amber-500/5 border-amber-500/40'
-                        : 'bg-card border-border/80 hover:bg-secondary/20'
+                      'p-3.5 sm:p-4 border border-slate-200 dark:border-white/10 bg-white dark:bg-white/[0.03] hover:border-purple-500/30 transition-all flex flex-col justify-between gap-3 shadow-sm rounded-2xl',
+                      isPaid && 'opacity-70'
                     )}
                   >
                     <div className="flex items-start justify-between gap-2">
-                      <div className="flex items-center gap-3">
-                        <div
-                          className={cn(
-                            'flex size-10 items-center justify-center rounded-2xl font-black text-lg',
-                            isPaid
-                              ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400'
-                              : isDueSoon
-                              ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400'
-                              : 'bg-primary/10 text-primary'
-                          )}
-                        >
-                          {bill.category === 'transporte' ? '🚗' : bill.name.toLowerCase().includes('luz') ? '⚡' : bill.name.toLowerCase().includes('agua') ? '💧' : bill.name.toLowerCase().includes('gas') ? '🔥' : '📄'}
+                      <div className="flex items-start gap-2.5">
+                        <div className="flex size-8 items-center justify-center rounded-xl bg-slate-100 dark:bg-white/[0.04] border border-slate-200 dark:border-white/5 shrink-0 mt-0.5">
+                          {bill.consumption ? getUtilityIcon(bill.consumption.utilityType) : <Receipt className="size-3.5 text-purple-600 dark:text-purple-400" />}
                         </div>
                         <div>
-                          <h4 className="text-base font-extrabold text-foreground">{bill.name}</h4>
-                          <span className="inline-block mt-0.5 text-xs text-muted-foreground font-semibold capitalize">
-                            Día {bill.dueDay} de cada mes · {bill.billingCycle}
-                          </span>
+                          <h4 className="text-sm font-bold text-slate-900 dark:text-white tracking-tight leading-snug">
+                            {bill.name}
+                          </h4>
+                          <div className="flex items-center gap-1.5 mt-0.5 text-[10px] text-slate-500 dark:text-slate-400 font-medium">
+                            <span>Día {bill.dueDay}</span>
+                            <span>·</span>
+                            <span className="capitalize">{bill.billingCycle}</span>
+                            {bill.autopay && <span>· Domiciliado</span>}
+                          </div>
                         </div>
                       </div>
 
                       <div className="flex items-center gap-1">
                         <button
                           onClick={() => handleOpenEdit(bill)}
-                          className="p-1.5 rounded-full text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
+                          className="p-1 rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white transition-colors"
                           title="Editar"
                         >
                           <Edit2 className="size-3.5" />
@@ -289,7 +286,7 @@ export function BillsSection() {
                           type="button"
                           onClick={() => {
                             confirmDelete({
-                              title: '¿Eliminar factura / suscripción?',
+                              title: '¿Eliminar factura?',
                               itemName: bill.name,
                               confirmText: 'Eliminar Factura',
                               onConfirm: () => {
@@ -298,7 +295,7 @@ export function BillsSection() {
                               },
                             })
                           }}
-                          className="p-1.5 rounded-full text-muted-foreground hover:bg-rose-500/10 hover:text-rose-500 transition-colors"
+                          className="p-1 rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-rose-600 transition-colors"
                           title="Eliminar"
                         >
                           <Trash2 className="size-3.5" />
@@ -306,63 +303,26 @@ export function BillsSection() {
                       </div>
                     </div>
 
-                    {/* Metric / Consumption badge if present */}
-                    {bill.consumption && bill.consumption.consumptionValue ? (
-                      <div className="flex items-center justify-between text-[11px] px-2.5 py-1 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-200">
-                        <span>Consumo: <strong>{bill.consumption.consumptionValue} {bill.consumption.consumptionUnit}</strong></span>
-                        {bill.consumption.unitPrice ? (
-                          <span>Precio: <strong>{bill.consumption.unitPrice.toFixed(3)} €/{bill.consumption.consumptionUnit}</strong></span>
-                        ) : null}
-                      </div>
-                    ) : null}
-
-                    {/* Amount & Status Action */}
-                    <div className="flex items-center justify-between gap-2 pt-2 border-t border-border/40">
-                      <div>
-                        <p className="text-lg font-black text-foreground">
-                          {formatCurrency(bill.amount)}
-                        </p>
-                        {bill.autopay && (
-                          <span className="text-[10px] text-muted-foreground font-bold flex items-center gap-1">
-                            <RefreshCw className="size-2.5 text-primary" /> Domiciliado
-                          </span>
-                        )}
-                      </div>
-
+                    <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-white/5 text-xs">
                       <button
                         onClick={() => {
                           toggleBillStatus(bill.id)
-                          toast(
-                            isPaid ? 'Factura marcada como pendiente' : 'Factura marcada como pagada',
-                            isPaid ? '⏳' : '✅'
-                          )
+                          toast(`Estado cambiado a ${!isPaid ? 'Pagado' : 'Pendiente'}`, '✅')
                         }}
                         className={cn(
-                          'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all active:scale-95 shadow-xs',
+                          'flex items-center gap-1 px-2.5 py-1 rounded-xl font-bold transition-all text-xs',
                           isPaid
-                            ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30'
-                            : isDueSoon
-                            ? 'bg-amber-500 text-white hover:bg-amber-600'
-                            : 'bg-secondary text-secondary-foreground hover:bg-primary/20'
+                            ? 'bg-emerald-50 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30'
+                            : 'bg-slate-100 dark:bg-white/[0.04] text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-white/10 hover:bg-slate-200'
                         )}
                       >
-                        {isPaid ? (
-                          <>
-                            <CheckCircle2 className="size-3.5" />
-                            <span>Pagado</span>
-                          </>
-                        ) : isDueSoon ? (
-                          <>
-                            <AlertTriangle className="size-3.5" />
-                            <span>¡Pagar hoy!</span>
-                          </>
-                        ) : (
-                          <>
-                            <Clock className="size-3.5" />
-                            <span>Marcar pagado</span>
-                          </>
-                        )}
+                        {isPaid ? <CheckCircle2 className="size-3" /> : <Clock className="size-3" />}
+                        <span>{isPaid ? 'Pagado' : 'Pendiente'}</span>
                       </button>
+
+                      <span className="text-sm font-bold text-slate-900 dark:text-white tabular-nums">
+                        {formatCurrency(bill.amount)}
+                      </span>
                     </div>
                   </Card>
                 )
@@ -372,201 +332,142 @@ export function BillsSection() {
         </>
       )}
 
-      {/* Modal Creador / Editor */}
+      {/* ── MODAL CREADOR / EDITOR ── */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="w-full max-w-md rounded-3xl border border-border bg-card p-6 shadow-2xl animate-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto no-scrollbar">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-black tracking-tight">
-                {editingId ? 'Editar Factura / Suscripción' : 'Añadir Factura o Suscripción'}
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 dark:bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="w-full max-w-md rounded-2xl border border-slate-200 dark:border-purple-500/20 bg-white dark:bg-[#0e0d1d] p-5 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                {editingId ? 'Editar Factura' : 'Añadir Factura o Suscripción'}
               </h3>
-              <button onClick={() => setIsModalOpen(false)} className="rounded-full p-1 text-muted-foreground hover:bg-secondary">
-                <X className="size-5" />
+              <button onClick={() => setIsModalOpen(false)} className="rounded-full p-1 text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10">
+                <X className="size-4" />
               </button>
             </div>
 
-            <div className="flex flex-col gap-3.5 text-xs">
+            <div className="flex flex-col gap-3 text-xs">
               <div className="flex flex-col gap-1">
-                <label className="font-bold text-muted-foreground">Nombre del Servicio / Suministro <span className="text-red-500">*</span></label>
+                <label className="font-semibold text-slate-500 dark:text-slate-400">Servicio / Nombre <span className="text-red-500">*</span></label>
                 <input
+                  type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Ej. Luz / Endesa, Agua, Gas, Gasolina Repsol, Netflix..."
-                  autoFocus
-                  className="w-full rounded-2xl border border-border bg-secondary/50 py-3 px-4 text-sm font-semibold outline-none focus:border-primary focus:bg-card"
+                  placeholder="Ej: Luz Endesa, Internet Fibra, Netflix..."
+                  className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-white/[0.04] py-2 px-3 text-xs font-medium text-slate-900 dark:text-white outline-none focus:border-purple-500"
                 />
               </div>
 
-              <div className="flex gap-3">
-                <div className="flex-1 flex flex-col gap-1">
-                  <label className="font-bold text-muted-foreground">Importe (€) <span className="text-red-500">*</span></label>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="flex flex-col gap-1">
+                  <label className="font-semibold text-slate-500 dark:text-slate-400">Importe (€) <span className="text-red-500">*</span></label>
                   <input
                     type="number"
-                    step="0.01"
+                    step="any"
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
                     placeholder="0.00"
-                    className="w-full rounded-2xl border border-border bg-secondary/50 py-3 px-4 text-sm font-semibold outline-none focus:border-primary focus:bg-card"
+                    className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-white/[0.04] py-2 px-3 text-xs font-medium text-slate-900 dark:text-white outline-none focus:border-purple-500"
                   />
                 </div>
-                <div className="w-32 flex flex-col gap-1">
-                  <label className="font-bold text-muted-foreground">Día de cobro (1-31)</label>
+
+                <div className="flex flex-col gap-1">
+                  <label className="font-semibold text-slate-500 dark:text-slate-400">Ciclo de cobro</label>
+                  <CustomSelect<BillingCycle>
+                    value={billingCycle}
+                    onChange={(val) => setBillingCycle(val)}
+                    options={[
+                      { value: 'mensual', label: 'Mensual' },
+                      { value: 'anual', label: 'Anual' },
+                    ]}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div className="flex flex-col gap-1">
+                  <label className="font-semibold text-slate-500 dark:text-slate-400">Día de cargo (1 - 31)</label>
                   <input
                     type="number"
                     min="1"
                     max="31"
                     value={dueDay}
                     onChange={(e) => setDueDay(e.target.value)}
-                    className="w-full rounded-2xl border border-border bg-secondary/50 py-3 px-3 text-xs font-semibold outline-none focus:border-primary"
+                    className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-white/[0.04] py-2 px-3 text-xs font-medium text-slate-900 dark:text-white outline-none focus:border-purple-500"
                   />
+                </div>
+
+                <div className="flex flex-col justify-end">
+                  <label className="flex items-center gap-2 p-2 rounded-xl bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={autopay}
+                      onChange={(e) => setAutopay(e.target.checked)}
+                      className="rounded accent-purple-600"
+                    />
+                    <span className="font-semibold text-slate-700 dark:text-slate-300">Pago domiciliado</span>
+                  </label>
                 </div>
               </div>
 
-              <div className="flex gap-3">
-                <div className="flex-1 flex flex-col gap-1">
-                  <label className="font-bold text-muted-foreground text-xs">Ciclo de facturación</label>
-                  <CustomSelect<BillingCycle>
-                    value={billingCycle}
-                    onChange={setBillingCycle}
-                    options={[
-                      { value: 'mensual', label: 'Mensual' },
-                      { value: 'anual', label: 'Anual' },
-                    ]}
-                    className="w-full"
-                  />
-                </div>
-
-                <div className="flex-1 flex flex-col gap-1">
-                  <label className="font-bold text-muted-foreground text-xs">Categoría</label>
-                  <CustomSelect<string>
-                    value={category}
-                    onChange={(val) => setCategory(val as any)}
-                    options={[
-                      { value: 'hogar', label: 'Hogar', icon: '🛋️' },
-                      { value: 'vivienda', label: 'Vivienda', icon: '🏠' },
-                      { value: 'transporte', label: 'Transporte', icon: '🚗' },
-                      { value: 'ocio', label: 'Ocio', icon: '🎬' },
-                      { value: 'salud', label: 'Salud', icon: '💊' },
-                      { value: 'educación', label: 'Educación', icon: '📚' },
-                      { value: 'otros', label: 'Otros', icon: '✨' },
-                    ]}
-                    className="w-full"
-                  />
-                </div>
-              </div>
-
-              {category === 'otros' && (
-                <div className="flex flex-col gap-1 animate-fade-in">
-                  <label className="font-bold text-muted-foreground">Especifica la categoría/concepto <span className="text-red-500">*</span></label>
-                  <input
-                    value={customCategoryInput}
-                    onChange={(e) => setCustomCategoryInput(e.target.value)}
-                    placeholder="Escribe la categoría personalizada..."
-                    className="w-full rounded-2xl border border-border bg-card py-2.5 px-3 text-xs font-semibold outline-none focus:border-primary"
-                  />
-                </div>
-              )}
-
-              {/* ── BLOQUE DE CONSUMO Y SUMINISTRO (OPCIONAL) ── */}
-              <div className="pt-2 border-t border-border/40 space-y-2.5">
-                <label className="flex items-center gap-2 cursor-pointer">
+              {/* Registro Opcional de Consumo */}
+              <div className="pt-2 border-t border-slate-200 dark:border-white/10">
+                <label className="flex items-center gap-2 cursor-pointer mb-2">
                   <input
                     type="checkbox"
                     checked={hasConsumption}
                     onChange={(e) => setHasConsumption(e.target.checked)}
-                    className="size-4 rounded border-border text-purple-600 focus:ring-purple-500"
+                    className="rounded accent-purple-600"
                   />
-                  <span className="font-bold text-purple-300 text-xs flex items-center gap-1">
-                    <Gauge className="size-3.5 text-purple-400" />
-                    Registrar lectura / unidades de consumo (opcional)
+                  <span className="font-bold text-slate-800 dark:text-slate-200">
+                    Registrar consumo / contador (kWh, m³, L)
                   </span>
                 </label>
 
                 {hasConsumption && (
-                  <div className="p-3.5 rounded-2xl bg-purple-500/10 border border-purple-500/20 space-y-3 animate-fade-in">
+                  <div className="grid grid-cols-2 gap-2 p-2.5 rounded-xl bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/5 animate-fade-in">
                     <div className="flex flex-col gap-1">
-                      <label className="font-bold text-muted-foreground text-[11px]">Tipo de Suministro</label>
+                      <label className="font-semibold text-slate-500 dark:text-slate-400">Tipo de suministro</label>
                       <CustomSelect<UtilityType>
                         value={utilityType}
-                        onChange={setUtilityType}
+                        onChange={(val) => setUtilityType(val)}
                         options={[
-                          { value: 'electricidad', label: '⚡ Electricidad (kWh)' },
-                          { value: 'agua', label: '💧 Agua (m³)' },
-                          { value: 'gas', label: '🔥 Gas Natural (kWh)' },
-                          { value: 'combustible', label: '⛽ Gasolina / Diésel (Litros)' },
+                          { value: 'electricidad', label: 'Electricidad (kWh)' },
+                          { value: 'agua', label: 'Agua (m³)' },
+                          { value: 'gas', label: 'Gas (kWh)' },
+                          { value: 'combustible', label: 'Combustible (L)' },
                         ]}
-                        className="w-full"
                       />
                     </div>
 
-                    <div className="flex gap-2.5">
-                      <div className="flex-1 flex flex-col gap-1">
-                        <label className="font-bold text-muted-foreground text-[11px]">
-                          Consumo ({unitLabel})
-                        </label>
-                        <input
-                          type="number"
-                          step="0.01"
-                          value={consumptionValue}
-                          onChange={(e) => setConsumptionValue(e.target.value)}
-                          placeholder={`Ej. ${utilityType === 'electricidad' ? '280' : utilityType === 'agua' ? '12' : utilityType === 'gas' ? '350' : '45'}`}
-                          className="w-full rounded-xl border border-border bg-card py-2 px-3 text-xs font-semibold outline-none focus:border-primary"
-                        />
-                      </div>
-
-                      {utilityType === 'combustible' && (
-                        <div className="flex-1 flex flex-col gap-1">
-                          <label className="font-bold text-muted-foreground text-[11px]">
-                            Kilómetros recorridos
-                          </label>
-                          <input
-                            type="number"
-                            value={kilometers}
-                            onChange={(e) => setKilometers(e.target.value)}
-                            placeholder="Ej. 650 km"
-                            className="w-full rounded-xl border border-border bg-card py-2 px-3 text-xs font-semibold outline-none focus:border-primary"
-                          />
-                        </div>
-                      )}
+                    <div className="flex flex-col gap-1">
+                      <label className="font-semibold text-slate-500 dark:text-slate-400">Consumo ({unitLabel})</label>
+                      <input
+                        type="number"
+                        step="any"
+                        value={consumptionValue}
+                        onChange={(e) => setConsumptionValue(e.target.value)}
+                        placeholder="Ej: 240"
+                        className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-white/[0.04] py-2 px-3 text-xs font-medium text-slate-900 dark:text-white outline-none focus:border-purple-500"
+                      />
                     </div>
-
-                    {/* Precios calculados en tiempo real */}
-                    {parsedUnits > 0 && parsedAmount > 0 && (
-                      <div className="p-2.5 rounded-xl bg-purple-950/40 border border-purple-500/30 text-[11px] font-bold text-purple-200 flex items-center justify-between">
-                        <span>Coste unitario: <strong className="text-white">{calculatedUnitPrice.toFixed(3)} €/{unitLabel}</strong></span>
-                        {utilityType === 'combustible' && parsedKm > 0 ? (
-                          <span>Consumo: <strong className="text-white">{calculatedCostPer100Km.toFixed(2)} €/100km</strong></span>
-                        ) : null}
-                      </div>
-                    )}
                   </div>
                 )}
               </div>
 
-              <label className="flex items-center gap-2 mt-1 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={autopay}
-                  onChange={(e) => setAutopay(e.target.checked)}
-                  className="size-4 rounded border-border text-purple-600 focus:ring-purple-500"
-                />
-                <span className="font-bold text-muted-foreground text-xs">Pago automático (Domiciliado)</span>
-              </label>
-
-              <div className="mt-3 flex gap-2 justify-end">
+              <div className="flex gap-2 justify-end pt-2">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="rounded-2xl px-4 py-2.5 text-xs font-bold text-muted-foreground hover:bg-secondary"
+                  className="rounded-xl px-4 py-2 text-xs font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-white/10"
                 >
                   Cancelar
                 </button>
                 <button
                   type="button"
                   onClick={handleSave}
-                  className="rounded-2xl bg-purple-600 px-5 py-2.5 text-xs font-bold text-white shadow-soft transition-transform active:scale-95 hover:bg-purple-700"
+                  className="rounded-xl bg-purple-600 hover:bg-purple-500 px-4 py-2 text-xs font-bold text-white shadow-sm transition-all active:scale-95"
                 >
-                  Guardar servicio
+                  Guardar
                 </button>
               </div>
             </div>

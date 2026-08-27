@@ -1,72 +1,27 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { Zap, Droplets, Flame, Fuel, TrendingUp, TrendingDown, ArrowRight, Gauge, Scale, Sparkles, Plus, Calendar } from 'lucide-react'
+import { TrendingUp, TrendingDown, Calendar, Scale, Plus, Zap, Droplets, Flame, Fuel } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { CustomSelect } from '@/components/ui/custom-select'
-import { PillTabs } from '@/components/ui/pill-tabs'
 import { useApp } from '@/components/app/app-context'
-import { formatCurrency, formatMonthLabel, getPreviousMonthISO, type UtilityType } from '@/types/finances'
+import {
+  type UtilityType,
+  formatCurrency,
+  formatMonthLabel,
+  getPreviousMonthISO,
+} from '@/types/finances'
 import { getTodayISO } from '@/lib/date-utils'
 import { cn } from '@/lib/utils'
 
-interface UtilityMeta {
-  type: UtilityType
-  label: string
-  icon: string
-  unit: string
-  color: string
-  border: string
-  bgLight: string
-  sampleBaseAmount: number
-  sampleBaseConsumption: number
-}
-
-const UTILITIES_META: Record<UtilityType, UtilityMeta> = {
-  electricidad: {
-    type: 'electricidad',
-    label: 'Electricidad',
-    icon: '⚡',
-    unit: 'kWh',
-    color: 'text-amber-400',
-    border: 'border-amber-500/30',
-    bgLight: 'bg-amber-500/10',
-    sampleBaseAmount: 85.5,
-    sampleBaseConsumption: 290,
-  },
-  agua: {
-    type: 'agua',
-    label: 'Agua',
-    icon: '💧',
-    unit: 'm³',
-    color: 'text-cyan-400',
-    border: 'border-cyan-500/30',
-    bgLight: 'bg-cyan-500/10',
-    sampleBaseAmount: 34.2,
-    sampleBaseConsumption: 14,
-  },
-  gas: {
-    type: 'gas',
-    label: 'Gas Natural',
-    icon: '🔥',
-    unit: 'kWh',
-    color: 'text-rose-400',
-    border: 'border-rose-500/30',
-    bgLight: 'bg-rose-500/10',
-    sampleBaseAmount: 48.0,
-    sampleBaseConsumption: 380,
-  },
-  combustible: {
-    type: 'combustible',
-    label: 'Gasolina / Diésel',
-    icon: '⛽',
-    unit: 'L',
-    color: 'text-emerald-400',
-    border: 'border-emerald-500/30',
-    bgLight: 'bg-emerald-500/10',
-    sampleBaseAmount: 95.0,
-    sampleBaseConsumption: 62,
-  },
+const UTILITIES_META: Record<
+  UtilityType,
+  { label: string; unit: string; icon: any; sampleBaseAmount: number; sampleBaseConsumption: number }
+> = {
+  electricidad: { label: 'Electricidad', unit: 'kWh', icon: Zap, sampleBaseAmount: 68.5, sampleBaseConsumption: 240 },
+  agua: { label: 'Agua', unit: 'm³', icon: Droplets, sampleBaseAmount: 32.0, sampleBaseConsumption: 14 },
+  gas: { label: 'Gas', unit: 'kWh', icon: Flame, sampleBaseAmount: 45.0, sampleBaseConsumption: 310 },
+  combustible: { label: 'Combustible', unit: 'L', icon: Fuel, sampleBaseAmount: 85.0, sampleBaseConsumption: 55 },
 }
 
 export function ConsumptionComparison({ onOpenAddBill }: { onOpenAddBill?: () => void }) {
@@ -98,29 +53,27 @@ export function ConsumptionComparison({ onOpenAddBill }: { onOpenAddBill?: () =>
   const getUtilityDataForMonth = (utilType: UtilityType, monthISO: string) => {
     const meta = UTILITIES_META[utilType]
 
-    // 1. Check bills matching utility type or keywords
     const matchingBills = bills.filter((b) => {
       const name = b.name.toLowerCase()
-      const isMatch =
+      return (
         b.consumption?.utilityType === utilType ||
         (utilType === 'electricidad' && (name.includes('luz') || name.includes('endesa') || name.includes('iberdrola') || name.includes('elec'))) ||
         (utilType === 'agua' && (name.includes('agua') || name.includes('aqualia') || name.includes('canal'))) ||
         (utilType === 'gas' && (name.includes('gas') || name.includes('naturgy') || name.includes('butano'))) ||
         (utilType === 'combustible' && (name.includes('gasolina') || name.includes('diésel') || name.includes('combustible') || name.includes('repsol')))
-      return isMatch
+      )
     })
 
-    // 2. Check expenses matching utility
     const matchingExpenses = expenses.filter((e) => {
       if (e.date && !e.date.startsWith(monthISO) && !e.isRecurring) return false
       const title = e.title.toLowerCase()
-      const isMatch =
+      return (
         e.consumption?.utilityType === utilType ||
         (utilType === 'combustible' && (title.includes('gasolina') || title.includes('repostaje') || title.includes('diésel') || title.includes('repsol') || title.includes('cepsa'))) ||
         (utilType === 'electricidad' && title.includes('luz')) ||
         (utilType === 'agua' && title.includes('agua')) ||
         (utilType === 'gas' && title.includes('gas'))
-      return isMatch
+      )
     })
 
     let totalAmount = 0
@@ -143,15 +96,12 @@ export function ConsumptionComparison({ onOpenAddBill }: { onOpenAddBill?: () =>
       count++
     })
 
-    // If no explicit consumption recorded yet, provide a realistic estimated baseline derived from amount
     if (totalAmount === 0) {
-      // Month-dependent baseline calculation for high quality preview
       const monthSeed = parseInt(monthISO.replace('-', ''), 10) % 7
       const variance = (monthSeed - 3) * 0.08
       totalAmount = Math.max(20, Math.round(meta.sampleBaseAmount * (1 + variance) * 100) / 100)
       totalUnits = Math.max(5, Math.round(meta.sampleBaseConsumption * (1 + variance * 0.9)))
     } else if (totalUnits === 0 && totalAmount > 0) {
-      // Unit ratio estimate
       const avgUnitCost = meta.sampleBaseAmount / meta.sampleBaseConsumption
       totalUnits = Math.round(totalAmount / avgUnitCost)
     }
@@ -171,65 +121,69 @@ export function ConsumptionComparison({ onOpenAddBill }: { onOpenAddBill?: () =>
 
   const meta = UTILITIES_META[activeUtility]
 
-  // Differences: Month A vs Month B
   const amountDiff = dataA.amount - dataB.amount
   const amountDiffPercent = dataB.amount > 0 ? ((dataA.amount - dataB.amount) / dataB.amount) * 100 : 0
 
   const unitsDiff = dataA.units - dataB.units
   const unitsDiffPercent = dataB.units > 0 ? ((dataA.units - dataB.units) / dataB.units) * 100 : 0
 
-  const priceDiff = dataA.unitPrice - dataB.unitPrice
+  const unitPriceDiff = dataA.unitPrice - dataB.unitPrice
+  const unitPriceDiffPercent = dataB.unitPrice > 0 ? ((dataA.unitPrice - dataB.unitPrice) / dataB.unitPrice) * 100 : 0
 
-  // Bar Graph Max Scale
-  const maxAmount = Math.max(dataA.amount, dataB.amount, 1)
-  const percentBarA = Math.round((dataA.amount / maxAmount) * 100)
-  const percentBarB = Math.round((dataB.amount / maxAmount) * 100)
+  const utilityKeys: UtilityType[] = ['electricidad', 'agua', 'gas', 'combustible']
 
   return (
     <div className="w-full max-w-2xl mx-auto space-y-4 animate-fade-in">
-      {/* ── SELECTOR DE SUMINISTRO / TIPO DE CONSUMO ── */}
-      <div className="w-full max-w-full overflow-x-auto no-scrollbar sm:w-fit mx-auto flex items-center justify-start sm:justify-center p-1.5 bg-white/[0.03] border border-white/10 rounded-2xl backdrop-blur-xl shadow-sm">
-        <PillTabs<UtilityType>
-          value={activeUtility}
-          onChange={setActiveUtility}
-          showScrollArrows={false}
-          tabs={[
-            { id: 'electricidad', label: '⚡ Luz' },
-            { id: 'agua', label: '💧 Agua' },
-            { id: 'gas', label: '🔥 Gas' },
-            { id: 'combustible', label: '⛽ Gasolina' },
-          ]}
-        />
+      {/* ── SELECTOR DE SUMINISTRO ── */}
+      <div className="flex items-center gap-1.5 p-1 bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 rounded-2xl overflow-x-auto no-scrollbar shadow-sm">
+        {utilityKeys.map((uKey) => {
+          const uMeta = UTILITIES_META[uKey]
+          const Icon = uMeta.icon
+          const isActive = activeUtility === uKey
+          return (
+            <button
+              key={uKey}
+              onClick={() => setActiveUtility(uKey)}
+              className={cn(
+                'flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2 px-3 text-xs font-bold transition-all shrink-0',
+                isActive
+                  ? 'bg-purple-600 text-white shadow-sm'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/[0.04]'
+              )}
+            >
+              <Icon className="size-3.5" />
+              <span>{uMeta.label}</span>
+            </button>
+          )
+        })}
       </div>
 
-      {/* ── SELECTOR DE PERIODOS A COMPARAR ── */}
-      <Card className="p-4 bg-[#100e23]/80 border border-purple-500/20 rounded-2xl shadow-xl backdrop-blur-xl space-y-3">
-        <div className="flex items-center justify-between gap-2 flex-wrap sm:flex-nowrap pb-2 border-b border-purple-500/15">
-          <div className="flex items-center gap-2">
-            <span className="text-xl">{meta.icon}</span>
-            <div>
-              <h3 className="text-sm font-black text-white">{meta.label} · Comparativa de Consumo</h3>
-              <p className="text-[11px] text-slate-400">Analiza gasto, unidades ({meta.unit}) y precio unitario</p>
-            </div>
+      {/* ── SELECTOR DE MESES A COMPARAR ── */}
+      <Card className="p-4 bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 rounded-2xl shadow-sm space-y-3">
+        <div className="flex items-center justify-between gap-2 pb-2 border-b border-slate-100 dark:border-white/5">
+          <div>
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+              Comparativa de {meta.label}
+            </h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Gasto total, unidades consumidas y precio por {meta.unit}</p>
           </div>
 
           {onOpenAddBill && (
             <button
               type="button"
               onClick={onOpenAddBill}
-              className="flex items-center gap-1 rounded-xl bg-purple-600/25 hover:bg-purple-600/40 border border-purple-500/30 px-3 py-1.5 text-xs font-bold text-purple-200 hover:text-white transition-all active:scale-95 shadow-sm"
+              className="flex items-center gap-1 rounded-xl bg-purple-600 hover:bg-purple-500 text-white px-3 py-1.5 text-xs font-bold transition-all active:scale-95 shadow-sm"
             >
               <Plus className="size-3.5" />
-              <span>+ Añadir lectura / factura</span>
+              <span>+ Factura</span>
             </button>
           )}
         </div>
 
-        {/* Dropdowns de Mes A y Mes B */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
           <div className="flex flex-col gap-1">
-            <label className="text-[11px] font-bold text-purple-300 flex items-center gap-1.5">
-              <Calendar className="size-3 text-purple-400" />
+            <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1">
+              <Calendar className="size-3 text-purple-600 dark:text-purple-400" />
               <span>Periodo Principal (A):</span>
             </label>
             <CustomSelect<string>
@@ -241,8 +195,8 @@ export function ConsumptionComparison({ onOpenAddBill }: { onOpenAddBill?: () =>
           </div>
 
           <div className="flex flex-col gap-1">
-            <label className="text-[11px] font-bold text-slate-400 flex items-center gap-1.5">
-              <Scale className="size-3 text-slate-400" />
+            <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1">
+              <Scale className="size-3 text-purple-600 dark:text-purple-400" />
               <span>Comparar con (B):</span>
             </label>
             <CustomSelect<string>
@@ -255,150 +209,74 @@ export function ConsumptionComparison({ onOpenAddBill }: { onOpenAddBill?: () =>
         </div>
       </Card>
 
-      {/* ── 3 TARJETAS DE COMPARACIÓN DE ALTO IMPACTO VISUAL ── */}
+      {/* ── 3 TARJETAS COMPARATIVAS COMPACTAS ── */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        {/* 1. Gasto Total (€) */}
-        <div className="rounded-2xl bg-[#100e23]/90 border border-purple-500/20 p-4 shadow-xl backdrop-blur-xl flex flex-col justify-between gap-2">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-            Gasto Total
+        {/* 1. Importe Total */}
+        <Card className="p-3.5 bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 rounded-2xl shadow-sm flex flex-col justify-between gap-1.5">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+            Importe Facturado
           </span>
           <div>
-            <p className="text-2xl font-black text-white tabular-nums tracking-tight">
+            <p className="text-lg font-bold text-slate-900 dark:text-white tabular-nums tracking-tight">
               {formatCurrency(dataA.amount)}
             </p>
-            <p className="text-xs font-semibold text-slate-400 mt-0.5">
-              vs {formatCurrency(dataB.amount)} en {formatMonthLabel(monthB)}
+            <p className="text-[11px] text-slate-400 mt-0.5">
+              vs {formatCurrency(dataB.amount)} ({formatMonthLabel(monthB)})
             </p>
           </div>
 
-          <div className={cn(
-            'inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-black w-fit mt-1',
-            amountDiff <= 0
-              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-              : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
-          )}>
-            {amountDiff <= 0 ? <TrendingDown className="size-3" /> : <TrendingUp className="size-3" />}
+          <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[11px] font-bold w-fit bg-purple-50 dark:bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-500/30">
+            {amountDiff > 0 ? <TrendingUp className="size-3 text-rose-500" /> : <TrendingDown className="size-3 text-emerald-500" />}
             <span>
-              {amountDiff <= 0 ? '-' : '+'}{Math.abs(amountDiffPercent).toFixed(1)}% ({formatCurrency(Math.abs(amountDiff))})
+              {amountDiff > 0 ? '+' : ''}{amountDiffPercent.toFixed(1)}%
             </span>
           </div>
-        </div>
+        </Card>
 
-        {/* 2. Consumo Físico */}
-        <div className="rounded-2xl bg-[#100e23]/90 border border-purple-500/20 p-4 shadow-xl backdrop-blur-xl flex flex-col justify-between gap-2">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-            Consumo Físico ({meta.unit})
+        {/* 2. Consumo Real */}
+        <Card className="p-3.5 bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 rounded-2xl shadow-sm flex flex-col justify-between gap-1.5">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+            Consumo ({meta.unit})
           </span>
           <div>
-            <p className="text-2xl font-black text-white tabular-nums tracking-tight">
-              {dataA.units} <span className="text-sm font-bold text-slate-400">{meta.unit}</span>
+            <p className="text-lg font-bold text-slate-900 dark:text-white tabular-nums tracking-tight">
+              {dataA.units.toLocaleString('es-ES')} {meta.unit}
             </p>
-            <p className="text-xs font-semibold text-slate-400 mt-0.5">
-              vs {dataB.units} {meta.unit} ({formatMonthLabel(monthB)})
+            <p className="text-[11px] text-slate-400 mt-0.5">
+              vs {dataB.units.toLocaleString('es-ES')} {meta.unit} ({formatMonthLabel(monthB)})
             </p>
           </div>
 
-          <div className={cn(
-            'inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-black w-fit mt-1',
-            unitsDiff <= 0
-              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-              : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
-          )}>
-            {unitsDiff <= 0 ? <TrendingDown className="size-3" /> : <TrendingUp className="size-3" />}
+          <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[11px] font-bold w-fit bg-purple-50 dark:bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-500/30">
+            {unitsDiff > 0 ? <TrendingUp className="size-3 text-rose-500" /> : <TrendingDown className="size-3 text-emerald-500" />}
             <span>
-              {unitsDiff <= 0 ? '-' : '+'}{Math.abs(unitsDiffPercent).toFixed(1)}% ({Math.abs(unitsDiff)} {meta.unit})
+              {unitsDiff > 0 ? '+' : ''}{unitsDiffPercent.toFixed(1)}%
             </span>
           </div>
-        </div>
+        </Card>
 
-        {/* 3. Coste Unitario Promedio */}
-        <div className="rounded-2xl bg-[#100e23]/90 border border-purple-500/20 p-4 shadow-xl backdrop-blur-xl flex flex-col justify-between gap-2">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-            Coste Unitario Promedio
+        {/* 3. Precio Unitario */}
+        <Card className="p-3.5 bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 rounded-2xl shadow-sm flex flex-col justify-between gap-1.5">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+            Precio / {meta.unit}
           </span>
           <div>
-            <p className="text-2xl font-black text-white tabular-nums tracking-tight">
-              {dataA.unitPrice.toFixed(3)} <span className="text-xs font-bold text-slate-400">€/{meta.unit}</span>
+            <p className="text-lg font-bold text-slate-900 dark:text-white tabular-nums tracking-tight">
+              {dataA.unitPrice.toFixed(3)} €
             </p>
-            <p className="text-xs font-semibold text-slate-400 mt-0.5">
-              vs {dataB.unitPrice.toFixed(3)} €/{meta.unit}
+            <p className="text-[11px] text-slate-400 mt-0.5">
+              vs {dataB.unitPrice.toFixed(3)} € ({formatMonthLabel(monthB)})
             </p>
           </div>
 
-          <div className={cn(
-            'inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-black w-fit mt-1',
-            priceDiff <= 0
-              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-              : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
-          )}>
-            {priceDiff <= 0 ? <TrendingDown className="size-3" /> : <TrendingUp className="size-3" />}
+          <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[11px] font-bold w-fit bg-purple-50 dark:bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-500/30">
+            {unitPriceDiff > 0 ? <TrendingUp className="size-3 text-rose-500" /> : <TrendingDown className="size-3 text-emerald-500" />}
             <span>
-              {priceDiff <= 0 ? '-' : '+'}{Math.abs(priceDiff).toFixed(3)} €/{meta.unit}
+              {unitPriceDiff > 0 ? '+' : ''}{unitPriceDiffPercent.toFixed(1)}%
             </span>
           </div>
-        </div>
+        </Card>
       </div>
-
-      {/* ── MINIGRÁFICA VISUAL DE BARRAS DIRECTA ── */}
-      <Card className="p-4 bg-[#100e23]/80 border border-purple-500/20 rounded-2xl shadow-xl backdrop-blur-xl space-y-3">
-        <div className="flex items-center justify-between">
-          <h4 className="text-xs font-black uppercase tracking-wider text-purple-300 flex items-center gap-1.5">
-            <Gauge className="size-3.5" />
-            <span>Comparación Visual de Importes</span>
-          </h4>
-          <span className="text-[11px] font-bold text-slate-400">
-            {formatMonthLabel(monthA)} vs {formatMonthLabel(monthB)}
-          </span>
-        </div>
-
-        <div className="space-y-3 pt-1">
-          {/* Barra Periodo A */}
-          <div className="space-y-1">
-            <div className="flex items-center justify-between text-xs font-bold">
-              <span className="text-white flex items-center gap-2">
-                <span className="size-2 rounded-full bg-purple-400" />
-                {formatMonthLabel(monthA)} (Principal)
-              </span>
-              <span className="text-purple-300 font-black tabular-nums">{formatCurrency(dataA.amount)} · {dataA.units} {meta.unit}</span>
-            </div>
-            <div className="h-3.5 w-full bg-white/[0.05] rounded-full overflow-hidden p-0.5 border border-white/10">
-              <div
-                className="h-full bg-gradient-to-r from-purple-600 to-indigo-500 rounded-full transition-all duration-500 shadow-sm"
-                style={{ width: `${percentBarA}%` }}
-              />
-            </div>
-          </div>
-
-          {/* Barra Periodo B */}
-          <div className="space-y-1">
-            <div className="flex items-center justify-between text-xs font-bold">
-              <span className="text-slate-300 flex items-center gap-2">
-                <span className="size-2 rounded-full bg-cyan-400" />
-                {formatMonthLabel(monthB)} (Comparado)
-              </span>
-              <span className="text-cyan-300 font-black tabular-nums">{formatCurrency(dataB.amount)} · {dataB.units} {meta.unit}</span>
-            </div>
-            <div className="h-3.5 w-full bg-white/[0.05] rounded-full overflow-hidden p-0.5 border border-white/10">
-              <div
-                className="h-full bg-gradient-to-r from-cyan-600 to-teal-500 rounded-full transition-all duration-500 shadow-sm"
-                style={{ width: `${percentBarB}%` }}
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Consejo / Resumen Inteligente */}
-        <div className="mt-3 p-3 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-start gap-2.5">
-          <Sparkles className="size-4 text-purple-400 shrink-0 mt-0.5" />
-          <p className="text-xs text-purple-200">
-            {amountDiff < 0
-              ? `🎉 ¡Excelente! En ${formatMonthLabel(monthA)} has ahorrado ${formatCurrency(Math.abs(amountDiff))} (${Math.abs(amountDiffPercent).toFixed(1)}%) en ${meta.label.toLowerCase()} respecto a ${formatMonthLabel(monthB)}.`
-              : amountDiff > 0
-              ? `💡 En ${formatMonthLabel(monthA)} el gasto de ${meta.label.toLowerCase()} subió ${formatCurrency(amountDiff)} (+${amountDiffPercent.toFixed(1)}%). Revisa picos de consumo o cambios en la tarifa unitaria.`
-              : `⚖️ El gasto en ${meta.label.toLowerCase()} se mantiene idéntico entre ambos periodos.`}
-          </p>
-        </div>
-      </Card>
     </div>
   )
 }

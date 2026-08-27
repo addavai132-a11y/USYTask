@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Award, Lock, Sparkles, CheckCircle2, Trophy, Star } from 'lucide-react'
+import { Award, Lock, Sparkles, Trophy, CheckCircle2 } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { ProgressBar } from '@/components/ui/progress-bar'
 import { useApp } from '@/components/app/app-context'
@@ -23,48 +23,46 @@ export function AchievementsTab() {
   })
 
   return (
-    <div className="flex flex-col gap-4">
-      {/* Banner de Progreso Global de Logros */}
-      <Card className="relative overflow-hidden p-4 bg-gradient-to-r from-amber-500/10 via-purple-500/10 to-indigo-500/10 border-amber-500/30">
+    <div className="w-full max-w-2xl mx-auto space-y-4">
+      {/* ── Global Achievements Progress Banner ── */}
+      <Card className="p-4 sm:p-5 bg-white/[0.03] border border-white/10 rounded-2xl backdrop-blur-xl shadow-sm space-y-3">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="flex size-12 items-center justify-center rounded-2xl bg-amber-500/20 text-amber-500 ring-2 ring-amber-500/30 shadow-md">
-              <Trophy className="size-6" />
+            <div className="flex size-10 items-center justify-center rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/20">
+              <Trophy className="size-5" />
             </div>
             <div>
-              <h3 className="text-base font-black text-foreground tracking-tight">
-                Salón de Logros Familiares
+              <h3 className="text-sm font-bold text-white tracking-tight">
+                Logros e Insignias del Hogar
               </h3>
-              <p className="text-xs text-muted-foreground font-medium">
-                {unlockedCount} de {total} insignias desbloqueadas
+              <p className="text-xs text-slate-400">
+                {unlockedCount} de {total} insignias conseguidas
               </p>
             </div>
           </div>
 
-          <div className="text-right">
-            <span className="text-2xl font-black text-amber-600 dark:text-amber-400 tabular-nums">
-              {completionPct}%
-            </span>
-          </div>
+          <span className="text-xl font-black text-purple-300 tabular-nums">
+            {completionPct}%
+          </span>
         </div>
 
-        <ProgressBar
-          value={unlockedCount}
-          max={total}
-          className="h-2 mt-3"
-          barClassName="bg-gradient-to-r from-amber-500 to-yellow-400 shadow-sm"
-        />
+        <div className="w-full bg-white/[0.05] rounded-full h-1.5 overflow-hidden">
+          <div
+            className="h-full bg-purple-500 rounded-full transition-all duration-300"
+            style={{ width: `${completionPct}%` }}
+          />
+        </div>
       </Card>
 
-      {/* Filter Tabs */}
-      <div className="flex rounded-2xl bg-secondary/60 p-1 border border-border self-start">
+      {/* ── Filter Pills ── */}
+      <div className="flex items-center gap-1.5 p-1 bg-white/[0.04] border border-white/10 rounded-xl w-fit">
         <button
           onClick={() => setFilter('todos')}
           className={cn(
-            'rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all',
+            'rounded-lg px-3 py-1 text-xs font-bold transition-all',
             filter === 'todos'
-              ? 'bg-primary text-primary-foreground shadow-sm'
-              : 'text-muted-foreground hover:text-foreground'
+              ? 'bg-purple-600 text-white shadow-sm'
+              : 'text-slate-400 hover:text-white'
           )}
         >
           Todos ({total})
@@ -72,10 +70,10 @@ export function AchievementsTab() {
         <button
           onClick={() => setFilter('desbloqueados')}
           className={cn(
-            'rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all',
+            'rounded-lg px-3 py-1 text-xs font-bold transition-all',
             filter === 'desbloqueados'
-              ? 'bg-primary text-primary-foreground shadow-sm'
-              : 'text-muted-foreground hover:text-foreground'
+              ? 'bg-purple-600 text-white shadow-sm'
+              : 'text-slate-400 hover:text-white'
           )}
         >
           Desbloqueados ({unlockedCount})
@@ -83,18 +81,18 @@ export function AchievementsTab() {
         <button
           onClick={() => setFilter('bloqueados')}
           className={cn(
-            'rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all',
+            'rounded-lg px-3 py-1 text-xs font-bold transition-all',
             filter === 'bloqueados'
-              ? 'bg-primary text-primary-foreground shadow-sm'
-              : 'text-muted-foreground hover:text-foreground'
+              ? 'bg-purple-600 text-white shadow-sm'
+              : 'text-slate-400 hover:text-white'
           )}
         >
           Bloqueados ({total - unlockedCount})
         </button>
       </div>
 
-      {/* Grid de Medallas e Insignias */}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      {/* ── Achievements Grid ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {filteredAchievements.map((ach) => {
           const isUnlocked = ach.isUnlocked
           const pct = Math.min(100, Math.round((ach.progress / ach.maxProgress) * 100))
@@ -103,34 +101,34 @@ export function AchievementsTab() {
             <Card
               key={ach.id}
               className={cn(
-                'relative flex flex-col justify-between p-4 transition-all',
+                'p-4 rounded-2xl flex flex-col justify-between gap-3 shadow-sm transition-all border',
                 isUnlocked
-                  ? 'border-amber-500/40 bg-amber-500/[0.04] dark:bg-amber-500/[0.06] shadow-lg shadow-amber-500/5 ring-1 ring-amber-500/20'
-                  : 'opacity-70 hover:opacity-100'
+                  ? 'bg-purple-500/[0.03] border-purple-500/30'
+                  : 'bg-white/[0.02] border-white/10 opacity-60 hover:opacity-85'
               )}
             >
               <div>
-                {/* Badge Icon & State */}
-                <div className="flex items-start justify-between gap-2 mb-2.5">
+                {/* Header: Icon & Status */}
+                <div className="flex items-start justify-between gap-2 mb-2">
                   <div
                     className={cn(
-                      'flex size-12 items-center justify-center rounded-2xl text-2xl shadow-inner border',
+                      'flex size-9 items-center justify-center rounded-xl border',
                       isUnlocked
-                        ? 'bg-amber-500/20 border-amber-500/40 shadow-amber-500/20 scale-105'
-                        : 'bg-secondary/60 border-border grayscale opacity-60'
+                        ? 'bg-purple-500/15 border-purple-500/30 text-purple-300'
+                        : 'bg-white/[0.04] border-white/10 text-slate-500'
                     )}
                   >
-                    {ach.icon}
+                    <Award className="size-4" />
                   </div>
 
                   {isUnlocked ? (
-                    <span className="flex items-center gap-1 rounded-full bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 text-[10px] font-black text-amber-600 dark:text-amber-400">
-                      <Sparkles className="size-3 fill-amber-500" />
-                      ¡Conseguido!
+                    <span className="flex items-center gap-1 rounded-full bg-purple-500/10 border border-purple-500/20 px-2.5 py-0.5 text-[10px] font-bold text-purple-300">
+                      <CheckCircle2 className="size-3" />
+                      Conseguido
                     </span>
                   ) : (
-                    <span className="flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-[10px] font-bold text-muted-foreground border border-border">
-                      <Lock className="size-3" />
+                    <span className="flex items-center gap-1 rounded-full bg-white/[0.04] px-2 py-0.5 text-[10px] font-medium text-slate-500 border border-white/5">
+                      <Lock className="size-2.5" />
                       Bloqueado
                     </span>
                   )}
@@ -139,37 +137,36 @@ export function AchievementsTab() {
                 {/* Title & Description */}
                 <h4
                   className={cn(
-                    'font-black text-base tracking-tight leading-snug',
-                    isUnlocked ? 'text-foreground' : 'text-muted-foreground'
+                    'font-bold text-sm tracking-tight leading-snug',
+                    isUnlocked ? 'text-white' : 'text-slate-400'
                   )}
                 >
                   {ach.title}
                 </h4>
-                <p className="mt-1 text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+                <p className="mt-1 text-xs text-slate-400 line-clamp-2 leading-relaxed">
                   {ach.description}
                 </p>
               </div>
 
               {/* Progress Footer */}
-              <div className="mt-3.5 pt-2.5 border-t border-border/40">
-                <div className="flex items-center justify-between text-[11px] font-bold mb-1">
-                  <span className="text-muted-foreground">
+              <div className="space-y-1.5 pt-2 border-t border-white/5">
+                <div className="flex items-center justify-between text-[10px] font-medium text-slate-400">
+                  <span>
                     Progreso: {ach.progress} / {ach.maxProgress}
                   </span>
-                  <span className={cn(isUnlocked ? 'text-amber-600 dark:text-amber-400' : 'text-muted-foreground')}>
+                  <span className={cn(isUnlocked ? 'font-bold text-purple-300' : '')}>
                     {pct}%
                   </span>
                 </div>
-                <ProgressBar
-                  value={ach.progress}
-                  max={ach.maxProgress}
-                  className="h-1.5"
-                  barClassName={
-                    isUnlocked
-                      ? 'bg-gradient-to-r from-amber-500 to-yellow-400'
-                      : 'bg-primary/70'
-                  }
-                />
+                <div className="w-full bg-white/[0.05] rounded-full h-1.5 overflow-hidden">
+                  <div
+                    className={cn(
+                      'h-full rounded-full transition-all duration-300',
+                      isUnlocked ? 'bg-purple-500' : 'bg-slate-600'
+                    )}
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
               </div>
             </Card>
           )

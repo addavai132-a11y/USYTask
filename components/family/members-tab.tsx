@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Plus, Star, Flame, Settings, PlusCircle, MinusCircle, User, ShieldCheck, Sparkles, X, Check, Award } from 'lucide-react'
+import { Plus, Settings, PlusCircle, MinusCircle, ShieldCheck, Sparkles, Star, Flame } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { MemberAvatar } from '@/components/ui/member-avatar'
 import { EmptyState } from '@/components/ui/empty-state'
@@ -9,12 +9,12 @@ import { BottomSheet } from '@/components/ui/bottom-sheet'
 import { ProgressBar } from '@/components/ui/progress-bar'
 import { useToast } from '@/components/ui/toast'
 import { useApp } from '@/components/app/app-context'
-import { MEMBER_COLORS, type Member, type FamilyRole } from '@/types'
+import { MEMBER_COLORS, type Member } from '@/types'
 import { cn } from '@/lib/utils'
 
 export function MembersTab() {
   const { toast } = useToast()
-  const { members, currentMember, addMember, updateMember, adjustMemberPoints, openQuickAdd } = useApp()
+  const { members, currentMember, addMember, updateMember, adjustMemberPoints } = useApp()
 
   // Modals state
   const [editingMember, setEditingMember] = useState<Member | null>(null)
@@ -28,7 +28,6 @@ export function MembersTab() {
 
   // Add Member form state
   const [newMemberName, setNewMemberName] = useState('')
-  const [newMemberRole, setNewMemberRole] = useState<'adult' | 'child'>('adult')
   const [newMemberColorIdx, setNewMemberColorIdx] = useState(0)
 
   // Edit Member form state
@@ -49,7 +48,7 @@ export function MembersTab() {
     adjustMemberPoints(pointsAdjustMember.id, delta, pointsReason.trim() || 'Ajuste manual')
     toast(
       `${delta >= 0 ? '+' : ''}${delta} pts para ${pointsAdjustMember.name}`,
-      delta >= 0 ? '⭐' : '📉'
+      delta >= 0 ? '✨' : '📉'
     )
     setPointsAdjustMember(null)
   }
@@ -77,46 +76,44 @@ export function MembersTab() {
         .toUpperCase()
         .slice(0, 2),
     })
-    toast('Perfil de miembro actualizado', '👤')
+    toast('Perfil de miembro actualizado', '✅')
     setEditingMember(null)
   }
 
   const handleCreateMember = () => {
     if (!newMemberName.trim()) return
     addMember(newMemberName.trim(), newMemberColorIdx)
-    toast(`¡Bienvenido/a ${newMemberName}!`, '🎉')
+    toast(`Miembro ${newMemberName} añadido`, '✅')
     setNewMemberName('')
-    setNewMemberRole('adult')
     setIsAddingMember(false)
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      {/* Header action */}
-      <div className="flex items-center justify-between">
+    <div className="w-full max-w-2xl mx-auto space-y-4">
+      {/* ── Header Bar ── */}
+      <div className="w-full flex items-center justify-between p-3.5 px-5 bg-white/[0.03] border border-white/10 rounded-2xl backdrop-blur-xl">
         <div>
-          <h3 className="text-base font-extrabold tracking-tight text-foreground">Integrantes del Hogar</h3>
-          <p className="text-xs text-muted-foreground font-medium">Gestiona roles, rachas y balances de puntos</p>
+          <span className="text-sm font-bold text-white">Integrantes ({members.length})</span>
+          <p className="text-xs text-slate-400">Roles, progreso y puntos acumulados</p>
         </div>
         <button
           onClick={() => setIsAddingMember(true)}
-          className="flex items-center gap-1.5 rounded-xl bg-primary text-primary-foreground px-3.5 py-2 text-xs font-bold shadow-soft transition-transform active:scale-95 hover:opacity-90 dark:bg-gradient-to-r dark:from-purple-600 dark:to-indigo-600"
+          className="flex items-center gap-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white px-3.5 py-1.5 text-xs font-bold transition-all active:scale-95 shadow-sm"
         >
-          <Plus className="size-4 stroke-[2.5]" />
-          <span>Añadir miembro</span>
+          <Plus className="size-3.5" />
+          <span>+ Añadir miembro</span>
         </button>
       </div>
 
       {members.length === 0 ? (
         <EmptyState
           emoji="👥"
-          title="Sin miembros en este grupo"
-          description="Añade a los integrantes de tu hogar para empezar a ganar puntos y cumplir retos."
+          title="Sin miembros registrados en este espacio."
           action="+ Añadir primer miembro"
           onAction={() => setIsAddingMember(true)}
         />
       ) : (
-        <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {members.map((m) => {
             const level = Math.floor((m.points || 0) / 200) + 1
             const progressToNextLevel = ((m.points || 0) % 200) / 2
@@ -127,94 +124,80 @@ export function MembersTab() {
               <Card
                 key={m.id}
                 className={cn(
-                  'relative overflow-hidden p-4 transition-all hover:border-primary/40',
-                  m.id === currentMember?.id && 'ring-1 ring-primary/50'
+                  'p-4 bg-white/[0.03] border border-white/10 hover:border-purple-500/30 transition-all rounded-2xl flex flex-col justify-between gap-3 shadow-sm',
+                  m.id === currentMember?.id && 'ring-1 ring-purple-500/40'
                 )}
               >
-                {/* Top Badge: Level & Role */}
-                <div className="flex items-start justify-between gap-2 mb-3">
+                {/* Top Row: Avatar, Name, Role & Action Buttons */}
+                <div className="flex items-start justify-between gap-2">
                   <div className="flex items-center gap-3">
-                    <div className="relative">
-                      <MemberAvatar member={m} size="lg" ring />
-                      <span className="absolute -bottom-1 -right-1 flex size-5 items-center justify-center rounded-full bg-amber-500 text-[10px] font-black text-black ring-2 ring-card shadow-sm">
-                        {level}
-                      </span>
-                    </div>
+                    <MemberAvatar member={m} size="md" ring />
                     <div>
                       <div className="flex items-center gap-1.5">
-                        <h4 className="font-black text-base text-foreground tracking-tight">{m.name}</h4>
+                        <h4 className="font-bold text-sm text-white tracking-tight">{m.name}</h4>
                         {m.isOwner && (
-                          <span title="Propietario del espacio">
-                            <ShieldCheck className="size-3.5 text-primary" />
+                          <span title="Propietario">
+                            <ShieldCheck className="size-3.5 text-purple-400" />
                           </span>
                         )}
                       </div>
-                      <span
-                        className={cn(
-                          'inline-block mt-0.5 rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider',
-                          isAdult
-                            ? 'bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/20'
-                            : isChild
-                            ? 'bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/20'
-                            : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
-                        )}
-                      >
-                        {isAdult ? 'Adulto' : isChild ? 'Hijo/a' : 'Invitado'}
-                      </span>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider px-1.5 py-0.5 rounded bg-white/[0.04] border border-white/5">
+                          {isAdult ? 'Adulto' : isChild ? 'Hijo/a' : 'Invitado'}
+                        </span>
+                        <span className="text-[10px] font-semibold text-purple-300">
+                          Nivel {level}
+                        </span>
+                      </div>
                     </div>
                   </div>
 
-                  {/* Settings / Adjust buttons */}
                   <div className="flex items-center gap-1">
                     <button
                       onClick={() => handleOpenAdjustPoints(m)}
-                      className="flex size-8 items-center justify-center rounded-xl bg-secondary/80 text-foreground transition-all hover:bg-secondary active:scale-90"
-                      title="Sumar o restar puntos"
+                      className="p-1.5 rounded-lg text-slate-400 hover:bg-white/10 hover:text-white transition-colors"
+                      title="Ajustar puntos"
                     >
-                      <Sparkles className="size-4 text-amber-500" />
+                      <Sparkles className="size-3.5 text-purple-400" />
                     </button>
                     <button
                       onClick={() => handleOpenEditMember(m)}
-                      className="flex size-8 items-center justify-center rounded-xl bg-secondary/80 text-muted-foreground transition-all hover:bg-secondary hover:text-foreground active:scale-90"
+                      className="p-1.5 rounded-lg text-slate-400 hover:bg-white/10 hover:text-white transition-colors"
                       title="Ajustes de perfil"
                     >
-                      <Settings className="size-4" />
+                      <Settings className="size-3.5" />
                     </button>
                   </div>
                 </div>
 
-                {/* Stats row: Points & Streak */}
-                <div className="grid grid-cols-2 gap-2 my-2.5 rounded-2xl bg-secondary/40 p-2.5 border border-border/40">
-                  <div className="flex items-center gap-2">
-                    <div className="flex size-7 items-center justify-center rounded-lg bg-amber-500/20 text-amber-500">
-                      <Star className="size-4 fill-amber-500" />
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-bold uppercase text-muted-foreground leading-none">Puntos</p>
-                      <p className="text-sm font-black text-foreground mt-0.5 tabular-nums">{m.points || 0} pts</p>
-                    </div>
+                {/* Points & Streak Metric Box */}
+                <div className="grid grid-cols-2 gap-2 p-2.5 rounded-xl bg-white/[0.02] border border-white/5 text-xs">
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-medium text-slate-400 uppercase">Puntos</span>
+                    <span className="text-sm font-bold text-purple-300 tabular-nums">
+                      {m.points || 0} pts
+                    </span>
                   </div>
-
-                  <div className="flex items-center gap-2">
-                    <div className="flex size-7 items-center justify-center rounded-lg bg-orange-500/20 text-orange-500">
-                      <Flame className="size-4 fill-orange-500" />
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-bold uppercase text-muted-foreground leading-none">Racha</p>
-                      <p className="text-sm font-black text-foreground mt-0.5 tabular-nums">
-                        {m.streak || m.streakDays || 0} días
-                      </p>
-                    </div>
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-medium text-slate-400 uppercase">Racha</span>
+                    <span className="text-sm font-bold text-white tabular-nums">
+                      {m.streak || m.streakDays || 0} días
+                    </span>
                   </div>
                 </div>
 
-                {/* Level progress */}
-                <div className="mt-2.5">
-                  <div className="flex items-center justify-between text-[10px] font-bold text-muted-foreground mb-1">
+                {/* Level Progress */}
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between text-[10px] font-medium text-slate-400">
                     <span>Nivel {level}</span>
                     <span>{200 - ((m.points || 0) % 200)} pts para Nivel {level + 1}</span>
                   </div>
-                  <ProgressBar value={progressToNextLevel} max={100} className="h-1.5" />
+                  <div className="w-full bg-white/[0.05] rounded-full h-1.5 overflow-hidden">
+                    <div
+                      className="h-full bg-purple-500 rounded-full transition-all duration-300"
+                      style={{ width: `${progressToNextLevel}%` }}
+                    />
+                  </div>
                 </div>
               </Card>
             )
@@ -222,21 +205,21 @@ export function MembersTab() {
         </div>
       )}
 
-      {/* MODAL: AJUSTAR PUNTOS (+ / -) */}
+      {/* ── MODAL: AJUSTAR PUNTOS ── */}
       <BottomSheet
         open={Boolean(pointsAdjustMember)}
         onClose={() => setPointsAdjustMember(null)}
         title={pointsAdjustMember ? `Ajustar puntos · ${pointsAdjustMember.name}` : ''}
       >
         {pointsAdjustMember && (
-          <div className="flex flex-col gap-4">
-            <div className="flex items-center justify-center gap-2 rounded-2xl bg-secondary/50 p-1 border border-border">
+          <div className="flex flex-col gap-4 text-xs">
+            <div className="flex items-center justify-center gap-2 rounded-2xl bg-white/[0.03] p-1 border border-white/10">
               <button
                 type="button"
                 onClick={() => setIsSubtract(false)}
                 className={cn(
                   'flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-bold transition-all',
-                  !isSubtract ? 'bg-emerald-600 text-white shadow-soft' : 'text-muted-foreground hover:text-foreground'
+                  !isSubtract ? 'bg-purple-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'
                 )}
               >
                 <PlusCircle className="size-4" />
@@ -247,7 +230,7 @@ export function MembersTab() {
                 onClick={() => setIsSubtract(true)}
                 className={cn(
                   'flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-bold transition-all',
-                  isSubtract ? 'bg-rose-600 text-white shadow-soft' : 'text-muted-foreground hover:text-foreground'
+                  isSubtract ? 'bg-white/10 text-white border border-white/10' : 'text-slate-400 hover:text-white'
                 )}
               >
                 <MinusCircle className="size-4" />
@@ -257,7 +240,7 @@ export function MembersTab() {
 
             {/* Quick point presets */}
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-bold text-muted-foreground">Cantidad de puntos</label>
+              <label className="font-bold text-slate-400">Cantidad de puntos</label>
               <div className="flex gap-2">
                 {[25, 50, 100, 250].map((amt) => (
                   <button
@@ -265,10 +248,10 @@ export function MembersTab() {
                     type="button"
                     onClick={() => setPointsDelta(amt)}
                     className={cn(
-                      'flex-1 rounded-xl py-2 text-xs font-black transition-all border',
+                      'flex-1 rounded-xl py-2 text-xs font-bold transition-all border',
                       pointsDelta === amt
-                        ? 'border-primary bg-primary/15 text-primary shadow-sm'
-                        : 'border-border bg-secondary/40 text-muted-foreground hover:bg-secondary'
+                        ? 'border-purple-500/50 bg-purple-500/20 text-purple-200'
+                        : 'border-white/10 bg-white/[0.02] text-slate-400 hover:bg-white/[0.06] hover:text-white'
                     )}
                   >
                     {amt}
@@ -281,20 +264,20 @@ export function MembersTab() {
                 max={5000}
                 value={pointsDelta || ''}
                 onChange={(e) => setPointsDelta(Number(e.target.value))}
-                className="mt-1 w-full rounded-xl border border-border bg-secondary/50 py-2.5 px-3 text-sm font-bold text-foreground outline-none focus:border-primary focus:bg-card transition-colors"
+                className="mt-1 w-full rounded-xl border border-white/10 bg-white/[0.04] py-2.5 px-3 text-sm font-bold text-white outline-none focus:border-purple-500"
                 placeholder="Cantidad personalizada"
               />
             </div>
 
             {/* Reason input */}
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-bold text-muted-foreground">Motivo / Concepto (opcional)</label>
+              <label className="font-bold text-slate-400">Motivo / Concepto (opcional)</label>
               <input
                 type="text"
                 value={pointsReason}
                 onChange={(e) => setPointsReason(e.target.value)}
-                placeholder="Ej. Ayudó a recoger la compra, Deberes a tiempo..."
-                className="w-full rounded-xl border border-border bg-secondary/50 py-2.5 px-3 text-xs font-semibold text-foreground outline-none focus:border-primary focus:bg-card transition-colors"
+                placeholder="Ej. Colaboración en el hogar, tarea cumplida..."
+                className="w-full rounded-xl border border-white/10 bg-white/[0.04] py-2.5 px-3 text-xs font-medium text-white outline-none focus:border-purple-500"
               />
             </div>
 
@@ -302,83 +285,59 @@ export function MembersTab() {
               <button
                 type="button"
                 onClick={() => setPointsAdjustMember(null)}
-                className="rounded-xl px-4 py-2.5 text-xs font-bold text-muted-foreground hover:bg-secondary"
+                className="rounded-xl px-4 py-2 text-xs font-bold text-slate-400 hover:bg-white/10"
               >
                 Cancelar
               </button>
               <button
                 type="button"
                 onClick={handleSaveAdjustPoints}
-                className={cn(
-                  'rounded-xl px-5 py-2.5 text-xs font-bold text-white shadow-soft transition-transform active:scale-95',
-                  isSubtract ? 'bg-rose-600 hover:bg-rose-700' : 'bg-emerald-600 hover:bg-emerald-700'
-                )}
+                className="rounded-xl bg-purple-600 hover:bg-purple-500 px-5 py-2 text-xs font-bold text-white shadow-sm transition-all active:scale-95"
               >
-                Confirmar {isSubtract ? `-${pointsDelta}` : `+${pointsDelta}`} pts
+                Confirmar ajuste
               </button>
             </div>
           </div>
         )}
       </BottomSheet>
 
-      {/* MODAL: EDITAR MIEMBRO */}
+      {/* ── MODAL: EDITAR MIEMBRO ── */}
       <BottomSheet
         open={Boolean(editingMember)}
         onClose={() => setEditingMember(null)}
-        title="Editar perfil del miembro"
+        title={editingMember ? `Editar · ${editingMember.name}` : ''}
       >
         {editingMember && (
-          <div className="flex flex-col gap-4">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-bold text-muted-foreground">Nombre</label>
+          <div className="flex flex-col gap-3.5 text-xs">
+            <div className="flex flex-col gap-1">
+              <label className="font-bold text-slate-400">Nombre</label>
               <input
                 type="text"
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
-                className="w-full rounded-xl border border-border bg-secondary/50 py-2.5 px-3 text-sm font-bold text-foreground outline-none focus:border-primary focus:bg-card"
+                className="w-full rounded-xl border border-white/10 bg-white/[0.04] py-2.5 px-3 text-xs font-medium text-white outline-none focus:border-purple-500"
               />
             </div>
 
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-bold text-muted-foreground">Rol familiar</label>
-              <div className="grid grid-cols-3 gap-2">
+            <div className="flex flex-col gap-1">
+              <label className="font-bold text-slate-400">Rol en el hogar</label>
+              <div className="grid grid-cols-2 gap-2">
                 {[
                   { id: 'adult', label: 'Adulto' },
                   { id: 'child', label: 'Hijo/a' },
-                  { id: 'invitado', label: 'Invitado' },
                 ].map((r) => (
                   <button
                     key={r.id}
                     type="button"
                     onClick={() => setEditRole(r.id)}
                     className={cn(
-                      'rounded-xl py-2 text-xs font-bold transition-all border',
+                      'rounded-xl py-2.5 text-xs font-bold border transition-all',
                       editRole === r.id
-                        ? 'border-primary bg-primary text-primary-foreground shadow-sm'
-                        : 'border-border bg-secondary/40 text-muted-foreground hover:bg-secondary'
+                        ? 'border-purple-500/50 bg-purple-500/20 text-purple-200'
+                        : 'border-white/10 bg-white/[0.02] text-slate-400 hover:bg-white/[0.06] hover:text-white'
                     )}
                   >
                     {r.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-bold text-muted-foreground">Color de avatar</label>
-              <div className="flex flex-wrap gap-2.5 p-1">
-                {MEMBER_COLORS.map((c, idx) => (
-                  <button
-                    key={c.name}
-                    type="button"
-                    onClick={() => setEditColorIdx(idx)}
-                    className={cn(
-                      'size-8 rounded-full transition-transform flex items-center justify-center',
-                      editColorIdx === idx ? 'ring-2 ring-primary scale-110' : 'opacity-80 hover:opacity-100'
-                    )}
-                    style={{ backgroundColor: c.value }}
-                  >
-                    {editColorIdx === idx && <Check className="size-4 text-white stroke-[3]" />}
                   </button>
                 ))}
               </div>
@@ -388,14 +347,14 @@ export function MembersTab() {
               <button
                 type="button"
                 onClick={() => setEditingMember(null)}
-                className="rounded-xl px-4 py-2.5 text-xs font-bold text-muted-foreground hover:bg-secondary"
+                className="rounded-xl px-4 py-2 text-xs font-bold text-slate-400 hover:bg-white/10"
               >
                 Cancelar
               </button>
               <button
                 type="button"
                 onClick={handleSaveEditMember}
-                className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-xs font-bold shadow-soft transition-transform active:scale-95"
+                className="rounded-xl bg-purple-600 hover:bg-purple-500 px-5 py-2 text-xs font-bold text-white shadow-sm transition-all active:scale-95"
               >
                 Guardar cambios
               </button>
@@ -404,90 +363,39 @@ export function MembersTab() {
         )}
       </BottomSheet>
 
-      {/* MODAL: AÑADIR MIEMBRO */}
+      {/* ── MODAL: AÑADIR MIEMBRO ── */}
       <BottomSheet
         open={isAddingMember}
         onClose={() => setIsAddingMember(false)}
-        title="Añadir integrante al hogar"
+        title="Añadir nuevo miembro"
       >
-        <div className="flex flex-col gap-4">
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-bold text-muted-foreground">Nombre completo</label>
+        <div className="flex flex-col gap-3.5 text-xs">
+          <div className="flex flex-col gap-1">
+            <label className="font-bold text-slate-400">Nombre del integrante <span className="text-red-400">*</span></label>
             <input
               type="text"
               value={newMemberName}
               onChange={(e) => setNewMemberName(e.target.value)}
-              placeholder="Ej. Sofía, Papá, Lucas..."
+              placeholder="Ej. Sofía, David, Papá..."
               autoFocus
-              className="w-full rounded-xl border border-border bg-secondary/50 py-2.5 px-3 text-sm font-bold text-foreground outline-none focus:border-primary focus:bg-card"
+              className="w-full rounded-xl border border-white/10 bg-white/[0.04] py-2.5 px-3 text-xs font-medium text-white outline-none focus:border-purple-500"
             />
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-bold text-muted-foreground">Rol familiar</label>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => setNewMemberRole('adult')}
-                className={cn(
-                  'rounded-xl py-2 text-xs font-bold transition-all border',
-                  newMemberRole === 'adult'
-                    ? 'border-primary bg-primary text-primary-foreground shadow-sm'
-                    : 'border-border bg-secondary/40 text-muted-foreground hover:bg-secondary'
-                )}
-              >
-                Adulto
-              </button>
-              <button
-                type="button"
-                onClick={() => setNewMemberRole('child')}
-                className={cn(
-                  'rounded-xl py-2 text-xs font-bold transition-all border',
-                  newMemberRole === 'child'
-                    ? 'border-primary bg-primary text-primary-foreground shadow-sm'
-                    : 'border-border bg-secondary/40 text-muted-foreground hover:bg-secondary'
-                )}
-              >
-                Hijo/a
-              </button>
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-bold text-muted-foreground">Color de avatar</label>
-            <div className="flex flex-wrap gap-2.5 p-1">
-              {MEMBER_COLORS.map((c, idx) => (
-                <button
-                  key={c.name}
-                  type="button"
-                  onClick={() => setNewMemberColorIdx(idx)}
-                  className={cn(
-                    'size-8 rounded-full transition-transform flex items-center justify-center',
-                    newMemberColorIdx === idx ? 'ring-2 ring-primary scale-110' : 'opacity-80 hover:opacity-100'
-                  )}
-                  style={{ backgroundColor: c.value }}
-                >
-                  {newMemberColorIdx === idx && <Check className="size-4 text-white stroke-[3]" />}
-                </button>
-              ))}
-            </div>
           </div>
 
           <div className="mt-2 flex gap-2 justify-end">
             <button
               type="button"
               onClick={() => setIsAddingMember(false)}
-              className="rounded-xl px-4 py-2.5 text-xs font-bold text-muted-foreground hover:bg-secondary"
+              className="rounded-xl px-4 py-2 text-xs font-bold text-slate-400 hover:bg-white/10"
             >
               Cancelar
             </button>
             <button
               type="button"
               onClick={handleCreateMember}
-              disabled={!newMemberName.trim()}
-              className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-xs font-bold shadow-soft transition-transform active:scale-95 disabled:opacity-50"
+              className="rounded-xl bg-purple-600 hover:bg-purple-500 px-5 py-2 text-xs font-bold text-white shadow-sm transition-all active:scale-95"
             >
-              Crear integrante
+              Añadir miembro
             </button>
           </div>
         </div>

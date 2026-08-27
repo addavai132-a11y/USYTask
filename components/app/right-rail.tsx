@@ -43,7 +43,6 @@ export function RightRail() {
           <EmptyState
             emoji="👥"
             title="Sin miembros en el grupo"
-            description="Invita a los integrantes de tu hogar"
             action="Invitar miembro"
             onAction={() => openQuickAdd('miembro', { hideTabs: true })}
           />

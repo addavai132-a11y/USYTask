@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Plus, Search, Filter, Trash2, Edit2, X, Calendar, User, ShoppingCart, AlertCircle } from 'lucide-react'
+import { Plus, Search, Filter, Trash2, Edit2, X, Calendar, User, ShoppingCart } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { CustomSelect } from '@/components/ui/custom-select'
 import { MemberFilterDropdown } from '@/components/shared/member-filter-dropdown'
@@ -120,7 +120,7 @@ export function ExpensesSection() {
         paidByMemberIds: memberIds,
         isRecurring,
       })
-      toast('Gasto registrado', '💸')
+      toast('Gasto registrado', '✅')
     }
 
     setIsModalOpen(false)
@@ -129,130 +129,93 @@ export function ExpensesSection() {
   return (
     <div className="w-full max-w-2xl mx-auto space-y-4">
       {/* ── Barra Resumen Superior Glassmorphism ── */}
-      <div className="w-full flex items-center justify-between p-3.5 px-5 bg-white/[0.03] border border-white/10 rounded-2xl backdrop-blur-xl">
-        <div className="flex items-center gap-3">
-          <span className="text-xl font-bold text-white tabular-nums">{formatCurrency(totalFilteredSum)}</span>
-          <span className="text-xs text-slate-400">gastos del mes ({filtered.length})</span>
+      <div className="w-full flex items-center justify-between p-3.5 px-5 bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 rounded-2xl backdrop-blur-xl shadow-sm">
+        <div>
+          <span className="text-base sm:text-lg font-bold text-slate-900 dark:text-white tabular-nums">
+            {formatCurrency(totalFilteredSum)}
+          </span>
+          <p className="text-xs text-slate-500 dark:text-slate-400">Total en {filtered.length} gastos</p>
         </div>
         <button
           onClick={handleOpenCreate}
-          className="flex items-center gap-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white px-3.5 py-1.5 text-xs font-bold transition-all active:scale-95 shadow-sm"
+          className="flex items-center gap-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white px-3.5 py-1.5 text-xs font-bold transition-all active:scale-95 shadow-sm"
         >
           <Plus className="size-3.5" />
           <span>+ Registrar gasto</span>
         </button>
       </div>
 
-      {/* Top Action & Search Bar */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
+      {/* ── Search & Filter Controls ── */}
+      <div className="flex flex-col sm:flex-row gap-2">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-slate-400" />
           <input
+            type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar gasto por concepto..."
-            className="w-full rounded-2xl border border-purple-500/20 bg-white/[0.04] py-2 px-3 pl-8 text-xs font-semibold text-white outline-none focus:border-purple-500"
+            placeholder="Buscar por concepto o categoría..."
+            className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/[0.03] pl-9 pr-3 py-2 text-xs font-medium text-slate-900 dark:text-white outline-none focus:border-purple-500 shadow-sm"
           />
         </div>
 
-        <CustomSelect<string>
-          value={categoryFilter}
-          onChange={setCategoryFilter}
-          options={[
-            { id: 'all', label: 'Todas las categorías' },
-            ...EXPENSE_CATEGORIES.map((c) => ({
-              id: c,
-              label: `${expenseCategoryMeta[c]?.icon || '📦'} ${c.charAt(0).toUpperCase() + c.slice(1)}`,
-            })),
-          ]}
-          className="w-full sm:w-44"
-        />
+        <div className="flex gap-2">
+          <div className="w-40 shrink-0">
+            <CustomSelect<string>
+              value={categoryFilter}
+              onChange={(val) => setCategoryFilter(val)}
+              options={[
+                { value: 'all', label: 'Categorías' },
+                ...EXPENSE_CATEGORIES.map((c) => ({ value: c, label: expenseCategoryMeta[c].label })),
+              ]}
+            />
+          </div>
 
-        <MemberFilterDropdown
-          members={members}
-          value={memberFilter}
-          onChange={setMemberFilter}
-          className="w-full sm:w-40"
-        />
+          <div className="w-36 shrink-0">
+            <MemberFilterDropdown
+              members={members}
+              value={memberFilter}
+              onChange={(val) => setMemberFilter(val)}
+            />
+          </div>
+        </div>
       </div>
 
       {/* Expenses List */}
       {filtered.length === 0 ? (
         <EmptyState
-          emoji="💸"
-          title="No hay gastos registrados"
-          description="Añade los gastos diarios, compras del supermercado o compras variables."
-          action="+ Registrar primer gasto"
+          emoji="💳"
+          title="Sin gastos registrados con este filtro."
+          action="+ Registrar gasto"
           onAction={handleOpenCreate}
         />
       ) : (
-        <div className="flex flex-col gap-2.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {filtered.map((exp) => {
-            const meta = expenseCategoryMeta[exp.category] || { label: exp.category, icon: '📦', color: 'gray' }
-            const isCustom = exp.category === 'otros' && exp.customCategory
+            const meta = expenseCategoryMeta[exp.category] || { icon: '✨', label: exp.category }
             const memberIds = getExpenseMemberIds(exp)
-            const paidMembers = memberIds.map((id) => getMemberById(id)).filter(Boolean)
+            const memberList = memberIds.map((id) => getMemberById(id)).filter(Boolean)
+            const displayCat = exp.category === 'otros' && exp.customCategory ? exp.customCategory : meta.label
 
             return (
               <Card
                 key={exp.id}
-                className="p-3.5 flex flex-col gap-2 bg-white/[0.03] border-white/10 hover:border-purple-500/30 transition-all rounded-2xl"
+                className="p-3.5 sm:p-4 border border-slate-200 dark:border-white/10 bg-white dark:bg-white/[0.03] hover:border-purple-500/30 transition-all flex flex-col justify-between gap-3 shadow-sm rounded-2xl"
               >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-start gap-3">
-                    <div className="flex size-10 items-center justify-center rounded-2xl bg-rose-500/10 text-rose-500 shrink-0 text-base">
-                      {meta.icon}
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-bold text-white">{exp.title}</h4>
-                      <div className="flex flex-wrap items-center gap-2 mt-1">
-                        <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-slate-300">
-                          {isCustom ? exp.customCategory : meta.label}
-                        </span>
-
-                        <span className="text-xs text-slate-400 flex items-center gap-1">
-                          <Calendar className="size-3" />
-                          {exp.date}
-                        </span>
-
-                        {exp.isRecurring && (
-                          <span className="text-[10px] font-bold text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-1.5 py-0.5 rounded-md">
-                            Recurrente
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col items-end gap-1">
-                    <span className="text-base font-black text-rose-400 tabular-nums">
-                      -{formatCurrency(exp.amount)}
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-white tracking-tight leading-snug">
+                      {exp.title}
+                    </h4>
+                    <span className="inline-block mt-1 px-2 py-0.5 rounded bg-slate-100 dark:bg-white/[0.04] border border-slate-200 dark:border-white/5 text-[10px] font-semibold capitalize text-slate-600 dark:text-slate-400">
+                      {displayCat} {exp.isRecurring && '· Fijo'}
                     </span>
-                  </div>
-                </div>
-
-                {/* Bottom Row: Associated Members & Actions */}
-                <div className="flex items-center justify-between pt-2 border-t border-white/5 text-xs">
-                  <div className="flex items-center gap-1.5 text-slate-400">
-                    <span className="text-[11px]">Pagado por:</span>
-                    {paidMembers.length === 0 ? (
-                      <span className="text-[11px] italic">General del hogar</span>
-                    ) : (
-                      <div className="flex items-center -space-x-1.5">
-                        {paidMembers.map((m) => (
-                          <div key={m!.id} className="relative group/m" title={m!.name}>
-                            <MemberAvatar member={m!} size="sm" ring />
-                          </div>
-                        ))}
-                      </div>
-                    )}
                   </div>
 
                   <div className="flex items-center gap-1">
                     <button
                       onClick={() => handleOpenEdit(exp)}
-                      className="rounded-lg p-1.5 text-slate-400 hover:bg-white/10 hover:text-white transition-colors"
-                      title="Editar gasto"
+                      className="p-1 rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white transition-colors"
+                      title="Editar"
                     >
                       <Edit2 className="size-3.5" />
                     </button>
@@ -260,22 +223,41 @@ export function ExpensesSection() {
                       type="button"
                       onClick={() => {
                         confirmDelete({
-                          title: '¿Eliminar este gasto?',
+                          title: '¿Eliminar gasto?',
                           itemName: exp.title,
-                          description: 'Se restará del balance total y desaparecerá del historial de gastos.',
                           confirmText: 'Eliminar Gasto',
                           onConfirm: () => {
                             deleteExpense(exp.id)
-                            toast(`"${exp.title}" eliminado`, '🗑️')
+                            toast('Gasto eliminado', '🗑️')
                           },
                         })
                       }}
-                      className="rounded-lg p-1.5 text-slate-400 hover:bg-rose-500/10 hover:text-rose-400 transition-colors"
-                      title="Eliminar gasto"
+                      className="p-1 rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-rose-600 transition-colors"
+                      title="Eliminar"
                     >
                       <Trash2 className="size-3.5" />
                     </button>
                   </div>
+                </div>
+
+                <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-white/5 text-xs">
+                  <div className="flex items-center gap-1.5">
+                    {memberList.length > 0 ? (
+                      <div className="flex items-center -space-x-1.5">
+                        {memberList.map((m) => (
+                          <MemberAvatar key={m!.id} member={m!} size="sm" />
+                        ))}
+                      </div>
+                    ) : (
+                      <User className="size-3.5 text-slate-400" />
+                    )}
+                    <span className="text-xs text-slate-500 dark:text-slate-400 font-medium truncate max-w-[120px]">
+                      {exp.date ? new Date(exp.date).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }) : 'Mes actual'}
+                    </span>
+                  </div>
+                  <span className="text-sm font-bold text-slate-900 dark:text-white tabular-nums">
+                    {formatCurrency(exp.amount)}
+                  </span>
                 </div>
               </Card>
             )
@@ -283,114 +265,115 @@ export function ExpensesSection() {
         </div>
       )}
 
-      {/* Modal Creador / Editor */}
+      {/* ── MODAL CREADOR / EDITOR ── */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="w-full max-w-md rounded-3xl border border-border bg-card p-6 shadow-2xl animate-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-black tracking-tight">
-                {editingId ? 'Editar Gasto' : 'Registrar Nuevo Gasto'}
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 dark:bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="w-full max-w-md rounded-2xl border border-slate-200 dark:border-purple-500/20 bg-white dark:bg-[#0e0d1d] p-5 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                {editingId ? 'Editar Gasto' : 'Registrar Gasto'}
               </h3>
-              <button onClick={() => setIsModalOpen(false)} className="rounded-full p-1 text-muted-foreground hover:bg-secondary">
-                <X className="size-5" />
+              <button onClick={() => setIsModalOpen(false)} className="rounded-full p-1 text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10">
+                <X className="size-4" />
               </button>
             </div>
 
-            <div className="flex flex-col gap-3.5 text-xs">
+            <div className="flex flex-col gap-3 text-xs">
               <div className="flex flex-col gap-1">
-                <label className="font-bold text-muted-foreground">Concepto / Título del Gasto <span className="text-red-500">*</span></label>
+                <label className="font-semibold text-slate-500 dark:text-slate-400">Concepto / Título <span className="text-red-500">*</span></label>
                 <input
+                  type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Ej. Compra semanal Mercadona, Gasolina..."
-                  autoFocus
-                  className="w-full rounded-2xl border border-border bg-secondary/50 py-3 px-4 text-sm font-semibold outline-none focus:border-primary focus:bg-card"
+                  placeholder="Ej: Compra Mercadona, Gasolina..."
+                  className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-white/[0.04] py-2 px-3 text-xs font-medium text-slate-900 dark:text-white outline-none focus:border-purple-500"
                 />
               </div>
 
-              <div className="flex gap-3">
-                <div className="flex-1 flex flex-col gap-1">
-                  <label className="font-bold text-muted-foreground">Importe (€) <span className="text-red-500">*</span></label>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="flex flex-col gap-1">
+                  <label className="font-semibold text-slate-500 dark:text-slate-400">Importe (€) <span className="text-red-500">*</span></label>
                   <input
                     type="number"
-                    step="0.01"
+                    step="any"
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
                     placeholder="0.00"
-                    className="w-full rounded-2xl border border-border bg-secondary/50 py-3 px-4 text-sm font-semibold outline-none focus:border-primary focus:bg-card"
+                    className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-white/[0.04] py-2 px-3 text-xs font-medium text-slate-900 dark:text-white outline-none focus:border-purple-500"
                   />
                 </div>
 
-                <div className="flex-1 flex flex-col gap-1">
-                  <label className="font-bold text-muted-foreground">Fecha del gasto</label>
-                  <input
-                    type="date"
-                    value={date}
-                    onChange={(e) => setDate(e.target.value)}
-                    className="w-full rounded-2xl border border-border bg-secondary/50 py-2.5 px-3 text-xs font-semibold outline-none focus:border-primary"
+                <div className="flex flex-col gap-1">
+                  <label className="font-semibold text-slate-500 dark:text-slate-400">Categoría</label>
+                  <CustomSelect<ExpenseCategory>
+                    value={category}
+                    onChange={(val) => setCategory(val)}
+                    options={EXPENSE_CATEGORIES.map((c) => ({
+                      value: c,
+                      label: expenseCategoryMeta[c].label,
+                    }))}
                   />
                 </div>
               </div>
 
-              {/* Multi-Member Selector */}
-              <MemberMultiSelect
-                members={members}
-                selectedIds={selectedMemberIds}
-                onChange={setSelectedMemberIds}
-                label="Miembros pagadores / asociados"
-              />
-
-              <div className="flex flex-col gap-1">
-                <label className="font-bold text-muted-foreground text-xs">Categoría</label>
-                <CustomSelect<ExpenseCategory>
-                  value={category}
-                  onChange={setCategory}
-                  options={EXPENSE_CATEGORIES.map((cat) => ({
-                    value: cat,
-                    label: expenseCategoryMeta[cat].label,
-                    icon: expenseCategoryMeta[cat].icon,
-                  }))}
-                  className="w-full"
-                />
-              </div>
-
-              {/* Custom Category Input if "Otros" */}
               {category === 'otros' && (
-                <div className="flex flex-col gap-1 animate-fade-in">
-                  <label className="font-bold text-muted-foreground">Especifica la categoría/concepto <span className="text-red-500">*</span></label>
+                <div className="flex flex-col gap-1">
+                  <label className="font-semibold text-slate-500 dark:text-slate-400">Especificar categoría</label>
                   <input
+                    type="text"
                     value={customCategoryInput}
                     onChange={(e) => setCustomCategoryInput(e.target.value)}
-                    placeholder="Escribe la categoría personalizada..."
-                    className="w-full rounded-2xl border border-border bg-card py-2.5 px-3 text-xs font-semibold outline-none focus:border-primary"
+                    placeholder="Ej: Reparación caldera..."
+                    className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-white/[0.04] py-2 px-3 text-xs font-medium text-slate-900 dark:text-white outline-none focus:border-purple-500"
                   />
                 </div>
               )}
 
-              <label className="flex items-center gap-2 mt-1 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={isRecurring}
-                  onChange={(e) => setIsRecurring(e.target.checked)}
-                  className="size-4 rounded border-border text-primary focus:ring-primary"
-                />
-                <span className="font-bold text-muted-foreground text-xs">Marcar como gasto mensual recurrente</span>
-              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="flex flex-col gap-1">
+                  <label className="font-semibold text-slate-500 dark:text-slate-400">Fecha del gasto</label>
+                  <input
+                    type="date"
+                    value={date}
+                    onChange={(e) => setDate(e.target.value)}
+                    className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-white/[0.04] py-2 px-3 text-xs font-medium text-slate-900 dark:text-white outline-none focus:border-purple-500"
+                  />
+                </div>
 
-              <div className="mt-3 flex gap-2 justify-end">
+                <div className="flex flex-col justify-end">
+                  <label className="flex items-center gap-2 p-2 rounded-xl bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={isRecurring}
+                      onChange={(e) => setIsRecurring(e.target.checked)}
+                      className="rounded accent-purple-600"
+                    />
+                    <span className="font-semibold text-slate-700 dark:text-slate-300">Gasto fijo mensual</span>
+                  </label>
+                </div>
+              </div>
+
+              <MemberMultiSelect
+                members={members}
+                selectedIds={selectedMemberIds}
+                onChange={setSelectedMemberIds}
+                label="Pagado por (integrantes)"
+              />
+
+              <div className="flex gap-2 justify-end pt-2">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="rounded-2xl px-4 py-2.5 text-xs font-bold text-muted-foreground hover:bg-secondary"
+                  className="rounded-xl px-4 py-2 text-xs font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-white/10"
                 >
                   Cancelar
                 </button>
                 <button
                   type="button"
                   onClick={handleSave}
-                  className="rounded-2xl bg-rose-500 px-5 py-2.5 text-xs font-bold text-white shadow-soft transition-transform active:scale-95 hover:bg-rose-600"
+                  className="rounded-xl bg-purple-600 hover:bg-purple-500 px-4 py-2 text-xs font-bold text-white shadow-sm transition-all active:scale-95"
                 >
-                  Guardar gasto
+                  Guardar
                 </button>
               </div>
             </div>

@@ -71,7 +71,7 @@ export function HistoryModal() {
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-bold truncate">{t.title}</p>
                       <div className="flex items-center gap-2 mt-1">
-                        {m && <MemberAvatar member={m} size="xs" />}
+                        {m && <MemberAvatar member={m} size="sm" />}
                         <p className="text-xs text-muted-foreground">{m?.name || 'Alguien'}</p>
                         {t.points > 0 && <span className="text-[10px] font-bold text-amber-600">+{t.points} pts</span>}
                       </div>
@@ -84,7 +84,7 @@ export function HistoryModal() {
               }
               if (item.type === 'event') {
                 const e = item.data as CalendarEvent
-                const m = getMemberById(e.assignedToMemberId)
+                const m = e.assignedToMemberId ? getMemberById(e.assignedToMemberId) : null
                 return (
                   <div key={`event-${e.id}-${idx}`} className="flex items-start gap-3 rounded-2xl bg-secondary/40 p-3 border border-border/50">
                     <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-purple-500/20 text-purple-600">

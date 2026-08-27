@@ -1,14 +1,15 @@
 import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
-import { Manrope } from 'next/font/google'
+import { Plus_Jakarta_Sans } from 'next/font/google'
 import { ServiceWorkerRegister } from '@/components/pwa/service-worker-register'
 import { ThemeModeProvider } from '@/components/ui/theme-mode-context'
 import './globals.css'
 
-const manrope = Manrope({
+const fontSans = Plus_Jakarta_Sans({
   subsets: ['latin'],
-  variable: '--font-manrope',
+  variable: '--font-sans',
   display: 'swap',
+  weight: ['300', '400', '500', '600', '700', '800'],
 })
 
 export const metadata: Metadata = {
@@ -55,7 +56,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="es" className={`${manrope.variable} dark`}>
+    <html lang="es" className={`${fontSans.variable} dark`}>
       <body className="font-sans antialiased bg-background text-foreground transition-colors duration-300">
         <ThemeModeProvider>
           {/* Fixed Ambient Aurora Glow Background Layer */}
