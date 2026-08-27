@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import {
   ChevronLeft,
   ChevronRight,
@@ -13,17 +13,14 @@ import {
   Clock,
   CheckCircle2,
   Calendar as CalendarIcon,
-  Sparkles,
   Layers,
   Check,
   X,
   Trash2,
   MapPin,
-  CalendarRange,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Card } from '@/components/ui/card'
-import { CustomSelect } from '@/components/ui/custom-select'
 import { MemberAvatar } from '@/components/ui/member-avatar'
 import { useApp } from '@/components/app/app-context'
 import { useToast } from '@/components/ui/toast'
@@ -120,7 +117,19 @@ export function CalendarSection({
   const { toast } = useToast()
 
   const todayISO = getTodayISO()
-  const [monthOffset, setMonthOffset] = useState<number>(0)
+  const todayDate = useMemo(() => new Date(), [])
+
+  // Explicit Year & Month state: consecutive range from 2024 to 2060
+  const [viewYear, setViewYear] = useState<number>(todayDate.getFullYear())
+  const [viewMonth, setViewMonth] = useState<number>(todayDate.getMonth())
+
+  const [isMonthPickerOpen, setIsMonthPickerOpen] = useState(false)
+  const [isYearPickerOpen, setIsYearPickerOpen] = useState(false)
+
+  const monthRef = useRef<HTMLDivElement>(null)
+  const yearRef = useRef<HTMLDivElement>(null)
+  const yearListRef = useRef<HTMLDivElement>(null)
+
   const [selectedDateISO, setSelectedDateISO] = useState<string>(todayISO)
   const [selectedDayModalISO, setSelectedDayModalISO] = useState<string | null>(null)
 
@@ -137,7 +146,31 @@ export function CalendarSection({
     meal: true,
   })
 
-  // Keyboard shortcut ('c' to add item)
+  // Close pickers on click outside
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (monthRef.current && !monthRef.current.contains(e.target as Node)) {
+        setIsMonthPickerOpen(false)
+      }
+      if (yearRef.current && !yearRef.current.contains(e.target as Node)) {
+        setIsYearPickerOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  // Scroll to active year when year picker opens
+  useEffect(() => {
+    if (isYearPickerOpen && yearListRef.current) {
+      const activeEl = yearListRef.current.querySelector('[data-active-year="true"]')
+      if (activeEl) {
+        activeEl.scrollIntoView({ block: 'center', behavior: 'smooth' })
+      }
+    }
+  }, [isYearPickerOpen])
+
+  // Keyboard shortcut ('c' to add item for currently selected date)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (
@@ -246,38 +279,47 @@ export function CalendarSection({
     return map
   }, [filteredItems])
 
-  // Month navigation calculation
-  const currentMonthDate = useMemo(() => {
-    const d = new Date()
-    d.setMonth(d.getMonth() + monthOffset)
-    return d
-  }, [monthOffset])
-
-  const year = currentMonthDate.getFullYear()
-  const month = currentMonthDate.getMonth()
-
+  // All consecutive years from 2024 to 2060
   const yearsList = useMemo(() => {
     const list: number[] = []
-    for (let y = 2024; y <= 2035; y++) {
+    for (let y = 2024; y <= 2060; y++) {
       list.push(y)
     }
     return list
   }, [])
 
-  const handleSelectMonth = (newMonth: number) => {
-    const today = new Date()
-    const diff = (year - today.getFullYear()) * 12 + (newMonth - today.getMonth())
-    setMonthOffset(diff)
+  const handlePrevMonth = () => {
+    setViewMonth((m) => {
+      if (m === 0) {
+        setViewYear((y) => Math.max(2024, y - 1))
+        return 11
+      }
+      return m - 1
+    })
   }
 
-  const handleSelectYear = (newYear: number) => {
-    const today = new Date()
-    const diff = (newYear - today.getFullYear()) * 12 + (month - today.getMonth())
-    setMonthOffset(diff)
+  const handleNextMonth = () => {
+    setViewMonth((m) => {
+      if (m === 11) {
+        setViewYear((y) => Math.min(2060, y + 1))
+        return 0
+      }
+      return m + 1
+    })
   }
 
-  const firstDay = new Date(year, month, 1)
-  const lastDay = new Date(year, month + 1, 0)
+  const handleGoToday = () => {
+    const now = new Date()
+    setViewYear(now.getFullYear())
+    setViewMonth(now.getMonth())
+    setSelectedDateISO(todayISO)
+    setSelectedDayModalISO(todayISO)
+    setIsMonthPickerOpen(false)
+    setIsYearPickerOpen(false)
+  }
+
+  const firstDay = new Date(viewYear, viewMonth, 1)
+  const lastDay = new Date(viewYear, viewMonth + 1, 0)
   const daysInMonth = lastDay.getDate()
   const startDayOfWeek = (firstDay.getDay() + 6) % 7 // Lun = 0
 
@@ -299,59 +341,144 @@ export function CalendarSection({
     return filteredItems.filter((i) => i.date === selectedDayModalISO)
   }, [selectedDayModalISO, filteredItems])
 
+  const isCurrentViewingMonthToday = viewYear === todayDate.getFullYear() && viewMonth === todayDate.getMonth()
+
   return (
     <div className="w-full max-w-xl mx-auto space-y-3">
       {/* ── CALENDARIO PRINCIPAL (Compacto max-w-xl) ── */}
-      <Card className="p-3.5 sm:p-4 bg-[#0e0d1d]/60 border border-purple-500/15 rounded-2xl backdrop-blur-xl shadow-md">
-        {/* Header: Desplegables de Mes/Año, Navegación y Botón Hoy */}
-        <div className="flex items-center justify-between mb-3 px-0.5">
+      <Card className="p-3.5 sm:p-4 bg-white dark:bg-[#0e0d1d]/60 border border-slate-200 dark:border-purple-500/15 rounded-2xl backdrop-blur-xl shadow-sm">
+        {/* Header: Pestañas interactivas de Mes / Año, Navegación y Botón Hoy */}
+        <div className="flex items-center justify-between mb-3 px-0.5 relative">
           <div className="flex items-center gap-1.5 sm:gap-2">
-            <div className="flex size-7 items-center justify-center rounded-lg bg-purple-500/15 text-purple-400 shrink-0">
+            <div className="flex size-7 items-center justify-center rounded-lg bg-purple-50 text-purple-600 dark:bg-purple-500/15 dark:text-purple-400 shrink-0 border border-purple-200 dark:border-purple-500/20">
               <CalendarIcon className="size-3.5" />
             </div>
 
-            {/* Desplegable de Mes */}
-            <CustomSelect<number>
-              value={month}
-              onChange={handleSelectMonth}
-              options={monthNames.map((name, idx) => ({ value: idx, label: name }))}
-              className="w-28 sm:w-32 text-xs"
-            />
+            {/* ── PESTAÑA / BOTÓN DIRECTO DE MES ── */}
+            <div className="relative" ref={monthRef}>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMonthPickerOpen((v) => !v)
+                  setIsYearPickerOpen(false)
+                }}
+                className={cn(
+                  'flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold transition-all shadow-sm',
+                  isMonthPickerOpen
+                    ? 'border-purple-500 bg-purple-50 text-purple-700 dark:bg-purple-500/20 dark:text-purple-300'
+                    : 'border-slate-200 dark:border-white/10 bg-white dark:bg-white/[0.04] text-slate-800 dark:text-white hover:bg-slate-50 dark:hover:bg-white/[0.08]'
+                )}
+              >
+                <span>{monthNames[viewMonth]}</span>
+                <ChevronDown className={cn('size-3 text-slate-400 transition-transform duration-200', isMonthPickerOpen && 'rotate-180 text-purple-600 dark:text-purple-400')} />
+              </button>
 
-            {/* Desplegable de Año */}
-            <CustomSelect<number>
-              value={year}
-              onChange={handleSelectYear}
-              options={yearsList.map((y) => ({ value: y, label: String(y) }))}
-              className="w-20 sm:w-24 text-xs"
-            />
+              {/* Menú de Selección de Mes (12 meses) */}
+              {isMonthPickerOpen && (
+                <div className="absolute left-0 top-full mt-1.5 z-50 w-56 rounded-2xl border border-slate-200 dark:border-purple-500/25 bg-white dark:bg-[#100e23] p-2 shadow-2xl backdrop-blur-xl grid grid-cols-2 gap-1 animate-in fade-in zoom-in-95 duration-150">
+                  {monthNames.map((mName, idx) => {
+                    const isSelected = viewMonth === idx
+                    return (
+                      <button
+                        key={mName}
+                        type="button"
+                        onClick={() => {
+                          setViewMonth(idx)
+                          setIsMonthPickerOpen(false)
+                        }}
+                        className={cn(
+                          'rounded-xl px-2.5 py-1.5 text-xs font-semibold text-left transition-all',
+                          isSelected
+                            ? 'bg-purple-600 text-white shadow-sm font-bold'
+                            : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10'
+                        )}
+                      >
+                        {mName}
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* ── PESTAÑA / BOTÓN DIRECTO DE AÑO (2024 - 2060) ── */}
+            <div className="relative" ref={yearRef}>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsYearPickerOpen((v) => !v)
+                  setIsMonthPickerOpen(false)
+                }}
+                className={cn(
+                  'flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold transition-all shadow-sm',
+                  isYearPickerOpen
+                    ? 'border-purple-500 bg-purple-50 text-purple-700 dark:bg-purple-500/20 dark:text-purple-300'
+                    : 'border-slate-200 dark:border-white/10 bg-white dark:bg-white/[0.04] text-slate-800 dark:text-white hover:bg-slate-50 dark:hover:bg-white/[0.08]'
+                )}
+              >
+                <span className="tabular-nums">{viewYear}</span>
+                <ChevronDown className={cn('size-3 text-slate-400 transition-transform duration-200', isYearPickerOpen && 'rotate-180 text-purple-600 dark:text-purple-400')} />
+              </button>
+
+              {/* Menú de Selección de Año Consecutivo (2024 - 2060) */}
+              {isYearPickerOpen && (
+                <div
+                  ref={yearListRef}
+                  className="absolute left-0 top-full mt-1.5 z-50 w-44 max-h-56 overflow-y-auto rounded-2xl border border-slate-200 dark:border-purple-500/25 bg-white dark:bg-[#100e23] p-1.5 shadow-2xl backdrop-blur-xl space-y-0.5 animate-in fade-in zoom-in-95 duration-150 dropdown-scroll"
+                >
+                  {yearsList.map((y) => {
+                    const isSelected = viewYear === y
+                    return (
+                      <button
+                        key={y}
+                        data-active-year={isSelected ? 'true' : undefined}
+                        type="button"
+                        onClick={() => {
+                          setViewYear(y)
+                          setIsYearPickerOpen(false)
+                        }}
+                        className={cn(
+                          'w-full rounded-xl px-3 py-1.5 text-xs font-semibold text-left transition-all flex items-center justify-between',
+                          isSelected
+                            ? 'bg-purple-600 text-white shadow-sm font-bold'
+                            : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10'
+                        )}
+                      >
+                        <span className="tabular-nums">{y}</span>
+                        {isSelected && <Check className="size-3 text-white" />}
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
           </div>
 
+          {/* Flechas de Navegación y Botón Hoy */}
           <div className="flex items-center gap-1">
             <button
-              onClick={() => setMonthOffset((o) => o - 1)}
-              className="flex size-7 items-center justify-center rounded-lg bg-white/[0.05] hover:bg-white/[0.1] text-foreground transition-all active:scale-95 border border-white/10"
+              onClick={handlePrevMonth}
+              disabled={viewYear <= 2024 && viewMonth === 0}
+              className="flex size-7 items-center justify-center rounded-lg bg-slate-100 dark:bg-white/[0.05] hover:bg-slate-200 dark:hover:bg-white/[0.1] text-slate-700 dark:text-slate-200 transition-all active:scale-95 border border-slate-200 dark:border-white/10 disabled:opacity-30 disabled:cursor-not-allowed"
               title="Mes anterior"
             >
               <ChevronLeft className="size-3.5" />
             </button>
             <button
-              onClick={() => {
-                setMonthOffset(0)
-                setSelectedDateISO(todayISO)
-              }}
+              onClick={handleGoToday}
               className={cn(
                 'rounded-lg px-2 py-0.5 text-[11px] font-bold transition-all border',
-                monthOffset === 0 && selectedDateISO === todayISO
+                isCurrentViewingMonthToday && selectedDateISO === todayISO
                   ? 'bg-purple-600 text-white border-purple-500 shadow-sm'
-                  : 'bg-white/[0.05] hover:bg-white/[0.1] text-foreground border-white/10'
+                  : 'bg-slate-100 dark:bg-white/[0.05] hover:bg-slate-200 dark:hover:bg-white/[0.1] text-slate-700 dark:text-slate-200 border-slate-200 dark:border-white/10'
               )}
             >
               Hoy
             </button>
             <button
-              onClick={() => setMonthOffset((o) => o + 1)}
-              className="flex size-7 items-center justify-center rounded-lg bg-white/[0.05] hover:bg-white/[0.1] text-foreground transition-all active:scale-95 border border-white/10"
+              onClick={handleNextMonth}
+              disabled={viewYear >= 2060 && viewMonth === 11}
+              className="flex size-7 items-center justify-center rounded-lg bg-slate-100 dark:bg-white/[0.05] hover:bg-slate-200 dark:hover:bg-white/[0.1] text-slate-700 dark:text-slate-200 transition-all active:scale-95 border border-slate-200 dark:border-white/10 disabled:opacity-30 disabled:cursor-not-allowed"
               title="Mes siguiente"
             >
               <ChevronRight className="size-3.5" />
@@ -378,7 +505,7 @@ export function CalendarSection({
               return <div key={idx} className="h-10 md:h-11 rounded-lg opacity-0" />
             }
 
-            const dateISO = `${year}-${String(month + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`
+            const dateISO = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`
             const isToday = dateISO === todayISO
             const isPast = dateISO < todayISO
             const isSelected = dateISO === selectedDateISO
@@ -396,38 +523,31 @@ export function CalendarSection({
                 key={idx}
                 type="button"
                 onClick={() => {
-                  if (isPast && !hasActivities) {
-                    toast('No se pueden programar actividades en fechas pasadas', 'ℹ️')
-                    return
-                  }
                   setSelectedDateISO(dateISO)
                   setSelectedDayModalISO(dateISO)
                 }}
-                disabled={isPast && !hasActivities}
                 className={cn(
-                  'group relative h-10 md:h-11 w-full rounded-lg p-0.5 flex flex-col items-center justify-center gap-0.5 transition-all duration-150 border text-center',
-                  isPast && !hasActivities
-                    ? 'opacity-35 cursor-not-allowed bg-white/[0.01] hover:bg-white/[0.01] text-slate-500 border-white/[0.02]'
-                    : isPast && hasActivities
-                    ? 'opacity-70 bg-white/[0.02] border-white/5 hover:bg-white/[0.06] hover:border-white/15 cursor-pointer active:scale-95'
-                    : isSelected
-                    ? 'border-purple-500 bg-purple-500/20 shadow-sm ring-1 ring-purple-500/40 active:scale-95'
+                  'group relative h-10 md:h-11 w-full rounded-lg p-0.5 flex flex-col items-center justify-center gap-0.5 transition-all duration-150 border text-center cursor-pointer',
+                  isSelected
+                    ? 'border-purple-500 bg-purple-50 dark:bg-purple-500/20 shadow-sm ring-1 ring-purple-500/40 active:scale-95'
                     : isToday
                     ? 'border-purple-500/40 bg-purple-500/10 active:scale-95'
-                    : 'border-white/5 bg-white/[0.02] hover:bg-white/[0.06] hover:border-white/15 active:scale-95'
+                    : isPast
+                    ? 'border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.01] hover:bg-slate-100 dark:hover:bg-white/[0.04] active:scale-95 opacity-80'
+                    : 'border-slate-100 dark:border-white/5 bg-white dark:bg-white/[0.02] hover:bg-slate-50 dark:hover:bg-white/[0.06] hover:border-purple-500/30 active:scale-95'
                 )}
               >
                 {/* Número del día */}
                 <span
                   className={cn(
-                    'text-xs font-medium transition-all leading-none',
+                    'text-xs font-medium transition-all leading-none tabular-nums',
                     isToday
                       ? 'w-5 h-5 text-[11px] flex items-center justify-center rounded-full bg-purple-600 font-bold text-white shadow-sm'
                       : isSelected
-                      ? 'font-bold text-purple-400'
+                      ? 'font-bold text-purple-700 dark:text-purple-300'
                       : isPast
-                      ? 'text-slate-500'
-                      : 'text-foreground/90 group-hover:text-purple-400'
+                      ? 'text-slate-400 dark:text-slate-500'
+                      : 'text-slate-800 dark:text-slate-200 group-hover:text-purple-600 dark:group-hover:text-purple-400'
                   )}
                 >
                   {dayNum}
@@ -455,10 +575,10 @@ export function CalendarSection({
       </Card>
 
       {/* ── BARRA INFERIOR DE FILTROS POR CAPAS ── */}
-      <Card className="p-2.5 sm:p-3 bg-[#0e0d1d]/60 border border-purple-500/15 rounded-2xl backdrop-blur-xl flex flex-wrap items-center justify-between gap-2 shadow-sm">
+      <Card className="p-2.5 sm:p-3 bg-white dark:bg-[#0e0d1d]/60 border border-slate-200 dark:border-purple-500/15 rounded-2xl backdrop-blur-xl flex flex-wrap items-center justify-between gap-2 shadow-sm">
         <div className="flex items-center gap-1.5">
-          <Layers className="size-3.5 text-purple-400" />
-          <span className="text-[11px] font-black uppercase text-foreground tracking-wider">
+          <Layers className="size-3.5 text-purple-600 dark:text-purple-400" />
+          <span className="text-[11px] font-bold uppercase text-slate-700 dark:text-slate-300 tracking-wider">
             Capas:
           </span>
         </div>
@@ -477,13 +597,13 @@ export function CalendarSection({
                 className={cn(
                   'flex items-center gap-1.5 rounded-lg px-2 py-1 text-[11px] font-bold transition-all border',
                   isChecked
-                    ? 'border-white/20 bg-white/[0.08] text-foreground shadow-sm'
-                    : 'border-white/5 bg-transparent text-muted-foreground/50 opacity-50 hover:opacity-75'
+                    ? 'border-purple-200 dark:border-white/20 bg-purple-50 dark:bg-white/[0.08] text-slate-900 dark:text-white shadow-sm'
+                    : 'border-slate-200 dark:border-white/5 bg-transparent text-slate-400 opacity-50 hover:opacity-75'
                 )}
               >
                 <span className={cn('size-1.5 rounded-full', cfg.dot)} />
                 <span>{cfg.label}</span>
-                <span className="rounded bg-white/[0.08] px-1 py-0.2 text-[9px] font-black text-muted-foreground">
+                <span className="rounded bg-slate-200/60 dark:bg-white/[0.08] px-1 py-0.2 text-[9px] font-bold text-slate-600 dark:text-slate-400 tabular-nums">
                   {count}
                 </span>
               </button>
@@ -568,36 +688,36 @@ function DayDetailModal({
   const dateCapitalized = dateFormatted.charAt(0).toUpperCase() + dateFormatted.slice(1)
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 dark:bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
       {/* Backdrop click to close */}
       <div className="absolute inset-0" onClick={onClose} />
 
-      <div className="relative w-full max-w-lg rounded-3xl bg-[#131127]/95 border border-white/15 p-5 sm:p-6 shadow-2xl backdrop-blur-2xl flex flex-col gap-4 max-h-[85vh] overflow-hidden z-10 animate-in zoom-in-95 duration-150">
+      <div className="relative w-full max-w-lg rounded-2xl bg-white dark:bg-[#0e0d1d] border border-slate-200 dark:border-purple-500/20 p-5 sm:p-6 shadow-2xl flex flex-col gap-4 max-h-[85vh] overflow-hidden z-10 animate-in zoom-in-95 duration-150">
         {/* Cabecera del modal */}
-        <div className="flex items-center justify-between pb-3 border-b border-white/10">
+        <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-white/10">
           <div className="flex items-center gap-2.5">
-            <div className="flex size-9 items-center justify-center rounded-xl bg-primary/20 text-primary">
+            <div className="flex size-9 items-center justify-center rounded-xl bg-purple-50 text-purple-600 dark:bg-purple-500/20 dark:text-purple-400 border border-purple-200 dark:border-purple-500/30">
               <CalendarIcon className="size-4" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-sm sm:text-base font-black text-foreground">
+                <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">
                   {dateCapitalized}
                 </h3>
                 {isToday && (
-                  <span className="rounded-full bg-primary/20 px-2 py-0.5 text-[10px] font-extrabold text-primary border border-primary/30">
+                  <span className="rounded-full bg-purple-100 dark:bg-purple-500/20 px-2 py-0.5 text-[10px] font-bold text-purple-700 dark:text-purple-300 border border-purple-300 dark:border-purple-500/30">
                     Hoy
                   </span>
                 )}
                 {isPast && (
-                  <span className="rounded-full bg-slate-500/20 px-2 py-0.5 text-[10px] font-extrabold text-slate-400 border border-slate-500/30">
-                    Pasado · Solo lectura
+                  <span className="rounded-full bg-slate-100 dark:bg-slate-500/20 px-2 py-0.5 text-[10px] font-bold text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-500/30">
+                    Pasado
                   </span>
                 )}
               </div>
-              <p className="text-[11px] font-semibold text-muted-foreground">
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">
                 {items.length === 0
-                  ? 'Sin actividades planificadas'
+                  ? 'Sin actividades registradas'
                   : `${items.length} ${items.length === 1 ? 'actividad' : 'actividades'} registradas`}
               </p>
             </div>
@@ -605,23 +725,21 @@ function DayDetailModal({
 
           <button
             onClick={onClose}
-            className="flex size-8 items-center justify-center rounded-full bg-white/[0.05] hover:bg-white/[0.1] text-muted-foreground hover:text-foreground transition-all"
+            className="flex size-8 items-center justify-center rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.05] dark:hover:bg-white/[0.1] text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all"
           >
             <X className="size-4" />
           </button>
         </div>
 
         {/* Lista de actividades o estado vacío */}
-        <div className="flex-1 overflow-y-auto pr-1 space-y-2.5 min-h-[160px] max-h-[380px]">
+        <div className="flex-1 overflow-y-auto pr-1 space-y-2 min-h-[140px] max-h-[360px]">
           {items.length === 0 ? (
-            <div className="py-8 px-4 flex flex-col items-center justify-center text-center gap-3 rounded-2xl bg-white/[0.02] border border-white/5">
-              <div className="flex size-12 items-center justify-center rounded-2xl bg-secondary text-2xl">
-                📅
-              </div>
+            <div className="py-8 px-4 flex flex-col items-center justify-center text-center gap-2.5 rounded-xl bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/5">
+              <CalendarDays className="size-8 text-purple-400/60" />
               <div className="space-y-0.5">
-                <p className="text-sm font-bold text-foreground">Día despejado</p>
-                <p className="text-xs text-muted-foreground max-w-xs">
-                  No hay eventos ni tareas registradas para esta fecha. ¡Crea uno a continuación!
+                <p className="text-xs font-bold text-slate-800 dark:text-slate-200">Día sin actividades</p>
+                <p className="text-[11px] text-slate-400 max-w-xs">
+                  No hay eventos, tareas ni recordatorios para esta fecha.
                 </p>
               </div>
             </div>
@@ -635,45 +753,45 @@ function DayDetailModal({
                 return (
                   <div
                     key={item.id}
-                    className="p-3 rounded-2xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/10 flex items-center justify-between gap-3 transition-all"
+                    className="p-2.5 rounded-xl bg-slate-50 dark:bg-white/[0.03] hover:bg-slate-100 dark:hover:bg-white/[0.06] border border-slate-200 dark:border-white/10 flex items-center justify-between gap-3 transition-all"
                   >
-                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
                       {/* Icono del tipo */}
                       <div
                         className={cn(
-                          'flex size-9 items-center justify-center rounded-xl shrink-0 border',
+                          'flex size-8 items-center justify-center rounded-lg shrink-0 border',
                           cfg.bg,
                           cfg.border
                         )}
                       >
-                        <Icon className="size-4" />
+                        <Icon className="size-3.5" />
                       </div>
 
                       {/* Detalles */}
                       <div className="min-w-0 flex-1">
                         <p
                           className={cn(
-                            'text-xs sm:text-sm font-bold text-foreground truncate',
+                            'text-xs font-bold text-slate-900 dark:text-white truncate',
                             item.completed && 'line-through opacity-60'
                           )}
                         >
                           {item.title}
                         </p>
-                        <div className="flex flex-wrap items-center gap-2 mt-0.5">
-                          <span className="text-[11px] font-semibold text-muted-foreground flex items-center gap-1">
-                            <Clock className="size-3" />
+                        <div className="flex flex-wrap items-center gap-2 mt-0.5 text-[10px]">
+                          <span className="text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                            <Clock className="size-2.5" />
                             {item.time}
                           </span>
                           <span
                             className={cn(
-                              'rounded-full px-2 py-0.2 text-[9px] font-black uppercase tracking-wider',
+                              'rounded px-1.5 py-0.2 font-bold uppercase tracking-wider',
                               cfg.bg
                             )}
                           >
                             {cfg.label}
                           </span>
                           {item.location && (
-                            <span className="text-[10px] text-muted-foreground/80 flex items-center gap-0.5 truncate">
+                            <span className="text-slate-400 flex items-center gap-0.5 truncate">
                               <MapPin className="size-2.5" />
                               {item.location}
                             </span>
@@ -683,7 +801,7 @@ function DayDetailModal({
                     </div>
 
                     {/* Acciones y Avatares */}
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex items-center gap-1.5 shrink-0">
                       {assigned.length > 0 && (
                         <div className="flex -space-x-1">
                           {assigned.slice(0, 2).map((m: any) => (
@@ -697,14 +815,14 @@ function DayDetailModal({
                         <button
                           onClick={() => onToggleTask(item.rawId, item.title)}
                           className={cn(
-                            'flex size-7 items-center justify-center rounded-lg transition-all',
+                            'flex size-6 items-center justify-center rounded-lg transition-all',
                             item.completed
                               ? 'bg-blue-500 text-white'
-                              : 'bg-white/[0.06] text-muted-foreground hover:text-foreground'
+                              : 'bg-slate-200 dark:bg-white/[0.06] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                           )}
                           title={item.completed ? 'Marcar incompleta' : 'Completar tarea'}
                         >
-                          <Check className="size-3.5 stroke-[3]" />
+                          <Check className="size-3 stroke-[3]" />
                         </button>
                       )}
 
@@ -715,10 +833,10 @@ function DayDetailModal({
                           else if (item.kind === 'task') onDeleteTask(item.rawId)
                           else if (item.kind === 'reminder') onDeleteReminder(item.rawId)
                         }}
-                        className="flex size-7 items-center justify-center rounded-lg bg-white/[0.04] text-muted-foreground hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+                        className="flex size-6 items-center justify-center rounded-lg bg-slate-200/60 dark:bg-white/[0.04] text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors"
                         title="Eliminar actividad"
                       >
-                        <Trash2 className="size-3.5" />
+                        <Trash2 className="size-3" />
                       </button>
                     </div>
                   </div>
@@ -728,46 +846,35 @@ function DayDetailModal({
           )}
         </div>
 
-        {/* Botones de acción rápida al pie o aviso de fecha pasada */}
-        {isPast ? (
-          <div className="pt-3 border-t border-white/10 flex items-center justify-between gap-2">
-            <span className="text-[11px] font-semibold text-slate-400">
-              Fecha pasada (modo solo lectura)
-            </span>
-            <span className="text-[10px] text-slate-500 italic">
-              No se pueden programar actividades en fechas anteriores
-            </span>
+        {/* Botones de acción rápida al pie */}
+        <div className="pt-3 border-t border-slate-100 dark:border-white/10 flex flex-wrap items-center justify-between gap-2">
+          <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+            Añadir a esta fecha:
+          </span>
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => onQuickAdd('evento')}
+              className="flex items-center gap-1 rounded-xl bg-purple-50 dark:bg-purple-500/20 hover:bg-purple-100 dark:hover:bg-purple-500/30 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-500/30 px-2.5 py-1.5 text-xs font-bold transition-all active:scale-95"
+            >
+              <Plus className="size-3" />
+              <span>Evento</span>
+            </button>
+            <button
+              onClick={() => onQuickAdd('tarea')}
+              className="flex items-center gap-1 rounded-xl bg-blue-50 dark:bg-blue-500/20 hover:bg-blue-100 dark:hover:bg-blue-500/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-500/30 px-2.5 py-1.5 text-xs font-bold transition-all active:scale-95"
+            >
+              <Plus className="size-3" />
+              <span>Tarea</span>
+            </button>
+            <button
+              onClick={() => onQuickAdd('recordatorio')}
+              className="flex items-center gap-1 rounded-xl bg-orange-50 dark:bg-orange-500/20 hover:bg-orange-100 dark:hover:bg-orange-500/30 text-orange-700 dark:text-orange-300 border border-orange-200 dark:border-orange-500/30 px-2.5 py-1.5 text-xs font-bold transition-all active:scale-95"
+            >
+              <Plus className="size-3" />
+              <span>Recordatorio</span>
+            </button>
           </div>
-        ) : (
-          <div className="pt-3 border-t border-white/10 flex flex-wrap items-center justify-between gap-2">
-            <span className="text-[11px] font-bold text-muted-foreground">
-              Añadir a esta fecha:
-            </span>
-            <div className="flex items-center gap-1.5">
-              <button
-                onClick={() => onQuickAdd('evento')}
-                className="flex items-center gap-1 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/30 px-2.5 py-1.5 text-xs font-bold transition-all active:scale-95"
-              >
-                <Plus className="size-3" />
-                <span>Evento</span>
-              </button>
-              <button
-                onClick={() => onQuickAdd('tarea')}
-                className="flex items-center gap-1 rounded-xl bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 border border-blue-500/30 px-2.5 py-1.5 text-xs font-bold transition-all active:scale-95"
-              >
-                <Plus className="size-3" />
-                <span>Tarea</span>
-              </button>
-              <button
-                onClick={() => onQuickAdd('recordatorio')}
-                className="flex items-center gap-1 rounded-xl bg-orange-500/20 hover:bg-orange-500/30 text-orange-300 border border-orange-500/30 px-2.5 py-1.5 text-xs font-bold transition-all active:scale-95"
-              >
-                <Plus className="size-3" />
-                <span>Recordatorio</span>
-              </button>
-            </div>
-          </div>
-        )}
+        </div>
       </div>
     </div>
   )
