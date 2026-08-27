@@ -116,7 +116,7 @@ export async function sendPushNotification(
   const sendPromises = subscriptions.map(async (item) => {
     try {
       await webpush.sendNotification(
-        item.subscription as webpush.PushSubscription,
+        item.subscription as any,
         stringifiedPayload
       )
       result.sentCount++

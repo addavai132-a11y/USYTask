@@ -82,7 +82,7 @@ export function ProfileScreen() {
 
   // Find current user's member data
   const currentMember = members.find((m) => m.name.toLowerCase() === userName.toLowerCase())
-  const userRole = currentMember?.role === 'admin' ? 'Administrador' : currentMember?.role === 'hijo' ? 'Hijo/a' : 'Adulto'
+  const userRole = (currentMember?.role as string) === 'admin' ? 'Administrador' : currentMember?.role === 'hijo' || currentMember?.role === 'child' ? 'Hijo/a' : 'Adulto'
   const userPoints = currentMember?.points || 0
   const userStreak = currentMember?.streakDays || currentMember?.streak || 0
 
@@ -177,7 +177,7 @@ export function ProfileScreen() {
               </div>
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
-                  <p className="text-sm font-bold text-slate-900 dark:text-white truncate">Notificaciones Push</p>
+                  <p className="text-sm font-bold text-slate-900 dark:text-white truncate">Activar notificaciones</p>
                   <button
                     type="button"
                     onClick={(e) => {

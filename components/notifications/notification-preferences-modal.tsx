@@ -208,7 +208,7 @@ export function NotificationPreferencesModal({
                   ) : (
                     <Bell className="size-3.5" />
                   )}
-                  <span>{isSubscribed ? 'Desactivar en este equipo' : 'Activar Notificaciones'}</span>
+                  <span>{isSubscribed ? 'Desactivar notificaciones' : 'Activar notificaciones'}</span>
                 </button>
 
                 {isSubscribed && (
