@@ -245,17 +245,17 @@ export function ProgressTab({
   return (
     <div className="w-full max-w-2xl mx-auto space-y-4 animate-fade-in">
       {/* ── BARRA RESUMEN DE RÉCORDS (PRs) ── */}
-      <div className="w-full flex items-center justify-between p-3.5 px-5 bg-white/[0.03] border border-white/10 rounded-2xl backdrop-blur-xl shadow-sm">
+      <div className="w-full flex items-center justify-between p-3.5 px-5 bg-white border border-slate-200 rounded-2xl shadow-sm dark:bg-white/[0.03] dark:border-white/10">
         <div className="flex items-center gap-3">
-          <span className="text-xl font-bold text-white tabular-nums">{prs.length}</span>
-          <span className="text-xs text-slate-400">marcas personales (PRs)</span>
+          <span className="text-xl font-bold text-slate-900 dark:text-white tabular-nums">{prs.length}</span>
+          <span className="text-xs text-slate-600 dark:text-slate-400">marcas personales (PRs)</span>
         </div>
         <button
           onClick={() => setIsPRModalOpen(true)}
-          className="flex items-center gap-1.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white px-3.5 py-1.5 text-xs font-bold transition-all active:scale-95 shadow-sm"
+          className="flex items-center gap-1.5 rounded-full bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 text-xs font-bold transition-all active:scale-95 shadow-sm"
         >
           <Plus className="size-3.5" />
-          <span>Registrar PR</span>
+          <span>+ Registrar PR</span>
         </button>
       </div>
 
@@ -267,38 +267,38 @@ export function ProgressTab({
           return (
             <Card
               key={pr.id}
-              className="p-4 bg-[#121026]/90 border border-purple-500/20 rounded-2xl shadow-xl backdrop-blur-xl flex flex-col justify-between gap-3 hover:border-amber-500/40 transition-all group"
+              className="p-4 bg-white border border-slate-200 rounded-2xl shadow-sm flex flex-col justify-between gap-3 hover:border-amber-500/40 transition-all group dark:bg-[#121026]/90 dark:border-purple-500/20 dark:shadow-xl"
             >
               <div className="flex items-start justify-between gap-2">
                 <div>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                     {meta.icon} {meta.label}
                   </span>
-                  <h4 className="text-sm font-extrabold text-white group-hover:text-amber-300 transition-colors">
+                  <h4 className="text-sm font-extrabold text-slate-900 group-hover:text-amber-600 transition-colors dark:text-white dark:group-hover:text-amber-300">
                     {pr.exerciseName}
                   </h4>
                 </div>
-                <div className="flex size-7 items-center justify-center rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-400">
+                <div className="flex size-7 items-center justify-center rounded-xl bg-amber-50 border border-amber-200 text-amber-700 dark:bg-amber-500/15 dark:border-amber-500/30 dark:text-amber-400">
                   <Trophy className="size-3.5" />
                 </div>
               </div>
 
               {/* Peso x Reps y 1RM Estimado */}
-              <div className="flex items-baseline justify-between pt-2 border-t border-purple-500/15">
+              <div className="flex items-baseline justify-between pt-2 border-t border-slate-200/80 dark:border-purple-500/15">
                 <div>
-                  <span className="text-2xl font-black text-white font-mono tracking-tight">
-                    {pr.weightKg} <span className="text-xs font-bold text-slate-400">kg</span>
+                  <span className="text-2xl font-black text-slate-900 font-mono tracking-tight dark:text-white">
+                    {pr.weightKg} <span className="text-xs font-bold text-slate-500 dark:text-slate-400">kg</span>
                   </span>
-                  <span className="text-xs text-slate-400 font-semibold ml-1.5">
+                  <span className="text-xs text-slate-500 dark:text-slate-400 font-semibold ml-1.5">
                     × {pr.reps} reps
                   </span>
                 </div>
 
                 <div className="text-right">
-                  <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wider block">
+                  <span className="text-[10px] font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wider block">
                     1RM Estimado
                   </span>
-                  <span className="text-sm font-black text-amber-300 font-mono">
+                  <span className="text-sm font-black text-amber-700 dark:text-amber-300 font-mono">
                     ~{pr.estimated1RM} kg
                   </span>
                 </div>
@@ -313,15 +313,15 @@ export function ProgressTab({
       </div>
 
       {/* ── SECCIÓN DE MÉTRICAS CORPORALES Y PESO ── */}
-      <Card className="p-4 bg-[#121026]/90 border border-purple-500/20 rounded-2xl shadow-xl backdrop-blur-xl space-y-3">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-purple-500/15">
+      <Card className="p-4 bg-white border border-slate-200 rounded-2xl shadow-sm space-y-3 dark:bg-[#121026]/90 dark:border-purple-500/20 dark:shadow-xl">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-200/80 dark:border-purple-500/15">
           <div className="flex items-center gap-2.5">
-            <div className="flex size-9 items-center justify-center rounded-xl bg-cyan-500/15 border border-cyan-500/30 text-cyan-300 shrink-0">
+            <div className="flex size-9 items-center justify-center rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 dark:bg-cyan-500/15 dark:border-cyan-500/30 dark:text-cyan-300 shrink-0">
               <Scale className="size-4" />
             </div>
             <div>
-              <h3 className="text-sm font-black text-white">Evolución del Peso Corporal</h3>
-              <p className="text-[11px] text-slate-400">Control de peso semanal y composición corporal</p>
+              <h3 className="text-sm font-black text-slate-900 dark:text-white">Evolución del Peso Corporal</h3>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">Control de peso semanal y composición corporal</p>
             </div>
           </div>
 
@@ -331,14 +331,13 @@ export function ProgressTab({
               value={goalPhase}
               onChange={handleGoalPhaseChange}
               options={BODY_GOAL_OPTIONS}
-              triggerClassName="py-1.5 px-3 text-xs bg-purple-950/40 border-purple-500/30 hover:bg-purple-900/40 rounded-xl"
               className="w-auto min-w-[145px]"
             />
 
             <button
               type="button"
               onClick={() => setIsBodyMetricModalOpen(true)}
-              className="flex items-center gap-1 rounded-xl bg-cyan-600/25 hover:bg-cyan-600/40 border border-cyan-500/30 px-3 py-1.5 text-xs font-bold text-cyan-200 hover:text-white transition-all active:scale-95 shadow-sm shrink-0"
+              className="flex items-center gap-1 rounded-full bg-emerald-600 hover:bg-emerald-700 px-3.5 py-2 text-xs font-bold text-white transition-all active:scale-95 shadow-sm shrink-0 dark:bg-cyan-600/25 dark:hover:bg-cyan-600/40 dark:border dark:border-cyan-500/30 dark:text-cyan-200"
             >
               <Plus className="size-3.5" />
               <span>Pesarme hoy</span>
@@ -347,11 +346,11 @@ export function ProgressTab({
         </div>
 
         {/* Resumen del último peso de ancho completo (Full Width) */}
-        <div className="w-full flex items-center justify-between p-4 md:p-5 bg-purple-950/20 border border-purple-500/20 rounded-2xl backdrop-blur-md">
+        <div className="w-full flex items-center justify-between p-4 md:p-5 bg-slate-50 border border-slate-200 rounded-2xl dark:bg-purple-950/20 dark:border-purple-500/20">
           {/* Lado Izquierdo: Etiqueta superior, valor grande y etapa activa */}
           <div className="space-y-1 min-w-0">
             <div className="flex items-center gap-2">
-              <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                 Último Peso Registrado
               </span>
               {bodyMetrics[0]?.date && (
@@ -362,18 +361,18 @@ export function ProgressTab({
             </div>
 
             <div className="flex items-baseline gap-1.5">
-              <span className="text-3xl md:text-4xl font-black text-white font-mono tracking-tight">
+              <span className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white font-mono tracking-tight">
                 {latestWeight}
               </span>
-              <span className="text-sm md:text-base font-bold text-slate-400">kg</span>
+              <span className="text-sm md:text-base font-bold text-slate-500 dark:text-slate-400">kg</span>
             </div>
 
-            <p className="text-[11px] font-semibold text-slate-400 flex items-center gap-1.5 pt-0.5">
-              <span className="text-purple-300 font-bold">
+            <p className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 flex items-center gap-1.5 pt-0.5">
+              <span className="text-emerald-700 dark:text-purple-300 font-bold">
                 {goalPhase === 'volumen' ? '📈 Volumen' : goalPhase === 'definicion' ? '🔥 Definición' : '⚖️ Mantenimiento'}
               </span>
-              <span className="text-slate-600">·</span>
-              <span className="text-slate-300">{trendMeta.label}</span>
+              <span className="text-slate-400">·</span>
+              <span className="text-slate-700 dark:text-slate-300">{trendMeta.label}</span>
             </p>
           </div>
 
@@ -381,7 +380,7 @@ export function ProgressTab({
           <div className="shrink-0 pl-3">
             <div
               className={cn(
-                'px-3.5 py-2 sm:px-4 sm:py-2.5 text-xs sm:text-sm font-black rounded-xl flex items-center gap-1.5 shadow-md transition-all',
+                'px-3.5 py-2 sm:px-4 sm:py-2.5 text-xs sm:text-sm font-black rounded-xl flex items-center gap-1.5 shadow-sm transition-all',
                 trendMeta.badgeStyle
               )}
               title={trendMeta.label}
@@ -394,15 +393,15 @@ export function ProgressTab({
 
         {/* Historial de pesajes */}
         <div className="space-y-1.5 pt-1">
-          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Historial reciente:</span>
+          <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Historial reciente:</span>
           <div className="space-y-1">
             {bodyMetrics.map((m) => (
-              <div key={m.id} className="flex items-center justify-between p-2 rounded-xl bg-white/[0.02] border border-white/5 text-xs">
+              <div key={m.id} className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs dark:bg-white/[0.02] dark:border-white/5">
                 <div className="flex items-center gap-2">
-                  <span className="font-mono text-purple-300 font-bold">{m.date}</span>
-                  {m.notes && <span className="text-[11px] text-slate-400 truncate max-w-[200px]">· {m.notes}</span>}
+                  <span className="font-mono text-emerald-800 dark:text-purple-300 font-bold">{m.date}</span>
+                  {m.notes && <span className="text-[11px] text-slate-600 dark:text-slate-400 truncate max-w-[200px]">· {m.notes}</span>}
                 </div>
-                <span className="font-mono font-black text-white">{m.weightKg} kg</span>
+                <span className="font-mono font-black text-slate-900 dark:text-white">{m.weightKg} kg</span>
               </div>
             ))}
           </div>
@@ -410,15 +409,15 @@ export function ProgressTab({
       </Card>
 
       {/* ── CONTROL DE VOLUMEN SEMANAL POR GRUPO MUSCULAR ── */}
-      <Card className="p-4 bg-[#121026]/90 border border-purple-500/20 rounded-2xl shadow-xl backdrop-blur-xl space-y-3">
+      <Card className="p-4 bg-white border border-slate-200 rounded-2xl shadow-sm space-y-3 dark:bg-[#121026]/90 dark:border-purple-500/20 dark:shadow-xl">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <BarChart3 className="size-4 text-purple-400" />
-            <h3 className="text-xs font-black uppercase tracking-wider text-purple-300">
+            <BarChart3 className="size-4 text-emerald-600 dark:text-purple-400" />
+            <h3 className="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-purple-300">
               Volumen Semanal (Series Efectivas por Músculo)
             </h3>
           </div>
-          <span className="text-[10px] font-bold text-slate-400">Control de fatiga</span>
+          <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400">Control de fatiga</span>
         </div>
 
         <div className="space-y-2.5 pt-1">
@@ -429,18 +428,18 @@ export function ProgressTab({
             return (
               <div key={muscle} className="space-y-1">
                 <div className="flex items-center justify-between text-xs font-bold">
-                  <span className="text-white">{muscle}</span>
-                  <span className="text-purple-300 font-mono">
+                  <span className="text-slate-800 dark:text-white">{muscle}</span>
+                  <span className="text-emerald-700 dark:text-purple-300 font-mono">
                     {sets} series {isOptimal ? '· Óptimo' : sets > 20 ? '· Alto' : '· Bajo'}
                   </span>
                 </div>
-                <div className="h-2 w-full bg-white/[0.05] rounded-full overflow-hidden">
+                <div className="h-2 w-full bg-slate-100 dark:bg-white/[0.05] rounded-full overflow-hidden">
                   <div
                     className={cn(
                       'h-full rounded-full transition-all duration-500',
                       sets > 20
                         ? 'bg-gradient-to-r from-amber-500 to-rose-500'
-                        : 'bg-gradient-to-r from-purple-600 to-indigo-500'
+                        : 'bg-emerald-600 dark:bg-gradient-to-r dark:from-purple-600 dark:to-indigo-500'
                     )}
                     style={{ width: `${percentage}%` }}
                   />
@@ -454,15 +453,15 @@ export function ProgressTab({
       {/* ── MODAL REGISTRO DE NUEVO PR ── */}
       {isPRModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="w-full max-w-md rounded-3xl border border-purple-500/30 bg-[#100e23] p-6 shadow-2xl animate-in zoom-in-95 duration-150 space-y-4">
-            <div className="flex items-center justify-between pb-2 border-b border-purple-500/15">
-              <h3 className="text-base font-black text-white flex items-center gap-2">
-                <Trophy className="size-5 text-amber-400" />
+          <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-150 space-y-4 dark:bg-[#100e23] dark:border-purple-500/30">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-purple-500/15">
+              <h3 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
+                <Trophy className="size-5 text-amber-500" />
                 Registrar Marca Personal (PR)
               </h3>
               <button
                 onClick={() => setIsPRModalOpen(false)}
-                className="rounded-full p-1 text-slate-400 hover:text-white"
+                className="rounded-full p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors dark:hover:text-white dark:hover:bg-white/10"
               >
                 <X className="size-5" />
               </button>
@@ -470,7 +469,7 @@ export function ProgressTab({
 
             <div className="space-y-3 text-xs">
               <div className="space-y-1">
-                <label className="font-bold text-slate-300">Ejercicio</label>
+                <label className="font-bold text-slate-700 dark:text-slate-300">Ejercicio</label>
                 <CustomSelect<string>
                   value={prExerciseName}
                   onChange={(val) => {
@@ -485,7 +484,7 @@ export function ProgressTab({
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="font-bold text-slate-300">Peso (Kg) <span className="text-red-500">*</span></label>
+                  <label className="font-bold text-slate-700 dark:text-slate-300">Peso (Kg) <span className="text-red-500">*</span></label>
                   <input
                     type="number"
                     step="0.5"
@@ -493,52 +492,52 @@ export function ProgressTab({
                     onChange={(e) => setPRWeight(e.target.value)}
                     placeholder="Ej: 100"
                     autoFocus
-                    className="w-full rounded-2xl border border-purple-500/20 bg-white/[0.04] py-2.5 px-3 font-mono font-bold text-white outline-none focus:border-purple-500"
+                    className="w-full rounded-2xl border border-slate-200 bg-white py-2.5 px-3 font-mono font-bold text-slate-900 outline-none focus:border-emerald-500 dark:border-purple-500/20 dark:bg-white/[0.04] dark:text-white dark:focus:border-purple-500"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="font-bold text-slate-300">Repeticiones <span className="text-red-500">*</span></label>
+                  <label className="font-bold text-slate-700 dark:text-slate-300">Repeticiones <span className="text-red-500">*</span></label>
                   <input
                     type="number"
                     value={prReps}
                     onChange={(e) => setPRReps(e.target.value)}
                     placeholder="Ej: 5"
-                    className="w-full rounded-2xl border border-purple-500/20 bg-white/[0.04] py-2.5 px-3 font-mono font-bold text-white outline-none focus:border-purple-500"
+                    className="w-full rounded-2xl border border-slate-200 bg-white py-2.5 px-3 font-mono font-bold text-slate-900 outline-none focus:border-emerald-500 dark:border-purple-500/20 dark:bg-white/[0.04] dark:text-white dark:focus:border-purple-500"
                   />
                 </div>
               </div>
 
               {/* 1RM Preview */}
               {live1RM > 0 && (
-                <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between text-xs font-bold text-amber-300">
+                <div className="p-3 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-between text-xs font-bold text-amber-800 dark:bg-amber-500/10 dark:border-amber-500/30 dark:text-amber-300">
                   <span>1RM Estimado (Fórmula Epley):</span>
                   <span className="text-base font-black font-mono">~{live1RM} kg</span>
                 </div>
               )}
 
               <div className="space-y-1">
-                <label className="font-bold text-slate-300">Fecha del logro</label>
+                <label className="font-bold text-slate-700 dark:text-slate-300">Fecha del logro</label>
                 <input
                   type="date"
                   value={prDate}
                   onChange={(e) => setPRDate(e.target.value)}
-                  className="w-full rounded-2xl border border-purple-500/20 bg-white/[0.04] py-2 px-3 text-xs font-medium text-white outline-none focus:border-purple-500"
+                  className="w-full rounded-2xl border border-slate-200 bg-white py-2 px-3 text-xs font-medium text-slate-900 outline-none focus:border-emerald-500 dark:border-purple-500/20 dark:bg-white/[0.04] dark:text-white dark:focus:border-purple-500"
                 />
               </div>
 
-              <div className="pt-2 border-t border-purple-500/15 flex gap-2 justify-end">
+              <div className="pt-2 border-t border-slate-200 dark:border-purple-500/15 flex gap-2 justify-end">
                 <button
                   type="button"
                   onClick={() => setIsPRModalOpen(false)}
-                  className="rounded-2xl px-4 py-2.5 text-xs font-bold text-slate-400 hover:bg-white/10"
+                  className="rounded-2xl px-4 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-100 transition-colors dark:text-slate-400 dark:hover:bg-white/10"
                 >
                   Cancelar
                 </button>
                 <button
                   type="button"
                   onClick={handleSaveNewPR}
-                  className="rounded-2xl bg-amber-600 hover:bg-amber-500 px-5 py-2.5 text-xs font-bold text-white shadow-soft transition-transform active:scale-95"
+                  className="rounded-2xl bg-amber-600 hover:bg-amber-700 px-5 py-2.5 text-xs font-bold text-white shadow-sm transition-transform active:scale-95"
                 >
                   Guardar Marca
                 </button>
@@ -551,15 +550,15 @@ export function ProgressTab({
       {/* ── MODAL REGISTRO DE PESO CORPORAL ── */}
       {isBodyMetricModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="w-full max-w-md rounded-3xl border border-purple-500/30 bg-[#100e23] p-6 shadow-2xl animate-in zoom-in-95 duration-150 space-y-4">
-            <div className="flex items-center justify-between pb-2 border-b border-purple-500/15">
-              <h3 className="text-base font-black text-white flex items-center gap-2">
-                <Scale className="size-5 text-cyan-400" />
+          <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-150 space-y-4 dark:bg-[#100e23] dark:border-purple-500/30">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-purple-500/15">
+              <h3 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
+                <Scale className="size-5 text-emerald-600 dark:text-cyan-400" />
                 Registrar Peso de Hoy
               </h3>
               <button
                 onClick={() => setIsBodyMetricModalOpen(false)}
-                className="rounded-full p-1 text-slate-400 hover:text-white"
+                className="rounded-full p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors dark:hover:text-white dark:hover:bg-white/10"
               >
                 <X className="size-5" />
               </button>
@@ -568,7 +567,7 @@ export function ProgressTab({
             <div className="space-y-3 text-xs">
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="font-bold text-slate-300">Peso (Kg) <span className="text-red-500">*</span></label>
+                  <label className="font-bold text-slate-700 dark:text-slate-300">Peso (Kg) <span className="text-red-500">*</span></label>
                   <input
                     type="number"
                     step="0.1"
@@ -576,55 +575,55 @@ export function ProgressTab({
                     onChange={(e) => setBodyWeight(e.target.value)}
                     placeholder="Ej: 78.6"
                     autoFocus
-                    className="w-full rounded-2xl border border-purple-500/20 bg-white/[0.04] py-2.5 px-3 font-mono font-bold text-white outline-none focus:border-purple-500"
+                    className="w-full rounded-2xl border border-slate-200 bg-white py-2.5 px-3 font-mono font-bold text-slate-900 outline-none focus:border-emerald-500 dark:border-purple-500/20 dark:bg-white/[0.04] dark:text-white dark:focus:border-purple-500"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="font-bold text-slate-300">% Grasa Corporal (opcional)</label>
+                  <label className="font-bold text-slate-700 dark:text-slate-300">% Grasa Corporal (opcional)</label>
                   <input
                     type="number"
                     step="0.1"
                     value={bodyFat}
                     onChange={(e) => setBodyFat(e.target.value)}
                     placeholder="Ej: 14.5"
-                    className="w-full rounded-2xl border border-purple-500/20 bg-white/[0.04] py-2.5 px-3 font-mono font-bold text-white outline-none focus:border-purple-500"
+                    className="w-full rounded-2xl border border-slate-200 bg-white py-2.5 px-3 font-mono font-bold text-slate-900 outline-none focus:border-emerald-500 dark:border-purple-500/20 dark:bg-white/[0.04] dark:text-white dark:focus:border-purple-500"
                   />
                 </div>
               </div>
 
               <div className="space-y-1">
-                <label className="font-bold text-slate-300">Notas / Sensaciones</label>
+                <label className="font-bold text-slate-700 dark:text-slate-300">Notas / Sensaciones</label>
                 <input
                   value={bodyNotes}
                   onChange={(e) => setBodyNotes(e.target.value)}
                   placeholder="Ej: En ayunas post-entreno, buena energía"
-                  className="w-full rounded-2xl border border-purple-500/20 bg-white/[0.04] py-2.5 px-3 text-xs text-white outline-none focus:border-purple-500"
+                  className="w-full rounded-2xl border border-slate-200 bg-white py-2.5 px-3 text-xs text-slate-900 outline-none focus:border-emerald-500 dark:border-purple-500/20 dark:bg-white/[0.04] dark:text-white dark:focus:border-purple-500"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="font-bold text-slate-300">Fecha</label>
+                <label className="font-bold text-slate-700 dark:text-slate-300">Fecha</label>
                 <input
                   type="date"
                   value={metricDate}
                   onChange={(e) => setMetricDate(e.target.value)}
-                  className="w-full rounded-2xl border border-purple-500/20 bg-white/[0.04] py-2 px-3 text-xs font-medium text-white outline-none focus:border-purple-500"
+                  className="w-full rounded-2xl border border-slate-200 bg-white py-2 px-3 text-xs font-medium text-slate-900 outline-none focus:border-emerald-500 dark:border-purple-500/20 dark:bg-white/[0.04] dark:text-white dark:focus:border-purple-500"
                 />
               </div>
 
-              <div className="pt-2 border-t border-purple-500/15 flex gap-2 justify-end">
+              <div className="pt-2 border-t border-slate-200 dark:border-purple-500/15 flex gap-2 justify-end">
                 <button
                   type="button"
                   onClick={() => setIsBodyMetricModalOpen(false)}
-                  className="rounded-2xl px-4 py-2.5 text-xs font-bold text-slate-400 hover:bg-white/10"
+                  className="rounded-2xl px-4 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-100 transition-colors dark:text-slate-400 dark:hover:bg-white/10"
                 >
                   Cancelar
                 </button>
                 <button
                   type="button"
                   onClick={handleSaveNewBodyMetric}
-                  className="rounded-2xl bg-cyan-600 hover:bg-cyan-500 px-5 py-2.5 text-xs font-bold text-white shadow-soft transition-transform active:scale-95"
+                  className="rounded-2xl bg-emerald-600 hover:bg-emerald-700 px-5 py-2.5 text-xs font-bold text-white shadow-sm transition-transform active:scale-95 dark:bg-cyan-600 dark:hover:bg-cyan-500"
                 >
                   Guardar Peso
                 </button>

@@ -14,17 +14,17 @@ export type MuscleGroup =
   | 'cardio'
 
 export const muscleGroupLabels: Record<MuscleGroup, { label: string; icon: string; color: string }> = {
-  pecho: { label: 'Pecho', icon: '🏋️‍♂️', color: 'text-rose-400 bg-rose-500/10 border-rose-500/20' },
-  espalda: { label: 'Espalda', icon: '🚣', color: 'text-blue-400 bg-blue-500/10 border-blue-500/20' },
-  hombro: { label: 'Hombro', icon: '🎯', color: 'text-amber-400 bg-amber-500/10 border-amber-500/20' },
-  biceps: { label: 'Bíceps', icon: '💪', color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' },
-  triceps: { label: 'Tríceps', icon: '⚡', color: 'text-purple-400 bg-purple-500/10 border-purple-500/20' },
-  cuadriceps: { label: 'Cuádriceps', icon: '🦵', color: 'text-cyan-400 bg-cyan-500/10 border-cyan-500/20' },
-  isquios: { label: 'Isquios', icon: '🏃', color: 'text-indigo-400 bg-indigo-500/10 border-indigo-500/20' },
-  gluteo: { label: 'Glúteo', icon: '🍑', color: 'text-pink-400 bg-pink-500/10 border-pink-500/20' },
-  gemelo: { label: 'Gemelo', icon: '🦶', color: 'text-teal-400 bg-teal-500/10 border-teal-500/20' },
-  core: { label: 'Core / Abdomen', icon: '🛡️', color: 'text-orange-400 bg-orange-500/10 border-orange-500/20' },
-  cardio: { label: 'Cardio', icon: '❤️‍🔥', color: 'text-red-400 bg-red-500/10 border-red-500/20' },
+  pecho: { label: 'Pecho', icon: '🏋️‍♂️', color: 'text-rose-700 bg-rose-50 border-rose-200 dark:text-rose-400 dark:bg-rose-500/10 dark:border-rose-500/20' },
+  espalda: { label: 'Espalda', icon: '🚣', color: 'text-blue-700 bg-blue-50 border-blue-200 dark:text-blue-400 dark:bg-blue-500/10 dark:border-blue-500/20' },
+  hombro: { label: 'Hombro', icon: '🎯', color: 'text-amber-700 bg-amber-50 border-amber-200 dark:text-amber-400 dark:bg-amber-500/10 dark:border-amber-500/20' },
+  biceps: { label: 'Bíceps', icon: '💪', color: 'text-emerald-700 bg-emerald-50 border-emerald-200 dark:text-emerald-400 dark:bg-emerald-500/10 dark:border-emerald-500/20' },
+  triceps: { label: 'Tríceps', icon: '⚡', color: 'text-purple-700 bg-purple-50 border-purple-200 dark:text-purple-400 dark:bg-purple-500/10 dark:border-purple-500/20' },
+  cuadriceps: { label: 'Cuádriceps', icon: '🦵', color: 'text-cyan-700 bg-cyan-50 border-cyan-200 dark:text-cyan-400 dark:bg-cyan-500/10 dark:border-cyan-500/20' },
+  isquios: { label: 'Isquios', icon: '🏃', color: 'text-indigo-700 bg-indigo-50 border-indigo-200 dark:text-indigo-400 dark:bg-indigo-500/10 dark:border-indigo-500/20' },
+  gluteo: { label: 'Glúteo', icon: '🍑', color: 'text-pink-700 bg-pink-50 border-pink-200 dark:text-pink-400 dark:bg-pink-500/10 dark:border-pink-500/20' },
+  gemelo: { label: 'Gemelo', icon: '🦶', color: 'text-teal-700 bg-teal-50 border-teal-200 dark:text-teal-400 dark:bg-teal-500/10 dark:border-teal-500/20' },
+  core: { label: 'Core / Abdomen', icon: '🛡️', color: 'text-orange-700 bg-orange-50 border-orange-200 dark:text-orange-400 dark:bg-orange-500/10 dark:border-orange-500/20' },
+  cardio: { label: 'Cardio', icon: '❤️‍🔥', color: 'text-red-700 bg-red-50 border-red-200 dark:text-red-400 dark:bg-red-500/10 dark:border-red-500/20' },
 }
 
 export type EquipmentType =

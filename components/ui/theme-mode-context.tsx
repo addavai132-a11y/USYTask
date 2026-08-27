@@ -11,13 +11,13 @@ interface ThemeModeContextType {
 }
 
 const ThemeModeContext = createContext<ThemeModeContextType>({
-  mode: 'dark',
+  mode: 'light',
   setMode: () => {},
   toggleMode: () => {},
 })
 
 export function ThemeModeProvider({ children }: { children: React.ReactNode }) {
-  const [mode, setModeState] = useState<ThemeMode>('dark')
+  const [mode, setModeState] = useState<ThemeMode>('light')
 
   useEffect(() => {
     try {
@@ -26,11 +26,11 @@ export function ThemeModeProvider({ children }: { children: React.ReactNode }) {
         setModeState(stored)
         applyModeClass(stored)
       } else {
-        setModeState('dark')
-        applyModeClass('dark')
+        setModeState('light')
+        applyModeClass('light')
       }
     } catch {
-      applyModeClass('dark')
+      applyModeClass('light')
     }
   }, [])
 

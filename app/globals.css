@@ -61,9 +61,59 @@
 }
 
 :root,
+.light {
+  color-scheme: light;
+  /* Original Clean White + Emerald Light System */
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+  --popover: #ffffff;
+  --popover-foreground: #0f172a;
+  --primary: #059669; /* Emerald 600 */
+  --primary-foreground: #ffffff;
+  --secondary: #f1f5f9;
+  --secondary-foreground: #334155;
+  --muted: #f8fafc;
+  --muted-foreground: #64748b;
+  --accent: #059669;
+  --accent-foreground: #ffffff;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --success: #059669;
+  --success-foreground: #ffffff;
+  --warning: #d97706;
+  --warning-foreground: #ffffff;
+  --border: #e2e8f0;
+  --input: #e2e8f0;
+  --ring: #059669;
+
+  --member-marcos: #2563eb;
+  --member-marieli: #db2777;
+  --member-adrian: #ea580c;
+  --member-celia: #9333ea;
+
+  --chart-1: #059669;
+  --chart-2: #2563eb;
+  --chart-3: #d97706;
+  --chart-4: #9333ea;
+  --chart-5: #0284c7;
+
+  --radius: 1.25rem;
+
+  --sidebar: #ffffff;
+  --sidebar-foreground: #0f172a;
+  --sidebar-primary: #059669;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f1f5f9;
+  --sidebar-accent-foreground: #0f172a;
+  --sidebar-border: #e2e8f0;
+  --sidebar-ring: #059669;
+}
+
 .dark {
   color-scheme: dark;
-  /* 1. Dark Luxury + Neon Purple Aurora System */
+  /* Dark Luxury + Neon Purple Aurora System */
   --background: #05050a;
   --foreground: #ffffff;
   --card: rgba(14, 13, 29, 0.65);
@@ -99,8 +149,6 @@
   --chart-4: #3b82f6;
   --chart-5: #10b981;
 
-  --radius: 1.25rem;
-
   --sidebar: rgba(9, 8, 20, 0.85);
   --sidebar-foreground: #ffffff;
   --sidebar-primary: #a855f7;
@@ -109,48 +157,6 @@
   --sidebar-accent-foreground: #ffffff;
   --sidebar-border: rgba(168, 85, 247, 0.15);
   --sidebar-ring: #a855f7;
-}
-
-.light {
-  color-scheme: light;
-  /* 2. Original Sober Forest Emerald Light System */
-  --background: #fbfbf9;
-  --foreground: #0f172a;
-  --card: #ffffff;
-  --card-foreground: #0f172a;
-  --popover: #ffffff;
-  --popover-foreground: #0f172a;
-  --primary: #047857; /* Forest Emerald Green */
-  --primary-foreground: #ffffff;
-  --secondary: #f1f5f9;
-  --secondary-foreground: #334155;
-  --muted: #f8fafc;
-  --muted-foreground: #64748b;
-  --accent: #047857;
-  --accent-foreground: #ffffff;
-  --destructive: #ef4444;
-  --destructive-foreground: #ffffff;
-  --success: #047857;
-  --success-foreground: #ffffff;
-  --warning: #d97706;
-  --warning-foreground: #ffffff;
-  --border: #e2e8f0;
-  --input: #e2e8f0;
-  --ring: #047857;
-
-  --member-marcos: #2563eb;
-  --member-marieli: #db2777;
-  --member-adrian: #ea580c;
-  --member-celia: #9333ea;
-
-  --sidebar: #ffffff;
-  --sidebar-foreground: #0f172a;
-  --sidebar-primary: #047857;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #f1f5f9;
-  --sidebar-accent-foreground: #0f172a;
-  --sidebar-border: #e2e8f0;
-  --sidebar-ring: #047857;
 }
 
 @layer base {
@@ -312,35 +318,57 @@
 }
 
 /* ──────────────────────────────────────────────────────────
-   GLOBAL DROPDOWNS, SELECTS & POPOVERS HIGH CONTRAST STYLING
+   GLOBAL DROPDOWNS, SELECTS & POPOVERS ADAPTIVE THEMED STYLING
    ────────────────────────────────────────────────────────── */
 select {
+  color-scheme: light;
+}
+.dark select {
   color-scheme: dark;
 }
 
 select option,
 select optgroup {
-  background-color: #121124 !important;
-  color: #e9d5ff !important; /* purple-200 */
+  background-color: #ffffff !important;
+  color: #0f172a !important; /* slate-900 */
   font-weight: 600 !important;
   padding: 8px 12px !important;
+}
+
+.dark select option,
+.dark select optgroup {
+  background-color: #121124 !important;
+  color: #e9d5ff !important; /* purple-200 */
 }
 
 select option:hover,
 select option:focus,
 select option:checked {
+  background-color: rgba(5, 150, 105, 0.15) !important;
+  color: #065f46 !important; /* emerald-800 */
+}
+
+.dark select option:hover,
+.dark select option:focus,
+.dark select option:checked {
   background-color: rgba(147, 51, 234, 0.35) !important;
   color: #f3e8ff !important; /* purple-100 */
 }
 
 /* Base dropdown / popover utility classes */
 .dropdown-menu-container {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08);
+  border-radius: 1rem;
+  padding: 0.375rem;
+}
+
+.dark .dropdown-menu-container {
   background-color: rgba(18, 17, 36, 0.98);
   border: 1px solid rgba(168, 85, 247, 0.25);
   box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.8), 0 0 20px 0 rgba(168, 85, 247, 0.15);
   backdrop-filter: blur(24px);
-  border-radius: 1rem;
-  padding: 0.375rem;
 }
 
 .dropdown-item {
@@ -352,17 +380,32 @@ select option:checked {
   border-radius: 0.75rem;
   font-size: 0.75rem;
   font-weight: 600;
-  color: #e9d5ff; /* purple-200 */
+  color: #334155; /* slate-700 */
   transition: all 0.15s ease;
   text-align: left;
 }
 
+.dark .dropdown-item {
+  color: #e9d5ff; /* purple-200 */
+}
+
 .dropdown-item:hover {
+  background-color: #f1f5f9;
+  color: #0f172a;
+}
+
+.dark .dropdown-item:hover {
   background-color: rgba(147, 51, 234, 0.2);
   color: #ffffff;
 }
 
 .dropdown-item-active {
+  background-color: #ecfdf5; /* emerald-50 */
+  color: #065f46; /* emerald-800 */
+  border: 1px solid #a7f3d0;
+}
+
+.dark .dropdown-item-active {
   background-color: rgba(147, 51, 234, 0.3);
   color: #d8b4fe; /* purple-300 */
   border: 1px solid rgba(168, 85, 247, 0.4);

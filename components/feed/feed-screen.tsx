@@ -161,26 +161,26 @@ export function FeedScreen() {
       {/* 1. SECCIÓN DE PRIORIDAD MÁXIMA PARA HOY (Solo si hay elementos hoy)        */}
       {/* ========================================================================= */}
       {hasTodayItems && (
-        <Card className="p-4 sm:p-5 bg-gradient-to-b from-purple-950/40 to-[#121026]/90 border border-purple-500/30 rounded-3xl shadow-2xl backdrop-blur-xl space-y-3.5 ring-1 ring-purple-500/20">
-          <div className="flex items-center justify-between pb-2.5 border-b border-purple-500/20">
+        <Card className="p-4 sm:p-5 bg-white border border-slate-200 rounded-3xl shadow-sm space-y-3.5 dark:bg-gradient-to-b dark:from-purple-950/40 dark:to-[#121026]/90 dark:border-purple-500/30 dark:shadow-2xl">
+          <div className="flex items-center justify-between pb-2.5 border-b border-slate-200/80 dark:border-purple-500/20">
             <div className="flex items-center gap-2.5">
-              <div className="flex size-9 items-center justify-center rounded-xl bg-purple-500/20 border border-purple-500/30 text-purple-300 shrink-0">
+              <div className="flex size-9 items-center justify-center rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 dark:bg-purple-500/20 dark:border-purple-500/30 dark:text-purple-300 shrink-0">
                 <Calendar className="size-4.5" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="text-sm sm:text-base font-black text-white">Hoy en vuestro día</h3>
-                  <span className="rounded-full bg-purple-500/25 border border-purple-500/40 px-2 py-0.5 text-[10px] font-black text-purple-300 uppercase tracking-wider">
+                  <h3 className="text-sm sm:text-base font-black text-slate-900 dark:text-white">Hoy en vuestro día</h3>
+                  <span className="rounded-full bg-emerald-100 border border-emerald-200 px-2 py-0.5 text-[10px] font-black text-emerald-800 uppercase tracking-wider dark:bg-purple-500/25 dark:border-purple-500/40 dark:text-purple-300">
                     {todayEvents.length + todayReminders.length} para hoy
                   </span>
                 </div>
-                <p className="text-[11px] text-slate-400">Prioridad para el día de hoy</p>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">Prioridad para el día de hoy</p>
               </div>
             </div>
 
             <button
               onClick={() => setTab('organizar')}
-              className="flex items-center gap-1 text-xs font-bold text-purple-300 hover:text-white transition-colors"
+              className="flex items-center gap-1 text-xs font-bold text-emerald-700 hover:text-emerald-900 dark:text-purple-300 dark:hover:text-white transition-colors"
             >
               <span>Ver todo</span>
               <ChevronRight className="size-3.5" />
@@ -192,16 +192,16 @@ export function FeedScreen() {
             {todayEvents.map((e) => (
               <div
                 key={e.id}
-                className="flex items-center justify-between gap-3 p-2.5 rounded-2xl bg-white/[0.04] hover:bg-white/[0.07] border border-purple-500/20 transition-all group"
+                className="flex items-center justify-between gap-3 p-2.5 rounded-2xl bg-slate-50 hover:bg-slate-100/80 border border-slate-200 transition-all group dark:bg-white/[0.04] dark:hover:bg-white/[0.07] dark:border-purple-500/20"
               >
                 <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                  <div className="flex size-8 items-center justify-center rounded-xl bg-purple-500/20 text-purple-300 shrink-0 text-xs font-mono font-bold">
+                  <div className="flex size-8 items-center justify-center rounded-xl bg-emerald-100 text-emerald-800 shrink-0 text-xs font-mono font-bold dark:bg-purple-500/20 dark:text-purple-300">
                     {e.time || '📅'}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs sm:text-sm font-bold text-white truncate">{e.title}</p>
-                    <div className="flex items-center gap-2 text-[10px] text-slate-400 mt-0.5">
-                      <span className="rounded bg-purple-500/15 text-purple-300 px-1.5 py-0.2 font-semibold">
+                    <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate">{e.title}</p>
+                    <div className="flex items-center gap-2 text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
+                      <span className="rounded bg-slate-200/80 text-slate-700 px-1.5 py-0.2 font-semibold dark:bg-purple-500/15 dark:text-purple-300">
                         {e.category}
                       </span>
                       {e.location && (
@@ -221,7 +221,7 @@ export function FeedScreen() {
                   })}
                   <button
                     onClick={() => deleteEvent(e.id)}
-                    className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-slate-400 hover:text-rose-400"
+                    className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400"
                     title="Eliminar"
                   >
                     <Trash2 className="size-3.5" />
@@ -234,21 +234,21 @@ export function FeedScreen() {
             {todayReminders.map((r) => (
               <div
                 key={r.id}
-                className="flex items-center justify-between gap-3 p-2.5 rounded-2xl bg-orange-500/10 border border-orange-500/25 transition-all group"
+                className="flex items-center justify-between gap-3 p-2.5 rounded-2xl bg-orange-50 border border-orange-200 transition-all group dark:bg-orange-500/10 dark:border-orange-500/25"
               >
                 <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                  <div className="flex size-8 items-center justify-center rounded-xl bg-orange-500/20 text-orange-400 shrink-0">
+                  <div className="flex size-8 items-center justify-center rounded-xl bg-orange-100 text-orange-700 shrink-0 dark:bg-orange-500/20 dark:text-orange-400">
                     <AlertTriangle className="size-4" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs sm:text-sm font-bold text-orange-200 truncate">{r.title}</p>
-                    <span className="text-[10px] font-bold text-orange-400">Vence hoy</span>
+                    <p className="text-xs sm:text-sm font-bold text-orange-950 dark:text-orange-200 truncate">{r.title}</p>
+                    <span className="text-[10px] font-bold text-orange-700 dark:text-orange-400">Vence hoy</span>
                   </div>
                 </div>
 
                 <button
                   onClick={() => deleteReminder(r.id)}
-                  className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-slate-400 hover:text-rose-400"
+                  className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400"
                   title="Eliminar recordatorio"
                 >
                   <Trash2 className="size-3.5" />
@@ -259,23 +259,23 @@ export function FeedScreen() {
         </Card>
       )}
 
-      {/* ── BLOQUE DE MIEMBROS DEL HOGAR (DARK GLASSMORPHISM) ── */}
-      <Card className="p-4 sm:p-5 bg-[#121026]/90 border border-purple-500/20 rounded-3xl shadow-xl backdrop-blur-xl space-y-3.5">
+      {/* ── BLOQUE DE MIEMBROS DEL HOGAR (LIGHT / DARK THEMED) ── */}
+      <Card className="p-4 sm:p-5 bg-white border border-slate-200 rounded-3xl shadow-sm space-y-3.5 dark:bg-[#121026]/90 dark:border-purple-500/20 dark:shadow-xl">
         {/* Cabecera con Título y Botón Invitar */}
-        <div className="flex items-center justify-between pb-2.5 border-b border-purple-500/15">
+        <div className="flex items-center justify-between pb-2.5 border-b border-slate-200/80 dark:border-purple-500/15">
           <div className="flex items-center gap-2.5">
-            <div className="flex size-9 items-center justify-center rounded-xl bg-purple-500/15 border border-purple-500/30 text-purple-400 shrink-0">
+            <div className="flex size-9 items-center justify-center rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 dark:bg-purple-500/15 dark:border-purple-500/30 dark:text-purple-400 shrink-0">
               <Users className="size-4.5" />
             </div>
             <div>
-              <h3 className="text-sm font-black text-white">Miembros del Hogar</h3>
-              <p className="text-[11px] text-slate-400">Integrantes de tu espacio y balance de puntos</p>
+              <h3 className="text-sm font-black text-slate-900 dark:text-white">Miembros del Hogar</h3>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">Integrantes de tu espacio y balance de puntos</p>
             </div>
           </div>
 
           <button
             onClick={() => openQuickAdd('miembro', { hideTabs: true })}
-            className="flex items-center gap-1.5 rounded-xl bg-purple-600/20 hover:bg-purple-600/35 border border-purple-500/30 px-3 py-1.5 text-xs font-bold text-purple-200 hover:text-white transition-all active:scale-95 shadow-sm"
+            className="flex items-center gap-1.5 rounded-full bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3.5 py-1.5 text-xs font-bold text-emerald-800 transition-all active:scale-95 shadow-sm dark:bg-purple-600/20 dark:hover:bg-purple-600/35 dark:border-purple-500/30 dark:text-purple-200"
           >
             <UserPlus className="size-3.5" />
             <span>Invitar</span>
@@ -301,8 +301,8 @@ export function FeedScreen() {
                   className={cn(
                     'flex items-center justify-between gap-3 p-2.5 rounded-2xl border transition-all',
                     isCurrent
-                      ? 'bg-purple-600/15 border-purple-500/40 shadow-sm ring-1 ring-purple-500/30'
-                      : 'bg-white/[0.02] border-white/5 hover:bg-white/[0.05] hover:border-purple-500/20'
+                      ? 'bg-emerald-50/80 border-emerald-300 shadow-2xs dark:bg-purple-600/15 dark:border-purple-500/40 dark:ring-1 dark:ring-purple-500/30'
+                      : 'bg-slate-50 border-slate-200 hover:bg-slate-100/80 dark:bg-white/[0.02] dark:border-white/5 dark:hover:bg-white/[0.05]'
                   )}
                 >
                   {/* Avatar y Datos del Miembro */}
@@ -311,7 +311,7 @@ export function FeedScreen() {
                       <MemberAvatar member={m} size="sm" ring />
                       {m.isOwner && (
                         <span
-                          className="absolute -bottom-1 -right-1 flex size-3.5 items-center justify-center rounded-full bg-purple-600 text-white ring-1 ring-[#121026]"
+                          className="absolute -bottom-1 -right-1 flex size-3.5 items-center justify-center rounded-full bg-emerald-600 text-white ring-1 ring-white dark:bg-purple-600 dark:ring-[#121026]"
                           title="Propietario"
                         >
                           <ShieldCheck className="size-2.5" />
@@ -321,9 +321,9 @@ export function FeedScreen() {
 
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5">
-                        <span className="text-xs font-bold text-white truncate">{m.name}</span>
+                        <span className="text-xs font-bold text-slate-900 dark:text-white truncate">{m.name}</span>
                         {isCurrent && (
-                          <span className="text-[9px] font-bold text-purple-300 bg-purple-500/20 px-1.5 py-0.2 rounded-full">
+                          <span className="text-[9px] font-bold text-emerald-800 bg-emerald-100 px-1.5 py-0.2 rounded-full dark:text-purple-300 dark:bg-purple-500/20">
                             Tú
                           </span>
                         )}
@@ -334,18 +334,18 @@ export function FeedScreen() {
                           className={cn(
                             'text-[9px] font-extrabold uppercase tracking-wider px-1.5 py-0.2 rounded-md',
                             isAdult
-                              ? 'bg-blue-500/15 text-blue-300 border border-blue-500/20'
+                              ? 'bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-500/15 dark:text-blue-300 dark:border-blue-500/20'
                               : isChild
-                              ? 'bg-pink-500/15 text-pink-300 border border-pink-500/20'
-                              : 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/20'
+                              ? 'bg-pink-50 text-pink-700 border border-pink-200 dark:bg-pink-500/15 dark:text-pink-300 dark:border-pink-500/20'
+                              : 'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-300 dark:border-emerald-500/20'
                           )}
                         >
                           {isAdult ? 'Adulto' : isChild ? 'Hijo/a' : 'Miembro'}
                         </span>
 
                         {streak > 0 && (
-                          <span className="text-[10px] font-bold text-orange-400 flex items-center gap-0.5">
-                            <Flame className="size-3 fill-orange-400" />
+                          <span className="text-[10px] font-bold text-orange-500 flex items-center gap-0.5">
+                            <Flame className="size-3 fill-orange-500" />
                             <span>{streak}d</span>
                           </span>
                         )}
@@ -354,9 +354,9 @@ export function FeedScreen() {
                   </div>
 
                   {/* Puntos / Estrellas */}
-                  <div className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-amber-500/10 border border-amber-500/20 shrink-0">
-                    <Star className="size-3 fill-amber-400 text-amber-400" />
-                    <span className="text-xs font-black text-amber-300 font-mono">
+                  <div className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-amber-50 border border-amber-200 shrink-0 dark:bg-amber-500/10 dark:border-amber-500/20">
+                    <Star className="size-3 fill-amber-500 text-amber-500" />
+                    <span className="text-xs font-black text-amber-800 dark:text-amber-300 font-mono">
                       {m.points || 0}
                     </span>
                   </div>
@@ -374,15 +374,15 @@ export function FeedScreen() {
       {/* 2. SECCIÓN DE PRÓXIMOS EVENTOS Y RECORDATORIOS (Cronológico y Compacto)   */}
       {/* ========================================================================= */}
       {upcomingItems.length > 0 && (
-        <Card className="p-4 bg-[#121026]/90 border border-purple-500/20 rounded-3xl shadow-lg backdrop-blur-xl space-y-3">
-          <div className="flex items-center justify-between pb-2 border-b border-purple-500/15">
+        <Card className="p-4 bg-white border border-slate-200 rounded-3xl shadow-sm space-y-3 dark:bg-[#121026]/90 dark:border-purple-500/20 dark:shadow-lg">
+          <div className="flex items-center justify-between pb-2 border-b border-slate-200/80 dark:border-purple-500/15">
             <div className="flex items-center gap-2">
-              <Clock className="size-4 text-purple-400" />
-              <h3 className="text-xs sm:text-sm font-black text-white">Próximos eventos y recordatorios</h3>
+              <Clock className="size-4 text-emerald-600 dark:text-purple-400" />
+              <h3 className="text-xs sm:text-sm font-black text-slate-900 dark:text-white">Próximos eventos y recordatorios</h3>
             </div>
             <button
               onClick={() => setTab('organizar')}
-              className="text-xs font-bold text-purple-300 hover:text-white transition-colors"
+              className="text-xs font-bold text-emerald-700 hover:text-emerald-900 dark:text-purple-300 dark:hover:text-white transition-colors"
             >
               Ver calendario
             </button>
@@ -392,24 +392,24 @@ export function FeedScreen() {
             {upcomingItems.slice(0, 4).map((item) => (
               <div
                 key={item.id}
-                className="flex items-center justify-between gap-3 p-2.5 rounded-2xl bg-white/[0.02] hover:bg-white/[0.05] border border-white/5 transition-all text-xs"
+                className="flex items-center justify-between gap-3 p-2.5 rounded-2xl bg-slate-50 hover:bg-slate-100/80 border border-slate-200 transition-all text-xs dark:bg-white/[0.02] dark:hover:bg-white/[0.05] dark:border-white/5"
               >
                 <div className="flex items-center gap-2.5 min-w-0 flex-1">
                   <div
                     className={cn(
                       'flex size-7 items-center justify-center rounded-xl shrink-0',
                       item.type === 'event'
-                        ? 'bg-purple-500/15 text-purple-400 border border-purple-500/25'
-                        : 'bg-orange-500/15 text-orange-400 border border-orange-500/25'
+                        ? 'bg-emerald-100 text-emerald-800 border border-emerald-200 dark:bg-purple-500/15 dark:text-purple-400 dark:border-purple-500/25'
+                        : 'bg-orange-100 text-orange-800 border border-orange-200 dark:bg-orange-500/15 dark:text-orange-400 dark:border-orange-500/25'
                     )}
                   >
                     {item.type === 'event' ? <Calendar className="size-3.5" /> : <AlertTriangle className="size-3.5" />}
                   </div>
 
                   <div className="min-w-0 flex-1">
-                    <p className="font-bold text-white truncate">{item.title}</p>
-                    <div className="flex items-center gap-2 text-[10px] text-slate-400 mt-0.5">
-                      <span className="font-semibold text-purple-300">
+                    <p className="font-bold text-slate-900 dark:text-white truncate">{item.title}</p>
+                    <div className="flex items-center gap-2 text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
+                      <span className="font-semibold text-emerald-800 dark:text-purple-300">
                         {formatDaysBadge(item.daysLeft, item.date)}
                       </span>
                       {item.time && <span>· {item.time}</span>}
@@ -434,15 +434,15 @@ export function FeedScreen() {
       {/* 3. TAREAS PENDIENTES (Compacto)                                           */}
       {/* ========================================================================= */}
       {pendingTasks.length > 0 ? (
-        <Card className="p-4 bg-[#121026]/90 border border-purple-500/20 rounded-3xl shadow-lg backdrop-blur-xl space-y-3">
-          <div className="flex items-center justify-between pb-2 border-b border-purple-500/15">
+        <Card className="p-4 bg-white border border-slate-200 rounded-3xl shadow-sm space-y-3 dark:bg-[#121026]/90 dark:border-purple-500/20 dark:shadow-lg">
+          <div className="flex items-center justify-between pb-2 border-b border-slate-200/80 dark:border-purple-500/15">
             <div className="flex items-center gap-2">
-              <ListTodo className="size-4 text-emerald-400" />
-              <h3 className="text-xs sm:text-sm font-black text-white">Tareas pendientes ({pendingTasks.length})</h3>
+              <ListTodo className="size-4 text-emerald-600 dark:text-emerald-400" />
+              <h3 className="text-xs sm:text-sm font-black text-slate-900 dark:text-white">Tareas pendientes ({pendingTasks.length})</h3>
             </div>
             <button
               onClick={() => setTab('organizar')}
-              className="text-xs font-bold text-purple-300 hover:text-white transition-colors"
+              className="text-xs font-bold text-emerald-700 hover:text-emerald-900 dark:text-purple-300 dark:hover:text-white transition-colors"
             >
               Ver todas
             </button>
@@ -472,8 +472,8 @@ export function FeedScreen() {
       {/* 4. ESTADO DISCRETO CUANDO NO HAY NADA PENDIENTE NI PRÓXIMO                */}
       {/* ========================================================================= */}
       {!hasTodayItems && upcomingItems.length === 0 && pendingTasks.length === 0 && (
-        <div className="flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-white/[0.02] border border-white/5 text-slate-400 text-xs font-semibold animate-fade-in">
-          <CheckCircle2 className="size-4 text-emerald-400" />
+        <div className="flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-white border border-slate-200 text-slate-500 text-xs font-semibold animate-fade-in dark:bg-white/[0.02] dark:border-white/5 dark:text-slate-400">
+          <CheckCircle2 className="size-4 text-emerald-600 dark:text-emerald-400" />
           <span>No tienes nada pendiente por ahora</span>
         </div>
       )}

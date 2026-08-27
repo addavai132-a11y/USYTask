@@ -126,17 +126,17 @@ export function RoutinesTab({
   return (
     <div className="w-full max-w-2xl mx-auto space-y-4 animate-fade-in">
       {/* ── Barra Resumen Superior Glassmorphism ── */}
-      <div className="w-full flex items-center justify-between p-3.5 px-5 bg-white/[0.03] border border-white/10 rounded-2xl backdrop-blur-xl shadow-sm">
+      <div className="w-full flex items-center justify-between p-3.5 px-5 bg-white border border-slate-200 rounded-2xl shadow-sm dark:bg-white/[0.03] dark:border-white/10">
         <div className="flex items-center gap-3">
-          <span className="text-xl font-bold text-white tabular-nums">{routines.length}</span>
-          <span className="text-xs text-slate-400">rutinas disponibles</span>
+          <span className="text-xl font-bold text-slate-900 dark:text-white tabular-nums">{routines.length}</span>
+          <span className="text-xs text-slate-600 dark:text-slate-400">rutinas disponibles</span>
         </div>
         <button
           onClick={handleOpenCreate}
-          className="flex items-center gap-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white px-3.5 py-1.5 text-xs font-bold transition-all active:scale-95 shadow-sm"
+          className="flex items-center gap-1.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 text-xs font-bold transition-all active:scale-95 shadow-sm dark:bg-purple-600 dark:hover:bg-purple-500"
         >
           <Plus className="size-3.5" />
-          <span>Crear rutina</span>
+          <span>+ Crear rutina</span>
         </button>
       </div>
 
@@ -163,14 +163,14 @@ export function RoutinesTab({
 
       {/* ── Listado de Rutinas ── */}
       {filteredRoutines.length === 0 ? (
-        <div className="w-full min-h-[220px] p-6 flex flex-col items-center justify-center gap-3 bg-white/[0.02] border border-white/10 rounded-2xl text-center">
-          <div className="flex size-10 items-center justify-center rounded-xl bg-purple-500/10 text-purple-400 text-lg">
+        <div className="w-full min-h-[220px] p-6 flex flex-col items-center justify-center gap-3 bg-white border border-slate-200 rounded-2xl text-center dark:bg-white/[0.02] dark:border-white/10">
+          <div className="flex size-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700 dark:bg-purple-500/10 dark:text-purple-400 text-lg">
             🏋️
           </div>
-          <p className="text-xs text-slate-400 max-w-xs">No tienes rutinas en esta categoría. Crea tu primera sesión.</p>
+          <p className="text-xs text-slate-600 dark:text-slate-400 max-w-xs">No tienes rutinas en esta categoría. Crea tu primera sesión.</p>
           <button
             onClick={handleOpenCreate}
-            className="mt-1 rounded-xl bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 text-xs font-bold transition-all active:scale-95 shadow-sm"
+            className="mt-1 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 text-xs font-bold transition-all active:scale-95 shadow-sm dark:bg-purple-600 dark:hover:bg-purple-500"
           >
             + Crear mi primera rutina
           </button>
@@ -184,21 +184,21 @@ export function RoutinesTab({
             return (
               <Card
                 key={routine.id}
-                className="p-4 bg-[#121026]/80 border border-purple-500/20 rounded-2xl shadow-xl backdrop-blur-xl transition-all hover:border-purple-500/40 flex flex-col justify-between gap-3 group"
+                className="p-4 bg-white border border-slate-200 rounded-2xl shadow-sm transition-all hover:border-emerald-500/40 flex flex-col justify-between gap-3 group dark:bg-[#121026]/80 dark:border-purple-500/20 dark:shadow-xl dark:hover:border-purple-500/40"
               >
                 {/* Header: Title & Actions */}
                 <div className="flex items-start justify-between gap-3">
                   <div className="space-y-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <h4 className="text-base font-extrabold text-white group-hover:text-purple-300 transition-colors truncate">
+                      <h4 className="text-base font-extrabold text-slate-900 group-hover:text-emerald-700 transition-colors truncate dark:text-white dark:group-hover:text-purple-300">
                         {routine.name}
                       </h4>
-                      <span className="rounded-full bg-purple-500/15 border border-purple-500/30 px-2 py-0.5 text-[10px] font-bold text-purple-300">
+                      <span className="rounded-full bg-slate-100 border border-slate-200 px-2 py-0.5 text-[10px] font-bold text-slate-700 dark:bg-purple-500/15 dark:border-purple-500/30 dark:text-purple-300">
                         {routineCategoryLabels[routine.category] || routine.category}
                       </span>
                     </div>
                     {routine.description && (
-                      <p className="text-xs text-slate-400 font-medium">
+                      <p className="text-xs text-slate-600 font-medium dark:text-slate-400">
                         {routine.description}
                       </p>
                     )}
@@ -208,7 +208,7 @@ export function RoutinesTab({
                     <button
                       type="button"
                       onClick={() => handleOpenEdit(routine)}
-                      className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+                      className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors dark:hover:text-white dark:hover:bg-white/10"
                       title="Editar rutina"
                     >
                       <Edit2 className="size-3.5" />
@@ -229,7 +229,7 @@ export function RoutinesTab({
                           },
                         })
                       }}
-                      className="p-1.5 rounded-xl text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+                      className="p-1.5 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors dark:hover:text-rose-400 dark:hover:bg-rose-500/10"
                       title="Eliminar rutina"
                     >
                       <Trash2 className="size-3.5" />
@@ -246,28 +246,28 @@ export function RoutinesTab({
                         key={mg}
                         className={cn(
                           'inline-flex items-center gap-1 rounded-lg border px-2 py-0.5 text-[10px] font-bold',
-                          meta.color
+                          meta?.color || 'bg-slate-100 text-slate-700 border-slate-200'
                         )}
                       >
-                        <span>{meta.icon}</span>
-                        <span>{meta.label}</span>
+                        <span>{meta?.icon}</span>
+                        <span>{meta?.label}</span>
                       </span>
                     )
                   })}
                 </div>
 
                 {/* Exercise List Preview */}
-                <div className="pt-2 border-t border-purple-500/15 space-y-1">
-                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                <div className="pt-2 border-t border-slate-200/80 dark:border-purple-500/15 space-y-1">
+                  <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider dark:text-slate-400">
                     {routine.exercises.length} Ejercicios planificados:
                   </span>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 pt-1">
                     {routine.exercises.map((ex, idx) => (
                       <div
                         key={`${ex.id}_${idx}`}
-                        className="flex items-center gap-2 rounded-xl bg-white/[0.02] border border-white/5 px-2.5 py-1.5 text-xs text-slate-300"
+                        className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-800 dark:bg-white/[0.02] dark:border-white/5 dark:text-slate-300"
                       >
-                        <span className="text-purple-400 font-bold text-[10px] size-4 flex items-center justify-center rounded-full bg-purple-500/20">
+                        <span className="text-emerald-800 font-semibold text-[10px] size-5 flex items-center justify-center rounded-full bg-emerald-100 dark:text-purple-400 dark:bg-purple-500/20 shrink-0">
                           {idx + 1}
                         </span>
                         <span className="truncate font-medium">{ex.name}</span>
@@ -277,14 +277,14 @@ export function RoutinesTab({
                 </div>
 
                 {/* Direct Action: Iniciar Sesión Live */}
-                <div className="pt-2 border-t border-purple-500/15 flex items-center justify-between gap-3">
-                  <span className="text-xs text-slate-400 font-semibold flex items-center gap-1">
-                    <Clock className="size-3 text-purple-400" /> ~60-75 min sugeridos
+                <div className="pt-2 border-t border-slate-200/80 dark:border-purple-500/15 flex items-center justify-between gap-3">
+                  <span className="text-xs text-slate-600 dark:text-slate-400 font-semibold flex items-center gap-1">
+                    <Clock className="size-3 text-emerald-600 dark:text-purple-400" /> ~60-75 min sugeridos
                   </span>
 
                   <button
                     onClick={() => onStartSessionWithRoutine(routine)}
-                    className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 px-4 py-2 text-xs font-black text-white shadow-md shadow-purple-950/50 transition-all active:scale-95"
+                    className="flex items-center gap-1.5 rounded-full bg-emerald-600 hover:bg-emerald-700 px-4 py-2 text-xs font-bold text-white shadow-sm transition-all active:scale-95 dark:bg-gradient-to-r dark:from-purple-600 dark:to-indigo-600"
                   >
                     <Play className="size-3.5 fill-current" />
                     <span>⚡ Iniciar Sesión</span>
@@ -299,16 +299,16 @@ export function RoutinesTab({
       {/* ── MODAL CONSTRUCTOR / EDITOR DE RUTINA ── */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="w-full max-w-lg rounded-3xl border border-purple-500/30 bg-[#100e23] shadow-2xl animate-in zoom-in-95 duration-150 max-h-[90vh] flex flex-col overflow-hidden">
+          <div className="w-full max-w-lg rounded-3xl border border-slate-200 bg-white shadow-2xl animate-in zoom-in-95 duration-150 max-h-[90vh] flex flex-col overflow-hidden dark:bg-[#100e23] dark:border-purple-500/30">
             {/* Cabecera Fija */}
-            <div className="p-4 pb-2.5 border-b border-purple-500/20 flex items-center justify-between shrink-0">
-              <h3 className="text-base sm:text-lg font-black tracking-tight text-white flex items-center gap-2">
-                <Dumbbell className="size-5 text-purple-400" />
+            <div className="p-4 pb-2.5 border-b border-slate-200 dark:border-purple-500/20 flex items-center justify-between shrink-0">
+              <h3 className="text-base sm:text-lg font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
+                <Dumbbell className="size-5 text-emerald-600 dark:text-purple-400" />
                 {editingRoutineId ? 'Editar Rutina' : 'Crear Nueva Rutina'}
               </h3>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="rounded-full p-1 text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+                className="rounded-full p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors dark:hover:text-white dark:hover:bg-white/10"
               >
                 <X className="size-5" />
               </button>
@@ -317,19 +317,19 @@ export function RoutinesTab({
             {/* Cuerpo con Scroll Vertical Completo */}
             <div className="p-4 flex-1 overflow-y-auto pr-2 space-y-4 custom-fitness-scroll text-xs">
               <div className="space-y-1">
-                <label className="font-bold text-slate-300">Nombre de la Rutina <span className="text-red-500">*</span></label>
+                <label className="font-bold text-slate-700 dark:text-slate-300">Nombre de la Rutina <span className="text-red-500">*</span></label>
                 <input
                   value={routineName}
                   onChange={(e) => setRoutineName(e.target.value)}
                   placeholder="Ej: Empuje A - Hipertrofia Pecho y Hombro"
                   autoFocus
-                  className="w-full rounded-2xl border border-purple-500/20 bg-white/[0.04] py-2.5 px-3.5 text-xs font-semibold text-white outline-none focus:border-purple-500"
+                  className="w-full rounded-2xl border border-slate-200 bg-white py-2.5 px-3.5 text-xs font-semibold text-slate-900 outline-none focus:border-emerald-500 dark:border-purple-500/20 dark:bg-white/[0.04] dark:text-white dark:focus:border-purple-500"
                 />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="font-bold text-slate-300">Categoría / Enfoque</label>
+                  <label className="font-bold text-slate-700 dark:text-slate-300">Categoría / Enfoque</label>
                   <CustomSelect<RoutineCategory>
                     value={routineCategory}
                     onChange={(cat) => {
@@ -350,12 +350,12 @@ export function RoutinesTab({
                 </div>
 
                 <div className="space-y-1">
-                  <label className="font-bold text-slate-300">Descripción / Objetivo (opcional)</label>
+                  <label className="font-bold text-slate-700 dark:text-slate-300">Descripción / Objetivo (opcional)</label>
                   <input
                     value={routineDescription}
                     onChange={(e) => setRoutineDescription(e.target.value)}
                     placeholder="Ej. 4 series por ejercicio, descanso 90s"
-                    className="w-full rounded-2xl border border-purple-500/20 bg-white/[0.04] py-2.5 px-3.5 text-xs font-semibold text-white outline-none focus:border-purple-500"
+                    className="w-full rounded-2xl border border-slate-200 bg-white py-2.5 px-3.5 text-xs font-semibold text-slate-900 outline-none focus:border-emerald-500 dark:border-purple-500/20 dark:bg-white/[0.04] dark:text-white dark:focus:border-purple-500"
                   />
                 </div>
               </div>
@@ -369,19 +369,19 @@ export function RoutinesTab({
                   if (currentTemplates.length === 0) return null
 
                   return (
-                    <div className="space-y-2 pt-1 border-t border-purple-500/15">
+                    <div className="space-y-2 pt-1 border-t border-slate-200 dark:border-purple-500/15">
                       <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-bold text-purple-300 flex items-center gap-1">
-                          <Sparkles className="size-3 text-purple-400" />
+                        <span className="text-[11px] font-bold text-emerald-800 dark:text-purple-300 flex items-center gap-1">
+                          <Sparkles className="size-3 text-emerald-600 dark:text-purple-400" />
                           Plantillas Populares / Variantes
                         </span>
-                        <span className="text-[10px] text-slate-400 font-semibold">
+                        <span className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold">
                           {currentTemplates.length} variantes disponibles
                         </span>
                       </div>
 
                       {/* Selector de píldoras [ Variante 1 ] [ Variante 2 ] [ Variante 3 ] */}
-                      <div className="flex gap-1.5 p-1 rounded-xl bg-white/[0.03] border border-white/10 overflow-x-auto no-scrollbar">
+                      <div className="flex gap-1.5 p-1 rounded-xl bg-slate-100 dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 overflow-x-auto no-scrollbar">
                         {currentTemplates.map((variant, vIdx) => (
                           <button
                             key={variant.id}
@@ -390,8 +390,8 @@ export function RoutinesTab({
                             className={cn(
                               'flex-1 min-w-[90px] py-1.5 px-2.5 rounded-lg text-xs font-bold transition-all text-center truncate flex items-center justify-center gap-1',
                               selectedVariantIndex === vIdx
-                                ? 'bg-purple-950/70 border border-purple-500/50 text-purple-100 shadow-sm'
-                                : 'text-slate-400 hover:text-white hover:bg-white/[0.04]'
+                                ? 'bg-white border border-slate-200 text-slate-900 shadow-sm dark:bg-purple-950/70 dark:border-purple-500/50 dark:text-purple-100'
+                                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 dark:text-slate-400 dark:hover:text-white dark:hover:bg-white/[0.04]'
                             )}
                           >
                             <span>Variante {vIdx + 1}</span>
@@ -402,21 +402,21 @@ export function RoutinesTab({
 
                       {/* Tarjeta de Vista Previa de la Variante */}
                       {activeTemplate && (
-                        <div className="p-3.5 rounded-2xl bg-[#100e23]/90 border border-purple-500/25 shadow-sm space-y-2.5 animate-fade-in">
+                        <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 shadow-sm space-y-2.5 animate-fade-in dark:bg-[#100e23]/90 dark:border-purple-500/25">
                           <div className="flex items-start justify-between gap-3">
                             <div className="space-y-0.5 min-w-0">
                               <div className="flex items-center gap-2 flex-wrap">
-                                <h5 className="font-extrabold text-white text-xs truncate">
+                                <h5 className="font-extrabold text-slate-900 dark:text-white text-xs truncate">
                                   {activeTemplate.name}
                                 </h5>
-                                <span className="px-2 py-0.5 rounded-full bg-purple-500/20 border border-purple-500/30 text-[9px] font-black text-purple-300">
+                                <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 text-[9px] font-black dark:bg-purple-500/20 dark:border-purple-500/30 dark:text-purple-300">
                                   {activeTemplate.badge}
                                 </span>
-                                <span className="text-[10px] text-slate-400 font-medium flex items-center gap-0.5">
+                                <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium flex items-center gap-0.5">
                                   <Clock className="size-2.5" /> {activeTemplate.suggestedDuration}
                                 </span>
                               </div>
-                              <p className="text-[11px] text-slate-400 font-medium leading-relaxed">
+                              <p className="text-[11px] text-slate-600 dark:text-slate-400 font-medium leading-relaxed">
                                 {activeTemplate.description}
                               </p>
                             </div>
@@ -424,7 +424,7 @@ export function RoutinesTab({
                             <button
                               type="button"
                               onClick={() => handleLoadTemplate(activeTemplate)}
-                              className="shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs shadow-md transition-all active:scale-95"
+                              className="shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition-all active:scale-95 dark:bg-gradient-to-r dark:from-purple-600 dark:to-indigo-600"
                             >
                               <Sparkles className="size-3 fill-current" />
                               <span>Cargar esta Rutina</span>
@@ -432,8 +432,8 @@ export function RoutinesTab({
                           </div>
 
                           {/* Lista compacta de ejercicios incluidos en la plantilla */}
-                          <div className="pt-2 border-t border-purple-500/15">
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                          <div className="pt-2 border-t border-slate-200 dark:border-purple-500/15">
+                            <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block mb-1">
                               Ejercicios incluidos ({activeTemplate.exercises.length}):
                             </span>
                             <div className="flex flex-wrap gap-1">
@@ -442,7 +442,7 @@ export function RoutinesTab({
                                 return (
                                   <span
                                     key={`${ex.id}_${exI}`}
-                                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-white/[0.03] border border-white/10 text-[10px] text-slate-200"
+                                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-white border border-slate-200 text-[10px] text-slate-700 dark:bg-white/[0.03] dark:border-white/10 dark:text-slate-200"
                                   >
                                     <span>{meta?.icon || '⚡'}</span>
                                     <span className="font-medium">{ex.name}</span>
@@ -459,15 +459,15 @@ export function RoutinesTab({
               )}
 
               {/* Constructor de Ejercicios */}
-              <div className="space-y-2 pt-2 border-t border-purple-500/15">
+              <div className="space-y-2 pt-2 border-t border-slate-200 dark:border-purple-500/15">
                 <div className="flex items-center justify-between">
-                  <label className="font-bold text-white text-xs flex items-center gap-1.5">
+                  <label className="font-bold text-slate-900 dark:text-white text-xs flex items-center gap-1.5">
                     <span>Ejercicios Seleccionados ({selectedExercises.length})</span>
                   </label>
                   <button
                     type="button"
                     onClick={() => setIsExercisePickerOpen(true)}
-                    className="flex items-center gap-1 rounded-xl bg-purple-600/30 hover:bg-purple-600/50 border border-purple-500/40 px-3 py-1.5 text-xs font-bold text-purple-200 hover:text-white transition-all active:scale-95 shadow-sm"
+                    className="flex items-center gap-1 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3 py-1.5 text-xs font-bold text-emerald-800 transition-all active:scale-95 shadow-sm dark:bg-purple-600/30 dark:hover:bg-purple-600/50 dark:border-purple-500/40 dark:text-purple-200"
                   >
                     <Plus className="size-3.5" />
                     <span>Añadir / Buscar Ejercicio</span>
@@ -475,7 +475,7 @@ export function RoutinesTab({
                 </div>
 
                 {selectedExercises.length === 0 ? (
-                  <div className="p-4 rounded-2xl border border-dashed border-purple-500/30 text-center text-xs text-slate-400">
+                  <div className="p-4 rounded-2xl border border-dashed border-slate-300 dark:border-purple-500/30 text-center text-xs text-slate-500 dark:text-slate-400">
                     No has añadido ejercicios aún. Pulsa el botón superior para explorar el catálogo.
                   </div>
                 ) : (
@@ -485,16 +485,16 @@ export function RoutinesTab({
                       return (
                         <div
                           key={`${ex.id}_${idx}`}
-                          className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-white/[0.03] border border-white/10"
+                          className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-slate-50 border border-slate-200 dark:bg-white/[0.03] dark:border-white/10"
                         >
                           <div className="flex items-center gap-2 min-w-0">
-                            <span className="size-5 rounded-full bg-purple-500/20 text-purple-300 font-bold text-[10px] flex items-center justify-center shrink-0">
+                            <span className="size-5 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[10px] flex items-center justify-center shrink-0 dark:bg-purple-500/20 dark:text-purple-300">
                               {idx + 1}
                             </span>
                             <div className="min-w-0">
-                              <p className="font-bold text-white text-xs truncate">{ex.name}</p>
-                              <span className="text-[10px] text-slate-400">
-                                {meta.icon} {meta.label} · {equipmentLabels[ex.equipment]}
+                              <p className="font-bold text-slate-900 dark:text-white text-xs truncate">{ex.name}</p>
+                              <span className="text-[10px] text-slate-500 dark:text-slate-400">
+                                {meta?.icon} {meta?.label} · {equipmentLabels[ex.equipment]}
                               </span>
                             </div>
                           </div>
@@ -502,7 +502,7 @@ export function RoutinesTab({
                           <button
                             type="button"
                             onClick={() => setSelectedExercises((prev) => prev.filter((_, i) => i !== idx))}
-                            className="p-1 text-slate-400 hover:text-rose-400 rounded-lg hover:bg-rose-500/10 transition-colors"
+                            className="p-1 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors dark:hover:text-rose-400 dark:hover:bg-rose-500/10"
                             title="Eliminar ejercicio"
                           >
                             <Trash2 className="size-3.5" />
@@ -516,18 +516,18 @@ export function RoutinesTab({
             </div>
 
             {/* Pie Fijo (Footer) */}
-            <div className="p-4 pt-3 border-t border-purple-500/20 mt-auto flex gap-2 justify-end shrink-0">
+            <div className="p-4 pt-3 border-t border-slate-200 dark:border-purple-500/20 mt-auto flex gap-2 justify-end shrink-0">
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
-                className="rounded-2xl px-4 py-2.5 text-xs font-bold text-slate-400 hover:bg-white/10 hover:text-white transition-colors"
+                className="rounded-2xl px-4 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-100 transition-colors dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-white"
               >
                 Cancelar
               </button>
               <button
                 type="button"
                 onClick={handleSave}
-                className="rounded-2xl bg-purple-600 hover:bg-purple-500 px-5 py-2.5 text-xs font-bold text-white shadow-soft transition-transform active:scale-95"
+                className="rounded-2xl bg-emerald-600 hover:bg-emerald-700 px-5 py-2.5 text-xs font-bold text-white shadow-sm transition-transform active:scale-95 dark:bg-purple-600 dark:hover:bg-purple-500"
               >
                 Guardar Rutina
               </button>
@@ -539,17 +539,17 @@ export function RoutinesTab({
       {/* ── MODAL EXPLORADOR / BUSCADOR DE EJERCICIOS ── */}
       {isExercisePickerOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="w-full max-w-lg rounded-3xl border border-purple-500/30 bg-[#100e23] p-6 shadow-2xl animate-in zoom-in-95 duration-150 max-h-[85vh] flex flex-col space-y-3">
+          <div className="w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-150 max-h-[85vh] flex flex-col space-y-3 dark:bg-[#100e23] dark:border-purple-500/30">
             {/* Cabecera y Buscador (Fijos arriba) */}
             <div className="shrink-0 space-y-3">
-              <div className="flex items-center justify-between pb-2 border-b border-purple-500/15">
+              <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-purple-500/15">
                 <div>
-                  <h3 className="text-base font-black text-white">Catálogo de Ejercicios</h3>
-                  <p className="text-[11px] text-slate-400">Selecciona los ejercicios que formarán parte de tu rutina</p>
+                  <h3 className="text-base font-black text-slate-900 dark:text-white">Catálogo de Ejercicios</h3>
+                  <p className="text-[11px] text-slate-600 dark:text-slate-400">Selecciona los ejercicios que formarán parte de tu rutina</p>
                 </div>
                 <button
                   onClick={() => setIsExercisePickerOpen(false)}
-                  className="rounded-full p-1 text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+                  className="rounded-full p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors dark:hover:text-white dark:hover:bg-white/10"
                 >
                   <X className="size-5" />
                 </button>
@@ -563,7 +563,7 @@ export function RoutinesTab({
                     value={exerciseSearch}
                     onChange={(e) => setExerciseSearch(e.target.value)}
                     placeholder="Buscar ejercicio (ej. Press banca, sentadilla...)"
-                    className="w-full rounded-xl border border-purple-500/20 bg-white/[0.04] py-2 px-3 pl-8 text-xs font-medium text-white outline-none focus:border-purple-500"
+                    className="w-full rounded-full border border-slate-200 bg-white py-2 px-3 pl-8 text-xs font-medium text-slate-800 placeholder:text-slate-400 outline-none focus:border-emerald-500 dark:border-purple-500/20 dark:bg-white/[0.04] dark:text-white dark:focus:border-purple-500"
                   />
                 </div>
 
@@ -603,23 +603,23 @@ export function RoutinesTab({
                     className={cn(
                       'w-full flex items-center justify-between p-2.5 rounded-xl border text-left transition-all active:scale-[0.99]',
                       isAdded
-                        ? 'bg-purple-950/60 border-purple-500/50 text-white'
-                        : 'bg-white/[0.02] border-white/10 hover:bg-white/[0.06] text-slate-300'
+                        ? 'bg-emerald-50 border-emerald-300 text-slate-900 dark:bg-purple-950/60 dark:border-purple-500/50 dark:text-white'
+                        : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-700 dark:bg-white/[0.02] dark:border-white/10 dark:hover:bg-white/[0.06] dark:text-slate-300'
                     )}
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <span className="text-lg shrink-0">{meta.icon}</span>
+                      <span className="text-lg shrink-0">{meta?.icon}</span>
                       <div className="min-w-0">
                         <p className="font-bold text-xs truncate">{ex.name}</p>
-                        <span className="text-[10px] text-slate-400 font-medium">
-                          {meta.label} · {equipmentLabels[ex.equipment]} {ex.targetRpeRir ? `· ${ex.targetRpeRir}` : ''}
+                        <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
+                          {meta?.label} · {equipmentLabels[ex.equipment]} {ex.targetRpeRir ? `· ${ex.targetRpeRir}` : ''}
                         </span>
                       </div>
                     </div>
 
                     <div className={cn(
                       'size-5 rounded-lg border flex items-center justify-center shrink-0 transition-colors',
-                      isAdded ? 'bg-purple-600 border-purple-500 text-white' : 'border-white/20'
+                      isAdded ? 'bg-emerald-600 border-emerald-600 text-white dark:bg-purple-600 dark:border-purple-500' : 'border-slate-300 dark:border-white/20'
                     )}>
                       {isAdded && <Check className="size-3.5 stroke-[3]" />}
                     </div>
@@ -629,11 +629,11 @@ export function RoutinesTab({
             </div>
 
             {/* Pie de Modal (Fijo abajo) */}
-            <div className="pt-3 border-t border-purple-500/20 mt-2 flex justify-end shrink-0">
+            <div className="pt-3 border-t border-slate-200 dark:border-purple-500/20 mt-2 flex justify-end shrink-0">
               <button
                 type="button"
                 onClick={() => setIsExercisePickerOpen(false)}
-                className="rounded-2xl bg-purple-600 hover:bg-purple-500 px-5 py-2.5 text-xs font-bold text-white shadow-soft transition-transform active:scale-95"
+                className="rounded-2xl bg-emerald-600 hover:bg-emerald-700 px-5 py-2.5 text-xs font-bold text-white shadow-sm transition-transform active:scale-95 dark:bg-purple-600 dark:hover:bg-purple-500"
               >
                 Listo ({selectedExercises.length} seleccionados)
               </button>

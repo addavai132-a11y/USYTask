@@ -541,20 +541,20 @@ export function NutritionTab({
   return (
     <div className="w-full max-w-2xl mx-auto space-y-4 animate-fade-in">
       {/* ── BARRA RESUMEN DE MACROS Y CALORÍAS CON GLASSMORPHISM ── */}
-      <Card className="p-4 sm:p-5 bg-[#121026]/90 border border-purple-500/20 rounded-2xl shadow-xl backdrop-blur-xl space-y-4">
+      <Card className="p-4 sm:p-5 bg-white border border-slate-200 rounded-2xl shadow-sm space-y-4 dark:bg-[#121026]/90 dark:border-purple-500/20 dark:shadow-xl">
         {/* Cabecera con Título y Botón de Ajustes */}
-        <div className="flex items-center justify-between gap-2 pb-2 border-b border-purple-500/15">
+        <div className="flex items-center justify-between gap-2 pb-2 border-b border-slate-200/80 dark:border-purple-500/15">
           <div className="flex items-center gap-2">
-            <Flame className="size-5 text-amber-400" />
+            <Flame className="size-5 text-amber-500" />
             <div>
-              <h3 className="text-sm font-black text-white">Objetivos Nutricionales Diarios</h3>
-              <p className="text-[11px] text-slate-400">Balance de calorías y distribución de macronutrientes</p>
+              <h3 className="text-sm font-black text-slate-900 dark:text-white">Objetivos Nutricionales Diarios</h3>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">Balance de calorías y distribución de macronutrientes</p>
             </div>
           </div>
 
           <button
             onClick={handleOpenGoalModal}
-            className="flex items-center gap-1.5 rounded-xl bg-purple-600/20 hover:bg-purple-600/35 border border-purple-500/30 px-3 py-1.5 text-xs font-bold text-purple-200 hover:text-white transition-all active:scale-95 shadow-sm shrink-0"
+            className="flex items-center gap-1.5 rounded-full bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3.5 py-1.5 text-xs font-bold text-emerald-800 transition-all active:scale-95 shadow-sm shrink-0 dark:bg-purple-600/20 dark:hover:bg-purple-600/35 dark:border-purple-500/30 dark:text-purple-200"
           >
             <Settings className="size-3.5" />
             <span className="hidden sm:inline">Calculadora / Ajustes</span>
@@ -564,15 +564,15 @@ export function NutritionTab({
 
         {/* ── SELECTOR DIRECTO DE FASE (VOLUMEN / DEFINICIÓN / MANTENIMIENTO) ── */}
         <div className="space-y-2.5">
-          <div className="grid grid-cols-3 gap-1.5 p-1 rounded-2xl bg-white/[0.03] border border-white/10 text-xs font-bold">
+          <div className="grid grid-cols-3 gap-1.5 p-1 rounded-2xl bg-slate-100 border border-slate-200 text-xs font-bold dark:bg-white/[0.03] dark:border-white/10">
             <button
               type="button"
               onClick={() => handleDirectPhaseChange('volumen')}
               className={cn(
                 'py-2 px-2 rounded-xl flex items-center justify-center gap-1.5 transition-all text-xs font-bold',
                 activePhase === 'volumen'
-                  ? 'bg-purple-600 text-white shadow-md ring-1 ring-purple-400'
-                  : 'text-slate-400 hover:text-white hover:bg-white/5'
+                  ? 'bg-emerald-600 text-white shadow-sm ring-1 ring-emerald-500 dark:bg-purple-600 dark:ring-purple-400'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 dark:text-slate-400 dark:hover:text-white dark:hover:bg-white/5'
               )}
             >
               <span>📈</span>
@@ -585,8 +585,8 @@ export function NutritionTab({
               className={cn(
                 'py-2 px-2 rounded-xl flex items-center justify-center gap-1.5 transition-all text-xs font-bold',
                 activePhase === 'definicion'
-                  ? 'bg-purple-600 text-white shadow-md ring-1 ring-purple-400'
-                  : 'text-slate-400 hover:text-white hover:bg-white/5'
+                  ? 'bg-emerald-600 text-white shadow-sm ring-1 ring-emerald-500 dark:bg-purple-600 dark:ring-purple-400'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 dark:text-slate-400 dark:hover:text-white dark:hover:bg-white/5'
               )}
             >
               <span>🔥</span>
@@ -599,8 +599,8 @@ export function NutritionTab({
               className={cn(
                 'py-2 px-2 rounded-xl flex items-center justify-center gap-1.5 transition-all text-xs font-bold',
                 activePhase === 'mantenimiento'
-                  ? 'bg-purple-600 text-white shadow-md ring-1 ring-purple-400'
-                  : 'text-slate-400 hover:text-white hover:bg-white/5'
+                  ? 'bg-emerald-600 text-white shadow-sm ring-1 ring-emerald-500 dark:bg-purple-600 dark:ring-purple-400'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 dark:text-slate-400 dark:hover:text-white dark:hover:bg-white/5'
               )}
             >
               <span>⚖️</span>
@@ -609,15 +609,15 @@ export function NutritionTab({
           </div>
 
           {/* Fila Compacta de Peso Actual y Peso Objetivo */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2.5 px-3.5 rounded-xl bg-white/[0.02] border border-purple-500/15 text-xs">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2.5 px-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs dark:bg-white/[0.02] dark:border-purple-500/15">
             {/* Peso Actual */}
             <div className="flex items-center gap-2">
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Peso Actual:</span>
-              <span className="font-mono font-black text-white text-sm">
+              <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Peso Actual:</span>
+              <span className="font-mono font-black text-slate-900 dark:text-white text-sm">
                 {currentWeight} kg
               </span>
               {bodyMetrics[0]?.weightKg && (
-                <span className="text-[10px] text-emerald-400 font-bold bg-emerald-500/10 px-1.5 py-0.5 rounded-md border border-emerald-500/20">
+                <span className="text-[10px] text-emerald-800 font-bold bg-emerald-100 px-1.5 py-0.5 rounded-md border border-emerald-200 dark:text-emerald-400 dark:bg-emerald-500/10 dark:border-emerald-500/20">
                   Registrado
                 </span>
               )}
@@ -626,13 +626,13 @@ export function NutritionTab({
             {/* Peso Objetivo */}
             <div className="flex items-center gap-2">
               {activePhase === 'mantenimiento' ? (
-                <span className="text-[11px] font-semibold text-purple-300 flex items-center gap-1">
+                <span className="text-[11px] font-semibold text-emerald-800 dark:text-purple-300 flex items-center gap-1">
                   <span>⚖️</span>
                   <span>Mantener peso actual ({currentWeight} kg)</span>
                 </span>
               ) : (
                 <div className="flex items-center gap-1.5">
-                  <label className="text-[11px] font-bold text-slate-300">Meta de peso:</label>
+                  <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300">Meta de peso:</label>
                   <div className="flex items-center gap-1">
                     <input
                       type="number"
@@ -640,12 +640,12 @@ export function NutritionTab({
                       value={directTargetWeight}
                       onChange={(e) => handleDirectTargetWeightChange(e.target.value)}
                       placeholder={activePhase === 'volumen' ? (currentWeight + 3).toString() : (currentWeight - 4).toString()}
-                      className="w-16 rounded-lg border border-purple-500/30 bg-purple-950/40 py-1 px-2 font-mono font-bold text-white text-center text-xs outline-none focus:border-purple-400"
+                      className="w-16 rounded-lg border border-slate-200 bg-white py-1 px-2 font-mono font-bold text-slate-900 text-center text-xs outline-none focus:border-emerald-500 dark:border-purple-500/30 dark:bg-purple-950/40 dark:text-white"
                     />
-                    <span className="font-bold text-slate-400">kg</span>
+                    <span className="font-bold text-slate-500 dark:text-slate-400">kg</span>
                   </div>
                   {parseFloat(directTargetWeight) > 0 && !isNaN(parseFloat(directTargetWeight)) && (
-                    <span className="text-[10px] text-slate-400 font-mono ml-1">
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400 font-mono ml-1">
                       ({activePhase === 'volumen' && (parseFloat(directTargetWeight) - currentWeight) > 0 ? '+' : ''}
                       {(parseFloat(directTargetWeight) - currentWeight).toFixed(1)} kg)
                     </span>
@@ -660,17 +660,17 @@ export function NutritionTab({
         <div className="space-y-1.5">
           <div className="flex items-baseline justify-between">
             <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-black text-white font-mono">{totals.calories}</span>
-              <span className="text-xs font-bold text-slate-400">/ {nutritionGoal.targetCalories} kcal</span>
+              <span className="text-2xl font-black text-slate-900 dark:text-white font-mono">{totals.calories}</span>
+              <span className="text-xs font-bold text-slate-500 dark:text-slate-400">/ {nutritionGoal.targetCalories} kcal</span>
             </div>
-            <span className="text-xs font-black text-amber-400 font-mono">
+            <span className="text-xs font-black text-amber-700 dark:text-amber-400 font-mono">
               {calPercent}% ({Math.max(0, nutritionGoal.targetCalories - totals.calories)} kcal restantes)
             </span>
           </div>
 
-          <div className="h-3 w-full bg-white/[0.05] rounded-full overflow-hidden p-0.5 border border-white/10">
+          <div className="h-3 w-full bg-slate-100 rounded-full overflow-hidden p-0.5 border border-slate-200 dark:bg-white/[0.05] dark:border-white/10">
             <div
-              className="h-full bg-gradient-to-r from-amber-500 via-purple-500 to-indigo-500 rounded-full transition-all duration-500"
+              className="h-full bg-gradient-to-r from-amber-500 via-emerald-500 to-teal-600 dark:from-amber-500 dark:via-purple-500 dark:to-indigo-500 rounded-full transition-all duration-500"
               style={{ width: `${calPercent}%` }}
             />
           </div>
@@ -679,35 +679,35 @@ export function NutritionTab({
         {/* 3 Barras de Macronutrientes (Proteínas, Carbos, Grasas) */}
         <div className="grid grid-cols-3 gap-1.5 sm:gap-2.5 pt-1">
           {/* Proteína */}
-          <div className="p-2 sm:p-3 rounded-2xl bg-rose-500/10 border border-rose-500/20 space-y-1.5 min-w-0">
+          <div className="p-2 sm:p-3 rounded-2xl bg-rose-50 border border-rose-200 space-y-1.5 min-w-0 dark:bg-rose-500/10 dark:border-rose-500/20">
             <div className="flex items-center justify-between text-[10px] sm:text-[11px] font-bold">
-              <span className="text-rose-300 truncate">Proteína</span>
-              <span className="text-rose-400 font-mono text-[9px] sm:text-[11px] shrink-0">{totals.protein}g / {nutritionGoal.targetProtein}g</span>
+              <span className="text-rose-700 dark:text-rose-300 truncate">Proteína</span>
+              <span className="text-rose-700 dark:text-rose-400 font-mono text-[9px] sm:text-[11px] shrink-0">{totals.protein}g / {nutritionGoal.targetProtein}g</span>
             </div>
-            <div className="h-1.5 w-full bg-white/[0.08] rounded-full overflow-hidden">
-              <div className="h-full bg-rose-500 rounded-full transition-all duration-500" style={{ width: `${proPercent}%` }} />
+            <div className="h-1.5 w-full bg-rose-200 dark:bg-white/[0.08] rounded-full overflow-hidden">
+              <div className="h-full bg-rose-600 dark:bg-rose-500 rounded-full transition-all duration-500" style={{ width: `${proPercent}%` }} />
             </div>
           </div>
 
           {/* Carbohidratos */}
-          <div className="p-2 sm:p-3 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 space-y-1.5 min-w-0">
+          <div className="p-2 sm:p-3 rounded-2xl bg-cyan-50 border border-cyan-200 space-y-1.5 min-w-0 dark:bg-cyan-500/10 dark:border-cyan-500/20">
             <div className="flex items-center justify-between text-[10px] sm:text-[11px] font-bold">
-              <span className="text-cyan-300 truncate">Carbos</span>
-              <span className="text-cyan-400 font-mono text-[9px] sm:text-[11px] shrink-0">{totals.carbs}g / {nutritionGoal.targetCarbs}g</span>
+              <span className="text-cyan-700 dark:text-cyan-300 truncate">Carbos</span>
+              <span className="text-cyan-700 dark:text-cyan-400 font-mono text-[9px] sm:text-[11px] shrink-0">{totals.carbs}g / {nutritionGoal.targetCarbs}g</span>
             </div>
-            <div className="h-1.5 w-full bg-white/[0.08] rounded-full overflow-hidden">
-              <div className="h-full bg-cyan-500 rounded-full transition-all duration-500" style={{ width: `${carbPercent}%` }} />
+            <div className="h-1.5 w-full bg-cyan-200 dark:bg-white/[0.08] rounded-full overflow-hidden">
+              <div className="h-full bg-cyan-600 dark:bg-cyan-500 rounded-full transition-all duration-500" style={{ width: `${carbPercent}%` }} />
             </div>
           </div>
 
           {/* Grasas */}
-          <div className="p-2 sm:p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 space-y-1.5 min-w-0">
+          <div className="p-2 sm:p-3 rounded-2xl bg-amber-50 border border-amber-200 space-y-1.5 min-w-0 dark:bg-amber-500/10 dark:border-amber-500/20">
             <div className="flex items-center justify-between text-[10px] sm:text-[11px] font-bold">
-              <span className="text-amber-300 truncate">Grasas</span>
-              <span className="text-amber-400 font-mono text-[9px] sm:text-[11px] shrink-0">{totals.fats}g / {nutritionGoal.targetFats}g</span>
+              <span className="text-amber-700 dark:text-amber-300 truncate">Grasas</span>
+              <span className="text-amber-700 dark:text-amber-400 font-mono text-[9px] sm:text-[11px] shrink-0">{totals.fats}g / {nutritionGoal.targetFats}g</span>
             </div>
-            <div className="h-1.5 w-full bg-white/[0.08] rounded-full overflow-hidden">
-              <div className="h-full bg-amber-500 rounded-full transition-all duration-500" style={{ width: `${fatPercent}%` }} />
+            <div className="h-1.5 w-full bg-amber-200 dark:bg-white/[0.08] rounded-full overflow-hidden">
+              <div className="h-full bg-amber-600 dark:bg-amber-500 rounded-full transition-all duration-500" style={{ width: `${fatPercent}%` }} />
             </div>
           </div>
         </div>
@@ -717,9 +717,9 @@ export function NutritionTab({
       <button
         type="button"
         onClick={handleOpenAddSection}
-        className="w-full py-2.5 bg-purple-950/40 hover:bg-purple-900/50 text-purple-200 border border-purple-500/30 rounded-2xl font-medium flex items-center justify-center gap-2 transition-all shadow-sm text-xs sm:text-sm active:scale-[0.99]"
+        className="w-full py-2.5 bg-white hover:bg-slate-50 text-slate-800 border border-slate-200 rounded-2xl font-semibold flex items-center justify-center gap-2 transition-all shadow-sm text-xs sm:text-sm active:scale-[0.99] dark:bg-purple-950/40 dark:hover:bg-purple-900/50 dark:text-purple-200 dark:border-purple-500/30"
       >
-        <Plus className="size-4" />
+        <Plus className="size-4 text-emerald-600 dark:text-purple-400" />
         <span>Añadir Toma / Comida</span>
       </button>
 
@@ -737,15 +737,15 @@ export function NutritionTab({
           return (
             <Card
               key={section.id}
-              className="p-4 bg-[#121026]/85 border border-purple-500/20 rounded-2xl shadow-xl backdrop-blur-xl space-y-3"
+              className="p-4 bg-white border border-slate-200 rounded-2xl shadow-sm space-y-3 dark:bg-[#121026]/85 dark:border-purple-500/20 dark:shadow-xl"
             >
               {/* Header de Comida */}
-              <div className="flex items-center justify-between gap-2 pb-2 border-b border-purple-500/15">
+              <div className="flex items-center justify-between gap-2 pb-2 border-b border-slate-200/80 dark:border-purple-500/15">
                 <div className="flex items-center gap-2 min-w-0">
                   <span className="text-xl shrink-0">{section.icon}</span>
                   <div className="min-w-0">
-                    <h4 className="text-sm font-extrabold text-white truncate">{section.name}</h4>
-                    <span className="text-[11px] text-purple-300 font-mono font-bold block sm:inline">
+                    <h4 className="text-sm font-extrabold text-slate-900 dark:text-white truncate">{section.name}</h4>
+                    <span className="text-[11px] text-emerald-800 dark:text-purple-300 font-mono font-bold block sm:inline">
                       {mealCalories} kcal · P: {mealProtein}g · C: {mealCarbs}g · G: {mealFats}g
                     </span>
                   </div>
@@ -753,12 +753,12 @@ export function NutritionTab({
 
                 <div className="flex items-center gap-1.5 shrink-0">
                   {/* Reordenar posición */}
-                  <div className="flex items-center bg-white/[0.03] border border-white/5 rounded-lg p-0.5">
+                  <div className="flex items-center bg-slate-100 border border-slate-200 rounded-lg p-0.5 dark:bg-white/[0.03] dark:border-white/5">
                     <button
                       type="button"
                       disabled={idx === 0}
                       onClick={() => handleMoveSection(idx, 'up')}
-                      className="p-1 text-slate-400 hover:text-white disabled:opacity-20 disabled:hover:text-slate-400 transition-colors"
+                      className="p-1 text-slate-500 hover:text-slate-900 disabled:opacity-20 disabled:hover:text-slate-400 transition-colors dark:text-slate-400 dark:hover:text-white"
                       title="Mover arriba"
                     >
                       <ChevronUp className="size-3.5" />
@@ -767,7 +767,7 @@ export function NutritionTab({
                       type="button"
                       disabled={idx === mealSections.length - 1}
                       onClick={() => handleMoveSection(idx, 'down')}
-                      className="p-1 text-slate-400 hover:text-white disabled:opacity-20 disabled:hover:text-slate-400 transition-colors"
+                      className="p-1 text-slate-500 hover:text-slate-900 disabled:opacity-20 disabled:hover:text-slate-400 transition-colors dark:text-slate-400 dark:hover:text-white"
                       title="Mover abajo"
                     >
                       <ChevronDown className="size-3.5" />
@@ -778,7 +778,7 @@ export function NutritionTab({
                     <button
                       type="button"
                       onClick={() => handleSyncToShoppingList(items, section.name)}
-                      className="p-1.5 rounded-xl bg-purple-600/20 hover:bg-purple-600/40 text-purple-300 hover:text-white border border-purple-500/30 transition-all text-xs flex items-center gap-1"
+                      className="p-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 transition-all text-xs flex items-center gap-1 dark:bg-purple-600/20 dark:hover:bg-purple-600/40 dark:text-purple-300 dark:border-purple-500/30"
                       title="Añadir ingredientes a Lista de Compras"
                     >
                       <ShoppingCart className="size-3.5" />
@@ -789,7 +789,7 @@ export function NutritionTab({
                   <button
                     type="button"
                     onClick={() => handleOpenAddFood(section.id, section.name)}
-                    className="flex items-center gap-1 rounded-xl bg-purple-600 hover:bg-purple-500 text-white px-2.5 py-1 text-xs font-bold transition-all active:scale-95 shadow-sm"
+                    className="flex items-center gap-1 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1 text-xs font-bold transition-all active:scale-95 shadow-sm dark:bg-purple-600 dark:hover:bg-purple-500"
                   >
                     <Plus className="size-3" />
                     <span>Añadir</span>
@@ -799,7 +799,7 @@ export function NutritionTab({
                   <button
                     type="button"
                     onClick={() => handleOpenEditSection(section)}
-                    className="p-1.5 text-slate-400 hover:text-purple-300 hover:bg-white/5 rounded-lg transition-colors"
+                    className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors dark:hover:text-purple-300 dark:hover:bg-white/5"
                     title="Renombrar toma"
                   >
                     <Edit2 className="size-3.5" />
@@ -810,7 +810,7 @@ export function NutritionTab({
                     <button
                       type="button"
                       onClick={() => handleDeleteSection(section)}
-                      className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
+                      className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors dark:hover:text-rose-400 dark:hover:bg-rose-500/10"
                       title="Eliminar toma"
                     >
                       <Trash2 className="size-3.5" />
@@ -821,26 +821,26 @@ export function NutritionTab({
 
               {/* Lista de Alimentos */}
               {items.length === 0 ? (
-                <p className="text-xs text-slate-500 italic py-1">Sin alimentos registrados en esta toma.</p>
+                <p className="text-xs text-slate-400 italic py-1">Sin alimentos registrados en esta toma.</p>
               ) : (
                 <div className="space-y-1.5">
                   {items.map((item) => (
                     <div
                       key={item.id}
-                      className="flex items-center justify-between p-2 rounded-xl bg-white/[0.02] border border-white/5 text-xs"
+                      className="flex items-center justify-between p-2 rounded-xl bg-slate-50 border border-slate-200 text-xs dark:bg-white/[0.02] dark:border-white/5"
                     >
                       <div className="min-w-0">
-                        <p className="font-bold text-white truncate">{item.name}</p>
-                        <span className="text-[10px] text-slate-400">
+                        <p className="font-bold text-slate-900 dark:text-white truncate">{item.name}</p>
+                        <span className="text-[10px] text-slate-500 dark:text-slate-400">
                           {item.quantity ? `${item.quantity} · ` : ''}
-                          <span className="text-purple-300">{item.calories} kcal</span> (P: {item.protein}g · C: {item.carbs}g · G: {item.fats}g)
+                          <span className="text-emerald-800 dark:text-purple-300 font-semibold">{item.calories} kcal</span> (P: {item.protein}g · C: {item.carbs}g · G: {item.fats}g)
                         </span>
                       </div>
 
                       <button
                         type="button"
                         onClick={() => onDeleteMealItem(section.id, item.id)}
-                        className="p-1 text-slate-400 hover:text-rose-400 transition-colors"
+                        className="p-1 text-slate-400 hover:text-rose-600 transition-colors dark:hover:text-rose-400"
                         title="Eliminar alimento"
                       >
                         <Trash2 className="size-3.5" />
