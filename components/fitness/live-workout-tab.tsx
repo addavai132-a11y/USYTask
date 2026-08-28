@@ -552,14 +552,17 @@ export function LiveWorkoutTab({
                     <div
                       key={set.id ? `${set.id}-${setIdx}` : `set-${exIdx}-${setIdx}`}
                       className={cn(
-                        'grid grid-cols-12 gap-1.5 items-center p-1.5 rounded-xl transition-colors text-xs font-semibold text-center',
+                        'grid grid-cols-12 gap-1.5 items-center p-2 rounded-xl transition-all duration-200 text-xs font-semibold text-center',
                         set.completed
-                          ? 'bg-emerald-950/30 border border-emerald-500/40 text-emerald-200'
-                          : 'bg-white/[0.02] border border-white/5 text-slate-200'
+                          ? 'bg-emerald-950/30 border border-emerald-500/40 text-emerald-100 shadow-[inset_0_1px_0_0_rgba(16,185,129,0.15)]'
+                          : 'bg-white/[0.02] border border-white/5 text-slate-200 hover:bg-white/[0.04]'
                       )}
                     >
                       {/* Set Number */}
-                      <div className="col-span-1 font-mono font-black text-slate-400">
+                      <div className={cn(
+                        'col-span-1 font-mono font-black transition-colors',
+                        set.completed ? 'text-emerald-400' : 'text-slate-400'
+                      )}>
                         {set.setNumber}
                       </div>
 
@@ -574,7 +577,10 @@ export function LiveWorkoutTab({
                             { value: 'dropset', label: 'D · Drop Set' },
                             { value: 'fallo', label: 'F · Al Fallo' },
                           ]}
-                          triggerClassName="py-1 px-2 text-[11px] rounded-lg"
+                          triggerClassName={cn(
+                            'py-1 px-2 text-[11px] rounded-lg transition-colors',
+                            set.completed && 'border-emerald-500/30 text-emerald-200'
+                          )}
                         />
                       </div>
 
@@ -597,7 +603,12 @@ export function LiveWorkoutTab({
                               e.target.value === '' ? 0 : parseFloat(e.target.value)
                             )
                           }
-                          className="w-full rounded-lg border border-purple-500/20 bg-white/[0.04] py-1 text-center font-mono font-bold text-white text-xs outline-none focus:border-purple-500"
+                          className={cn(
+                            'w-full rounded-lg border py-1 text-center font-mono font-bold text-xs outline-none transition-colors',
+                            set.completed
+                              ? 'border-emerald-500/40 bg-emerald-950/40 text-emerald-100 focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400/30'
+                              : 'border-purple-500/20 bg-white/[0.04] text-white focus:border-purple-500'
+                          )}
                         />
                       </div>
 
@@ -614,30 +625,35 @@ export function LiveWorkoutTab({
                               e.target.value === '' ? 0 : parseInt(e.target.value, 10)
                             )
                           }
-                          className="w-full rounded-lg border border-purple-500/20 bg-white/[0.04] py-1 text-center font-mono font-bold text-white text-xs outline-none focus:border-purple-500"
+                          className={cn(
+                            'w-full rounded-lg border py-1 text-center font-mono font-bold text-xs outline-none transition-colors',
+                            set.completed
+                              ? 'border-emerald-500/40 bg-emerald-950/40 text-emerald-100 focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400/30'
+                              : 'border-purple-500/20 bg-white/[0.04] text-white focus:border-purple-500'
+                          )}
                         />
                       </div>
 
-                      {/* Check Complete Button */}
-                      <div className="col-span-2 flex items-center justify-center gap-1">
+                      {/* Check Complete Circular Emerald Button */}
+                      <div className="col-span-2 flex items-center justify-center gap-1.5">
                         <button
                           type="button"
                           onClick={() => handleToggleSetComplete(exIdx, setIdx)}
                           className={cn(
-                            'size-7 rounded-lg border flex items-center justify-center transition-all active:scale-90',
+                            'size-8 rounded-full flex items-center justify-center transition-all duration-200 active:scale-90 select-none shrink-0',
                             set.completed
-                              ? 'bg-emerald-600 border-emerald-500 text-white shadow-sm ring-1 ring-emerald-400/40'
-                              : 'bg-white/[0.05] border-white/20 text-slate-400 hover:border-purple-500 hover:text-white'
+                              ? 'bg-emerald-500 hover:bg-emerald-400 border border-emerald-400 text-white shadow-[0_0_14px_rgba(16,185,129,0.55)] ring-2 ring-emerald-400/40 cursor-pointer'
+                              : 'bg-white/[0.05] border border-white/20 text-slate-400 hover:border-purple-400 hover:text-white hover:bg-purple-500/10 cursor-pointer'
                           )}
-                          title={set.completed ? 'Serie completada' : 'Marcar como completada'}
+                          title={set.completed ? 'Serie completada (clic para desmarcar)' : 'Marcar serie como completada'}
                         >
-                          <Check className="size-4 stroke-[3]" />
+                          <Check className={cn('size-4 stroke-[3.5] transition-transform duration-200', set.completed && 'scale-110')} />
                         </button>
 
                         <button
                           type="button"
                           onClick={() => handleRemoveSet(exIdx, setIdx)}
-                          className="p-1 text-slate-500 hover:text-rose-400 transition-colors"
+                          className="p-1 text-slate-500 hover:text-rose-400 transition-colors rounded-lg hover:bg-white/5"
                           title="Eliminar serie"
                         >
                           <Trash2 className="size-3" />
