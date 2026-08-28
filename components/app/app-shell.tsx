@@ -20,6 +20,7 @@ import { DevModeIndicator } from '@/components/dev/dev-mode-indicator'
 import { SpaceSelectorModal } from './space-selector-modal'
 import { CreateSpaceModal } from './create-space-modal'
 import { HistoryModal } from './history-modal'
+import { FloatingRestTimer } from '@/components/fitness/floating-rest-timer'
 import { UsyTaskLogo } from '@/components/ui/usytask-logo'
 import { cn } from '@/lib/utils'
 import { getStoredSession } from '@/lib/user-session'
@@ -162,6 +163,7 @@ function ShellInner() {
       <SpaceSelectorModal />
       <CreateSpaceModal />
       <HistoryModal />
+      <FloatingRestTimer />
     </div>
   )
 }

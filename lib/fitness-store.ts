@@ -4,6 +4,7 @@ import type {
   WorkoutRoutine,
   Exercise,
   WorkoutSession,
+  WorkoutExerciseSession,
   PersonalRecord,
   BodyMetric,
   DailyMealLog,
@@ -19,6 +20,27 @@ export const PRS_KEY = 'usytask_fitness_prs'
 export const BODY_METRICS_KEY = 'usytask_fitness_body_metrics'
 export const NUTRITION_GOAL_KEY = 'usytask_fitness_nutrition_goal'
 export const MEAL_LOGS_KEY = 'usytask_fitness_meal_logs'
+export const ACTIVE_WORKOUT_KEY = 'usytask_active_workout_session'
+export const REST_TIMER_KEY = 'usytask_active_rest_timer'
+
+export interface ActiveWorkoutState {
+  routineId: string
+  routineName?: string
+  sessionSeconds: number
+  startTimeMs: number
+  lastUpdatedMs: number
+  isTimerRunning: boolean
+  exercises: WorkoutExerciseSession[]
+  notes?: string
+}
+
+export interface RestTimerState {
+  targetEndTime: number
+  totalSeconds: number
+  isPaused: boolean
+  remainingSecondsWhenPaused?: number
+  exerciseName?: string
+}
 
 function loadArray<T>(key: string, defaultSeed: T[] = []): T[] {
   if (typeof window === 'undefined') return defaultSeed
@@ -449,5 +471,105 @@ export function deleteMealItem(dateISO: string, mealType: DailyMealLog['mealType
   if (mealLog) {
     mealLog.items = mealLog.items.filter((i) => i.id !== itemId)
     saveArray(MEAL_LOGS_KEY, all)
+  }
+}
+
+// ── ACTIVE WORKOUT SESSION PERSISTENCE ──
+export function getActiveWorkoutSession(): ActiveWorkoutState | null {
+  if (typeof window === 'undefined') return null
+  try {
+    const raw = localStorage.getItem(ACTIVE_WORKOUT_KEY)
+    if (!raw) return null
+    return JSON.parse(raw)
+  } catch (err) {
+    console.error('Error reading active workout session from localStorage', err)
+    return null
+  }
+}
+
+export function saveActiveWorkoutSession(state: ActiveWorkoutState): void {
+  if (typeof window === 'undefined') return
+  try {
+    localStorage.setItem(ACTIVE_WORKOUT_KEY, JSON.stringify(state))
+  } catch (err) {
+    console.error('Error saving active workout session to localStorage', err)
+  }
+}
+
+export function clearActiveWorkoutSession(): void {
+  if (typeof window === 'undefined') return
+  try {
+    localStorage.removeItem(ACTIVE_WORKOUT_KEY)
+  } catch (err) {
+    console.error('Error clearing active workout session from localStorage', err)
+  }
+}
+
+// ── REST TIMER PERSISTENCE (TARGET END TIME METHOD) ──
+export function getRestTimer(): RestTimerState | null {
+  if (typeof window === 'undefined') return null
+  try {
+    const raw = localStorage.getItem(REST_TIMER_KEY)
+    if (!raw) return null
+    return JSON.parse(raw)
+  } catch (err) {
+    console.error('Error reading rest timer from localStorage', err)
+    return null
+  }
+}
+
+export function saveRestTimer(state: RestTimerState): void {
+  if (typeof window === 'undefined') return
+  try {
+    localStorage.setItem(REST_TIMER_KEY, JSON.stringify(state))
+  } catch (err) {
+    console.error('Error saving rest timer to localStorage', err)
+  }
+}
+
+export function clearRestTimer(): void {
+  if (typeof window === 'undefined') return
+  try {
+    localStorage.removeItem(REST_TIMER_KEY)
+  } catch (err) {
+    console.error('Error clearing rest timer from localStorage', err)
+  }
+}
+
+// ── AUDIO & HAPTIC NOTIFICATIONS FOR COMPLETED REST ──
+export function playTimerCompletionSound(): void {
+  if (typeof window === 'undefined') return
+  try {
+    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext
+    if (!AudioContextClass) return
+    const ctx = new AudioContextClass()
+    const now = ctx.currentTime
+
+    const playTone = (time: number, freq: number, duration: number) => {
+      const osc = ctx.createOscillator()
+      const gain = ctx.createGain()
+      osc.type = 'sine'
+      osc.frequency.setValueAtTime(freq, time)
+      gain.gain.setValueAtTime(0.25, time)
+      gain.gain.exponentialRampToValueAtTime(0.001, time + duration)
+      osc.connect(gain)
+      gain.connect(ctx.destination)
+      osc.start(time)
+      osc.stop(time + duration)
+    }
+
+    playTone(now, 880, 0.15) // A5
+    playTone(now + 0.18, 880, 0.15) // A5
+    playTone(now + 0.36, 1174.66, 0.35) // D6
+  } catch {
+    // Audio autoplay or permissions limitation
+  }
+}
+
+export function triggerHapticFeedback(): void {
+  if (typeof window !== 'undefined' && 'vibrate' in navigator) {
+    try {
+      navigator.vibrate([200, 100, 200])
+    } catch {}
   }
 }

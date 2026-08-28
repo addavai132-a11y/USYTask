@@ -1,7 +1,25 @@
 'use client'
 
-import { useState, useEffect, useRef, useMemo } from 'react'
-import { Play, Pause, RotateCcw, Check, Plus, Trash2, Clock, Dumbbell, Sparkles, CheckCircle2, AlertCircle, X, Volume2, Timer, Flame, Layers } from 'lucide-react'
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
+import {
+  Play,
+  Pause,
+  RotateCcw,
+  Check,
+  Plus,
+  Trash2,
+  Clock,
+  Dumbbell,
+  Sparkles,
+  CheckCircle2,
+  AlertCircle,
+  X,
+  Volume2,
+  Timer,
+  Flame,
+  Layers,
+  RotateLeft,
+} from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { CustomSelect } from '@/components/ui/custom-select'
 import { useToast } from '@/components/ui/toast'
@@ -11,10 +29,15 @@ import type {
   WorkoutExerciseSession,
   WorkoutSet,
   SetType,
-  Exercise,
 } from '@/types/fitness'
-import { setTypeLabels, muscleGroupLabels } from '@/types/fitness'
-import { PREDEFINED_EXERCISES } from '@/lib/fitness-store'
+import { muscleGroupLabels } from '@/types/fitness'
+import {
+  getActiveWorkoutSession,
+  saveActiveWorkoutSession,
+  clearActiveWorkoutSession,
+  type ActiveWorkoutState,
+} from '@/lib/fitness-store'
+import { triggerRestTimer, FloatingRestTimer } from './floating-rest-timer'
 import { getTodayISO } from '@/lib/date-utils'
 import { cn } from '@/lib/utils'
 
@@ -32,6 +55,51 @@ function generateSetId(exerciseId: string, setIdx: number): string {
   return `set_${exerciseId}_${Date.now()}_${Math.random().toString(36).slice(2, 9)}_${setIdx}`
 }
 
+function buildInitialExercisesForRoutine(routine: WorkoutRoutine | undefined): WorkoutExerciseSession[] {
+  if (!routine) return []
+  return routine.exercises.map((ex) => ({
+    exerciseId: ex.id,
+    exerciseName: ex.name,
+    muscleGroup: ex.muscleGroup,
+    equipment: ex.equipment,
+    targetRestSeconds: ex.restSeconds || 90,
+    sets: [
+      {
+        id: generateSetId(ex.id, 1),
+        setNumber: 1,
+        type: 'calentamiento',
+        weightKg: 40,
+        reps: 10,
+        completed: false,
+        prevWeightKg: 40,
+        prevReps: 10,
+      },
+      {
+        id: generateSetId(ex.id, 2),
+        setNumber: 2,
+        type: 'efectiva',
+        weightKg: 70,
+        reps: 8,
+        rpe: 8,
+        completed: false,
+        prevWeightKg: 67.5,
+        prevReps: 8,
+      },
+      {
+        id: generateSetId(ex.id, 3),
+        setNumber: 3,
+        type: 'efectiva',
+        weightKg: 75,
+        reps: 6,
+        rpe: 8.5,
+        completed: false,
+        prevWeightKg: 72.5,
+        prevReps: 6,
+      },
+    ],
+  }))
+}
+
 export function LiveWorkoutTab({
   routines,
   activeRoutineForSession,
@@ -39,11 +107,131 @@ export function LiveWorkoutTab({
   onClearActiveRoutine,
 }: LiveWorkoutTabProps) {
   const { toast } = useToast()
+  const isHydratedRef = useRef(false)
 
-  // ── SESSION TIMER ──
-  const [sessionSeconds, setSessionSeconds] = useState(0)
-  const [isTimerRunning, setIsTimerRunning] = useState(true)
+  // ── INITIAL STATE FROM STORAGE OR DEFAULT ──
+  const [selectedRoutineId, setSelectedRoutineId] = useState<string>(() => {
+    if (activeRoutineForSession) return activeRoutineForSession.id
+    const saved = getActiveWorkoutSession()
+    if (saved && saved.routineId) return saved.routineId
+    return routines[0]?.id || 'custom'
+  })
 
+  const [sessionExercises, setSessionExercises] = useState<WorkoutExerciseSession[]>(() => {
+    if (activeRoutineForSession) {
+      return buildInitialExercisesForRoutine(activeRoutineForSession)
+    }
+    const saved = getActiveWorkoutSession()
+    if (saved && saved.exercises && saved.exercises.length > 0) {
+      return saved.exercises
+    }
+    const defaultRoutine = routines[0]
+    return buildInitialExercisesForRoutine(defaultRoutine)
+  })
+
+  const [sessionSeconds, setSessionSeconds] = useState<number>(() => {
+    const saved = getActiveWorkoutSession()
+    if (saved) {
+      const now = Date.now()
+      if (saved.isTimerRunning && saved.lastUpdatedMs) {
+        const passedSeconds = Math.max(0, Math.floor((now - saved.lastUpdatedMs) / 1000))
+        return (saved.sessionSeconds || 0) + passedSeconds
+      }
+      return saved.sessionSeconds || 0
+    }
+    return 0
+  })
+
+  const [isTimerRunning, setIsTimerRunning] = useState<boolean>(() => {
+    const saved = getActiveWorkoutSession()
+    return saved ? saved.isTimerRunning : true
+  })
+
+  const [startTimeMs, setStartTimeMs] = useState<number>(() => {
+    const saved = getActiveWorkoutSession()
+    return saved?.startTimeMs || Date.now()
+  })
+
+  const [sessionNotes, setSessionNotes] = useState<string>(() => {
+    const saved = getActiveWorkoutSession()
+    return saved?.notes || ''
+  })
+
+  const [isResetModalOpen, setIsResetModalOpen] = useState(false)
+  const [isFinishModalOpen, setIsFinishModalOpen] = useState(false)
+
+  // ── REACTIVE AUTO-SAVE TO LOCALSTORAGE ──
+  const persistCurrentWorkout = useCallback(
+    (
+      currentExercises: WorkoutExerciseSession[],
+      routineId: string,
+      seconds: number,
+      timerRunning: boolean,
+      notes: string,
+      startMs: number
+    ) => {
+      const currentRoutine = routines.find((r) => r.id === routineId)
+      const state: ActiveWorkoutState = {
+        routineId,
+        routineName: currentRoutine?.name || 'Entrenamiento',
+        sessionSeconds: seconds,
+        startTimeMs: startMs,
+        lastUpdatedMs: Date.now(),
+        isTimerRunning: timerRunning,
+        exercises: currentExercises,
+        notes,
+      }
+      saveActiveWorkoutSession(state)
+    },
+    [routines]
+  )
+
+  // Save whenever session exercises or properties change
+  useEffect(() => {
+    if (!isHydratedRef.current) {
+      isHydratedRef.current = true
+      return
+    }
+    persistCurrentWorkout(
+      sessionExercises,
+      selectedRoutineId,
+      sessionSeconds,
+      isTimerRunning,
+      sessionNotes,
+      startTimeMs
+    )
+  }, [
+    sessionExercises,
+    selectedRoutineId,
+    sessionSeconds,
+    isTimerRunning,
+    sessionNotes,
+    startTimeMs,
+    persistCurrentWorkout,
+  ])
+
+  // Handle incoming activeRoutineForSession prop from parent
+  useEffect(() => {
+    if (activeRoutineForSession) {
+      const initialExercises = buildInitialExercisesForRoutine(activeRoutineForSession)
+      setSelectedRoutineId(activeRoutineForSession.id)
+      setSessionExercises(initialExercises)
+      const newStart = Date.now()
+      setStartTimeMs(newStart)
+      setSessionSeconds(0)
+      setIsTimerRunning(true)
+      persistCurrentWorkout(
+        initialExercises,
+        activeRoutineForSession.id,
+        0,
+        true,
+        '',
+        newStart
+      )
+    }
+  }, [activeRoutineForSession, persistCurrentWorkout])
+
+  // ── STOPWATCH WITH REAL TIMESTAMP RECOVERY (MOBILE SCREEN OFF IMMUNE) ──
   useEffect(() => {
     let interval: NodeJS.Timeout
     if (isTimerRunning) {
@@ -51,7 +239,25 @@ export function LiveWorkoutTab({
         setSessionSeconds((prev) => prev + 1)
       }, 1000)
     }
-    return () => clearInterval(interval)
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && isTimerRunning) {
+        const saved = getActiveWorkoutSession()
+        if (saved && saved.isTimerRunning && saved.lastUpdatedMs) {
+          const passed = Math.max(0, Math.floor((Date.now() - saved.lastUpdatedMs) / 1000))
+          setSessionSeconds((saved.sessionSeconds || 0) + passed)
+        }
+      }
+    }
+
+    window.addEventListener('visibilitychange', handleVisibilityChange)
+    window.addEventListener('focus', handleVisibilityChange)
+
+    return () => {
+      clearInterval(interval)
+      window.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('focus', handleVisibilityChange)
+    }
   }, [isTimerRunning])
 
   const formatStopwatch = (totalSecs: number) => {
@@ -64,127 +270,20 @@ export function LiveWorkoutTab({
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
   }
 
-  // ── REST TIMER ──
-  const [restTotalSeconds, setRestTotalSeconds] = useState(90)
-  const [restSecondsRemaining, setRestSecondsRemaining] = useState<number | null>(null)
-  const [isRestActive, setIsRestActive] = useState(false)
-
-  useEffect(() => {
-    let restInterval: NodeJS.Timeout
-    if (isRestActive && restSecondsRemaining !== null && restSecondsRemaining > 0) {
-      restInterval = setInterval(() => {
-        setRestSecondsRemaining((prev) => {
-          if (prev === null || prev <= 1) {
-            setIsRestActive(false)
-            toast('⏰ ¡Tiempo de descanso completado! A por la siguiente serie 💪', '🔔')
-            return 0
-          }
-          return prev - 1
-        })
-      }, 1000)
-    }
-    return () => clearInterval(restInterval)
-  }, [isRestActive, restSecondsRemaining, toast])
-
-  function startRestTimer(seconds: number) {
-    setRestTotalSeconds(seconds)
-    setRestSecondsRemaining(seconds)
-    setIsRestActive(true)
-  }
-
-  // ── ACTIVE WORKOUT DATA ──
-  const [selectedRoutineId, setSelectedRoutineId] = useState<string>(
-    activeRoutineForSession ? activeRoutineForSession.id : routines[0]?.id || 'custom'
-  )
-
-  const [sessionExercises, setSessionExercises] = useState<WorkoutExerciseSession[]>(() => {
-    const routine = activeRoutineForSession || routines[0]
-    if (routine) {
-      return routine.exercises.map((ex) => ({
-        exerciseId: ex.id,
-        exerciseName: ex.name,
-        muscleGroup: ex.muscleGroup,
-        equipment: ex.equipment,
-        targetRestSeconds: ex.restSeconds || 90,
-        sets: [
-          {
-            id: generateSetId(ex.id, 1),
-            setNumber: 1,
-            type: 'calentamiento',
-            weightKg: 40,
-            reps: 10,
-            completed: false,
-            prevWeightKg: 40,
-            prevReps: 10,
-          },
-          {
-            id: generateSetId(ex.id, 2),
-            setNumber: 2,
-            type: 'efectiva',
-            weightKg: 70,
-            reps: 8,
-            rpe: 8,
-            completed: false,
-            prevWeightKg: 67.5,
-            prevReps: 8,
-          },
-          {
-            id: generateSetId(ex.id, 3),
-            setNumber: 3,
-            type: 'efectiva',
-            weightKg: 75,
-            reps: 6,
-            rpe: 8.5,
-            completed: false,
-            prevWeightKg: 72.5,
-            prevReps: 6,
-          },
-        ],
-      }))
-    }
-    return []
-  })
-
-  // Synchronize when activeRoutineForSession prop changes
-  useEffect(() => {
-    if (activeRoutineForSession) {
-      setSelectedRoutineId(activeRoutineForSession.id)
-      setSessionExercises(
-        activeRoutineForSession.exercises.map((ex) => ({
-          exerciseId: ex.id,
-          exerciseName: ex.name,
-          muscleGroup: ex.muscleGroup,
-          equipment: ex.equipment,
-          targetRestSeconds: ex.restSeconds || 90,
-          sets: [
-            { id: generateSetId(ex.id, 1), setNumber: 1, type: 'calentamiento', weightKg: 40, reps: 10, completed: false, prevWeightKg: 40, prevReps: 10 },
-            { id: generateSetId(ex.id, 2), setNumber: 2, type: 'efectiva', weightKg: 70, reps: 8, rpe: 8, completed: false, prevWeightKg: 67.5, prevReps: 8 },
-            { id: generateSetId(ex.id, 3), setNumber: 3, type: 'efectiva', weightKg: 75, reps: 6, rpe: 8.5, completed: false, prevWeightKg: 72.5, prevReps: 6 },
-          ],
-        }))
-      )
-    }
-  }, [activeRoutineForSession])
-
+  // ── HANDLERS ──
   function handleRoutineChange(newRoutineId: string) {
     setSelectedRoutineId(newRoutineId)
     const routine = routines.find((r) => r.id === newRoutineId)
-    if (routine) {
-      setSessionExercises(
-        routine.exercises.map((ex) => ({
-          exerciseId: ex.id,
-          exerciseName: ex.name,
-          muscleGroup: ex.muscleGroup,
-          equipment: ex.equipment,
-          targetRestSeconds: ex.restSeconds || 90,
-          sets: [
-            { id: generateSetId(ex.id, 1), setNumber: 1, type: 'calentamiento', weightKg: 40, reps: 10, completed: false, prevWeightKg: 40, prevReps: 10 },
-            { id: generateSetId(ex.id, 2), setNumber: 2, type: 'efectiva', weightKg: 70, reps: 8, rpe: 8, completed: false, prevWeightKg: 67.5, prevReps: 8 },
-            { id: generateSetId(ex.id, 3), setNumber: 3, type: 'efectiva', weightKg: 75, reps: 6, rpe: 8.5, completed: false, prevWeightKg: 72.5, prevReps: 6 },
-          ],
-        }))
-      )
-    }
+    const newExercises = buildInitialExercisesForRoutine(routine)
+    setSessionExercises(newExercises)
+    persistCurrentWorkout(
+      newExercises,
+      newRoutineId,
+      sessionSeconds,
+      isTimerRunning,
+      sessionNotes,
+      startTimeMs
+    )
   }
 
   // Add Set to Exercise
@@ -214,7 +313,6 @@ export function LiveWorkoutTab({
     setSessionExercises((prev) => {
       const updated = [...prev]
       updated[exerciseIndex].sets = updated[exerciseIndex].sets.filter((_, i) => i !== setIndex)
-      // Renumber
       updated[exerciseIndex].sets.forEach((s, idx) => {
         s.setNumber = idx + 1
       })
@@ -222,7 +320,7 @@ export function LiveWorkoutTab({
     })
   }
 
-  // Toggle Set Complete
+  // Toggle Set Complete & Trigger Persistent Floating Rest Timer
   function handleToggleSetComplete(exerciseIndex: number, setIndex: number) {
     setSessionExercises((prev) => {
       const updated = [...prev]
@@ -231,15 +329,15 @@ export function LiveWorkoutTab({
       targetSet.completed = willBeCompleted
 
       if (willBeCompleted) {
-        // Start rest timer automatically with exercise target rest
         const restSecs = updated[exerciseIndex].targetRestSeconds || 90
-        startRestTimer(restSecs)
+        const exName = updated[exerciseIndex].exerciseName
+        triggerRestTimer(restSecs, exName)
       }
       return updated
     })
   }
 
-  // Update Set Values
+  // Update Set Values (Kg, Reps, Type, RPE)
   function handleUpdateSet(
     exerciseIndex: number,
     setIndex: number,
@@ -265,7 +363,7 @@ export function LiveWorkoutTab({
     sessionExercises.forEach((ex) => {
       ex.sets.forEach((s) => {
         if (s.completed) {
-          volume += s.weightKg * s.reps
+          volume += (s.weightKg || 0) * (s.reps || 0)
           completedCount++
           if (s.type === 'efectiva' || s.type === 'dropset' || s.type === 'fallo') {
             effectiveCount++
@@ -281,10 +379,21 @@ export function LiveWorkoutTab({
     }
   }, [sessionExercises])
 
-  // ── FINISH SESSION MODAL ──
-  const [isFinishModalOpen, setIsFinishModalOpen] = useState(false)
-  const [sessionNotes, setSessionNotes] = useState('')
+  // ── CLEAN RESET OF CURRENT SESSION ──
+  function handleResetSession() {
+    clearActiveWorkoutSession()
+    const routine = routines.find((r) => r.id === selectedRoutineId) || routines[0]
+    const resetExercises = buildInitialExercisesForRoutine(routine)
+    setSessionExercises(resetExercises)
+    setSessionSeconds(0)
+    setStartTimeMs(Date.now())
+    setIsTimerRunning(true)
+    setSessionNotes('')
+    setIsResetModalOpen(false)
+    toast('Entrenamiento reiniciado a su estado inicial', '🔄')
+  }
 
+  // ── FINISH SESSION & CLEAN STORAGE ──
   function handleConfirmFinishSession() {
     const routine = routines.find((r) => r.id === selectedRoutineId)
     const session: WorkoutSession = {
@@ -293,7 +402,7 @@ export function LiveWorkoutTab({
       routineId: selectedRoutineId,
       routineName: routine ? routine.name : 'Entrenamiento Libre',
       date: getTodayISO(),
-      startTime: new Date(Date.now() - sessionSeconds * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      startTime: new Date(startTimeMs).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       endTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       durationSeconds: sessionSeconds,
       totalVolumeKg: totalVolume,
@@ -302,14 +411,16 @@ export function LiveWorkoutTab({
       notes: sessionNotes.trim() || undefined,
     }
 
+    // Save to permanent history & clean active session storage
     onFinishSession(session)
+    clearActiveWorkoutSession()
     onClearActiveRoutine()
     setIsFinishModalOpen(false)
-    toast('🎉 ¡Entrenamiento completado y sincronizado en tu historial y calendario!', '🏆')
+    toast('🎉 ¡Entrenamiento completado y guardado permanentemente!', '🏆')
   }
 
   return (
-    <div className="w-full max-w-2xl mx-auto space-y-4 animate-fade-in pb-20">
+    <div className="w-full max-w-2xl mx-auto space-y-4 animate-fade-in pb-24">
       {/* ── CABECERA CON CRONÓMETRO DE SESIÓN ACTIVA ── */}
       <Card className="p-4 bg-[#121026]/90 border border-purple-500/30 rounded-2xl shadow-2xl backdrop-blur-xl space-y-3 sticky top-4 z-20">
         <div className="flex items-center justify-between gap-3 flex-wrap sm:flex-nowrap">
@@ -320,7 +431,7 @@ export function LiveWorkoutTab({
             <div>
               <span className="text-[11px] font-bold uppercase tracking-wider text-purple-300 flex items-center gap-1.5">
                 <span className="size-2 rounded-full bg-emerald-400 animate-ping" />
-                Sesión en Vivo
+                Sesión en Vivo (Guardado automático)
               </span>
               <div className="flex items-baseline gap-2">
                 <span className="text-2xl sm:text-3xl font-black text-white tabular-nums tracking-tight font-mono">
@@ -350,8 +461,8 @@ export function LiveWorkoutTab({
           </div>
         </div>
 
-        {/* Resumen en vivo de volumen y series */}
-        <div className="pt-2 border-t border-purple-500/15 flex items-center justify-between text-xs font-bold text-slate-300">
+        {/* Resumen en vivo de volumen y series + Botón Reset & Finalizar */}
+        <div className="pt-2 border-t border-purple-500/15 flex items-center justify-between text-xs font-bold text-slate-300 flex-wrap gap-2">
           <div className="flex items-center gap-4">
             <span>
               Volumen: <strong className="text-purple-300 font-mono">{totalVolume.toLocaleString('es-ES')} kg</strong>
@@ -361,17 +472,30 @@ export function LiveWorkoutTab({
             </span>
           </div>
 
-          <button
-            onClick={() => setIsFinishModalOpen(true)}
-            className="rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white px-3.5 py-1.5 text-xs font-black shadow-md transition-all active:scale-95 flex items-center gap-1"
-          >
-            <CheckCircle2 className="size-3.5" />
-            <span>Finalizar Sesión</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setIsResetModalOpen(true)}
+              className="rounded-xl border border-white/10 bg-white/[0.04] hover:bg-white/10 text-slate-300 px-2.5 py-1.5 text-xs font-bold transition-all active:scale-95 flex items-center gap-1"
+              title="Reiniciar series y descartar progreso actual"
+            >
+              <RotateCcw className="size-3.5" />
+              <span>Reiniciar</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setIsFinishModalOpen(true)}
+              className="rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white px-3.5 py-1.5 text-xs font-black shadow-md transition-all active:scale-95 flex items-center gap-1"
+            >
+              <CheckCircle2 className="size-3.5" />
+              <span>Finalizar Sesión</span>
+            </button>
+          </div>
         </div>
       </Card>
 
-      {/* ── TABLA DE EJERCICIOS Y REGISTRO DE SERIES ── */}
+      {/* ── TABLA DE EJERCICIOS Y REGISTRO DE SERIES PERSISTENTE ── */}
       <div className="space-y-4">
         {sessionExercises.map((exerciseSession, exIdx) => {
           const meta = muscleGroupLabels[exerciseSession.muscleGroup] || muscleGroupLabels.pecho
@@ -397,8 +521,13 @@ export function LiveWorkoutTab({
 
                 <button
                   type="button"
-                  onClick={() => startRestTimer(exerciseSession.targetRestSeconds || 90)}
-                  className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 text-[11px] font-bold border border-purple-500/25 transition-all"
+                  onClick={() =>
+                    triggerRestTimer(
+                      exerciseSession.targetRestSeconds || 90,
+                      exerciseSession.exerciseName
+                    )
+                  }
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 text-[11px] font-bold border border-purple-500/25 transition-all active:scale-95"
                 >
                   <Timer className="size-3" />
                   <span>Descanso {exerciseSession.targetRestSeconds || 90}s</span>
@@ -417,7 +546,7 @@ export function LiveWorkoutTab({
                   <div className="col-span-2">✓</div>
                 </div>
 
-                {/* Filas de Series */}
+                {/* Filas de Series con inputs y checks persistentes */}
                 {exerciseSession.sets.map((set, setIdx) => {
                   return (
                     <div
@@ -425,7 +554,7 @@ export function LiveWorkoutTab({
                       className={cn(
                         'grid grid-cols-12 gap-1.5 items-center p-1.5 rounded-xl transition-colors text-xs font-semibold text-center',
                         set.completed
-                          ? 'bg-emerald-950/20 border border-emerald-500/30 text-emerald-200'
+                          ? 'bg-emerald-950/30 border border-emerald-500/40 text-emerald-200'
                           : 'bg-white/[0.02] border border-white/5 text-slate-200'
                       )}
                     >
@@ -459,8 +588,15 @@ export function LiveWorkoutTab({
                         <input
                           type="number"
                           step="0.5"
-                          value={set.weightKg || ''}
-                          onChange={(e) => handleUpdateSet(exIdx, setIdx, 'weightKg', parseFloat(e.target.value) || 0)}
+                          value={set.weightKg ?? ''}
+                          onChange={(e) =>
+                            handleUpdateSet(
+                              exIdx,
+                              setIdx,
+                              'weightKg',
+                              e.target.value === '' ? 0 : parseFloat(e.target.value)
+                            )
+                          }
                           className="w-full rounded-lg border border-purple-500/20 bg-white/[0.04] py-1 text-center font-mono font-bold text-white text-xs outline-none focus:border-purple-500"
                         />
                       </div>
@@ -469,8 +605,15 @@ export function LiveWorkoutTab({
                       <div className="col-span-2">
                         <input
                           type="number"
-                          value={set.reps || ''}
-                          onChange={(e) => handleUpdateSet(exIdx, setIdx, 'reps', parseInt(e.target.value, 10) || 0)}
+                          value={set.reps ?? ''}
+                          onChange={(e) =>
+                            handleUpdateSet(
+                              exIdx,
+                              setIdx,
+                              'reps',
+                              e.target.value === '' ? 0 : parseInt(e.target.value, 10)
+                            )
+                          }
                           className="w-full rounded-lg border border-purple-500/20 bg-white/[0.04] py-1 text-center font-mono font-bold text-white text-xs outline-none focus:border-purple-500"
                         />
                       </div>
@@ -483,9 +626,10 @@ export function LiveWorkoutTab({
                           className={cn(
                             'size-7 rounded-lg border flex items-center justify-center transition-all active:scale-90',
                             set.completed
-                              ? 'bg-emerald-600 border-emerald-500 text-white shadow-sm'
+                              ? 'bg-emerald-600 border-emerald-500 text-white shadow-sm ring-1 ring-emerald-400/40'
                               : 'bg-white/[0.05] border-white/20 text-slate-400 hover:border-purple-500 hover:text-white'
                           )}
+                          title={set.completed ? 'Serie completada' : 'Marcar como completada'}
                         >
                           <Check className="size-4 stroke-[3]" />
                         </button>
@@ -518,64 +662,37 @@ export function LiveWorkoutTab({
         })}
       </div>
 
-      {/* ── TEMPORIZADOR DE DESCANSO FLOTANTE ── */}
-      {restSecondsRemaining !== null && (
-        <div className="fixed bottom-20 sm:bottom-8 right-4 sm:right-8 z-50 animate-in slide-in-from-bottom-5 duration-200">
-          <div className="rounded-2xl bg-[#100e23]/98 border border-purple-500/40 p-3 shadow-2xl backdrop-blur-2xl flex items-center gap-3 w-72">
-            <div className="size-10 rounded-xl bg-purple-600/25 border border-purple-500/40 flex items-center justify-center text-purple-300 font-mono font-bold text-sm shrink-0">
-              {restSecondsRemaining}s
+      {/* ── MODAL DE CONFIRMACIÓN PARA REINICIAR SESIÓN ── */}
+      {isResetModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="w-full max-w-sm rounded-3xl border border-rose-500/30 bg-[#100e23] p-6 shadow-2xl space-y-4">
+            <div className="flex items-center gap-3 text-rose-400">
+              <div className="size-10 rounded-2xl bg-rose-500/15 border border-rose-500/30 flex items-center justify-center">
+                <RotateCcw className="size-5" />
+              </div>
+              <div>
+                <h4 className="text-base font-black text-white">¿Reiniciar sesión actual?</h4>
+                <p className="text-xs text-slate-400">Se descartarán las series marcadas.</p>
+              </div>
             </div>
-
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between text-[11px] font-bold mb-1">
-                <span className="text-white flex items-center gap-1">
-                  <Timer className="size-3 text-purple-400" /> Descanso
-                </span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsRestActive(false)
-                    setRestSecondsRemaining(null)
-                  }}
-                  className="text-slate-400 hover:text-white"
-                >
-                  <X className="size-3.5" />
-                </button>
-              </div>
-
-              {/* Barra de progreso de descanso */}
-              <div className="h-1.5 w-full bg-white/[0.08] rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-purple-500 transition-all duration-1000 rounded-full"
-                  style={{
-                    width: `${Math.max(0, Math.min(100, (restSecondsRemaining / restTotalSeconds) * 100))}%`,
-                  }}
-                />
-              </div>
-
-              <div className="flex items-center justify-between gap-1 mt-1.5 text-[10px] font-bold">
-                <button
-                  type="button"
-                  onClick={() => setRestSecondsRemaining((r) => Math.max(0, (r || 0) - 15))}
-                  className="px-1.5 py-0.5 rounded bg-white/[0.04] text-slate-300 hover:text-white"
-                >
-                  -15s
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setRestSecondsRemaining((r) => (r || 0) + 30)}
-                  className="px-1.5 py-0.5 rounded bg-white/[0.04] text-slate-300 hover:text-white"
-                >
-                  +30s
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setIsRestActive((a) => !a)}
-                  className="px-2 py-0.5 rounded bg-purple-600/30 text-purple-200 hover:text-white"
-                >
-                  {isRestActive ? 'Pausar' : 'Reanudar'}
-                </button>
-              </div>
+            <p className="text-xs text-slate-300">
+              Esta acción limpiará los checks de series de la sesión actual y restablecerá el cronómetro a 0.
+            </p>
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-white/10">
+              <button
+                type="button"
+                onClick={() => setIsResetModalOpen(false)}
+                className="px-4 py-2 text-xs font-bold text-slate-400 hover:text-white"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleResetSession}
+                className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-xs font-black text-white shadow-soft transition-all active:scale-95"
+              >
+                Sí, reiniciar
+              </button>
             </div>
           </div>
         </div>
