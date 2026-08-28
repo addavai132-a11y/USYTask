@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
@@ -21,9 +22,25 @@ import {
 import { LandingHeader } from '@/components/landing/landing-header'
 import { AppPreviewMockup } from '@/components/landing/app-preview-mockup'
 import { isDevModeActive, enableDevMode } from '@/lib/dev-mode'
+import { getStoredSession } from '@/lib/user-session'
+import { createClient } from '@/lib/supabase'
 
 export default function LandingPage() {
   const router = useRouter()
+
+  useEffect(() => {
+    const session = getStoredSession()
+    if (session || isDevModeActive()) {
+      router.replace('/app')
+      return
+    }
+    const supabase = createClient()
+    supabase.auth.getSession().then(({ data: { session: supaSession } }) => {
+      if (supaSession?.user) {
+        router.replace('/app')
+      }
+    })
+  }, [router])
 
   const handleCreateSpace = (e: React.MouseEvent) => {
     if (isDevModeActive()) {

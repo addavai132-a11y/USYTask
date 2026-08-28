@@ -16,6 +16,12 @@ export async function GET(request: Request) {
       ''
 
     const supabase = createServerClient(supabaseUrl, supabaseKey, {
+      cookieOptions: {
+        maxAge: 60 * 60 * 24 * 365,
+        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production',
+        path: '/',
+      },
       cookies: {
         getAll() {
           return cookieStore.getAll()
@@ -23,7 +29,13 @@ export async function GET(request: Request) {
         setAll(cookiesToSet) {
           try {
             cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
+              cookieStore.set(name, value, {
+                ...options,
+                maxAge: 60 * 60 * 24 * 365,
+                sameSite: 'lax',
+                secure: process.env.NODE_ENV === 'production',
+                path: '/',
+              })
             )
           } catch {
             // Called from Server Component
@@ -43,6 +55,8 @@ export async function GET(request: Request) {
       const hasDateOfBirth = Boolean(
         metadata.date_of_birth || metadata.dateOfBirth || metadata.age
       )
+      const isProfileCompleted = Boolean(metadata.profile_completed) || (hasUsername && hasDateOfBirth)
+
       if (next === '/reset-password' || next.startsWith('/reset-password')) {
         return NextResponse.redirect(`${origin}${next}`)
       }

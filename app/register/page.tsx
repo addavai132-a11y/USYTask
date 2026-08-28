@@ -1,18 +1,20 @@
 'use client'
 
-import { useState, Suspense } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { ArrowRight, Lock, Mail, User, AtSign, Calendar, CheckCircle2 } from 'lucide-react'
 import { UsyTaskLogo } from '@/components/ui/usytask-logo'
 import { GoogleIcon } from '@/components/ui/google-icon'
-import { handleGoogleAuth } from '@/lib/supabase-auth'
+import { handleGoogleAuth, getActiveUserSession } from '@/lib/supabase-auth'
+import { createClient } from '@/lib/supabase'
 import {
   UserProfile,
   calculateAge,
   generateUserId,
   sanitizeUsername,
   setStoredSession,
+  getStoredSession,
   validateDateOfBirth,
   validateUsername,
 } from '@/lib/user-session'
@@ -36,6 +38,27 @@ function RegisterContent() {
   const [dateOfBirthError, setDateOfBirthError] = useState('')
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
+
+  // Auto redirect if already logged in
+  useEffect(() => {
+    if (isDevModeActive()) {
+      router.replace(nextTarget || '/app')
+      return
+    }
+    const session = getStoredSession()
+    if (session) {
+      router.replace(nextTarget || '/app')
+      return
+    }
+    const supabase = createClient()
+    supabase.auth.getSession().then(({ data: { session: supaSession } }) => {
+      if (supaSession?.user) {
+        getActiveUserSession().then(() => {
+          router.replace(nextTarget || '/app')
+        })
+      }
+    })
+  }, [router, nextTarget])
 
   const handleUsernameChange = (val: string) => {
     setUsername(val)

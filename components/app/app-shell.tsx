@@ -20,9 +20,12 @@ import { DevModeIndicator } from '@/components/dev/dev-mode-indicator'
 import { SpaceSelectorModal } from './space-selector-modal'
 import { CreateSpaceModal } from './create-space-modal'
 import { HistoryModal } from './history-modal'
+import { UsyTaskLogo } from '@/components/ui/usytask-logo'
 import { cn } from '@/lib/utils'
 import { getStoredSession } from '@/lib/user-session'
 import { isDevModeActive } from '@/lib/dev-mode'
+import { createClient } from '@/lib/supabase'
+import { getActiveUserSession } from '@/lib/supabase-auth'
 
 function Screens() {
   const { tab } = useApp()
@@ -47,22 +50,78 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   const [checked, setChecked] = useState(false)
 
   useEffect(() => {
-    const session = getStoredSession()
-    const devMode = isDevModeActive()
-    if (!session && !devMode) {
-      router.push('/login')
-    } else {
-      setChecked(true)
+    let isMounted = true
+
+    async function verifyAuth() {
+      // Immediate local verification to avoid delays
+      const localSession = getStoredSession()
+      const devMode = isDevModeActive()
+
+      if (localSession || devMode) {
+        if (isMounted) setChecked(true)
+        return
+      }
+
+      // Background verification against Supabase Auth session
+      try {
+        const supabase = createClient()
+        const {
+          data: { session },
+        } = await supabase.auth.getSession()
+
+        if (session?.user) {
+          await getActiveUserSession()
+          if (isMounted) setChecked(true)
+        } else {
+          if (isMounted) router.replace('/login')
+        }
+      } catch (err) {
+        console.warn('Session verification fallback to stored session:', err)
+        if (isMounted) router.replace('/login')
+      }
+    }
+
+    verifyAuth()
+
+    const supabase = createClient()
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_OUT') {
+        if (isMounted) {
+          setChecked(false)
+          router.replace('/login')
+        }
+      } else if (session?.user) {
+        await getActiveUserSession()
+        if (isMounted) setChecked(true)
+      }
+    })
+
+    return () => {
+      isMounted = false
+      subscription.unsubscribe()
     }
   }, [router])
 
   if (!checked) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <p className="text-sm font-bold text-muted-foreground animate-pulse">Cargando...</p>
+      <div className="flex min-h-screen min-h-[100dvh] w-full flex-col items-center justify-center bg-[#05050a] text-white relative overflow-hidden">
+        {/* Ambient Glows */}
+        <div className="pointer-events-none absolute -top-32 left-1/2 -translate-x-1/2 size-96 rounded-full bg-purple-600/15 blur-[120px]" />
+        <div className="pointer-events-none absolute -bottom-32 right-1/4 size-80 rounded-full bg-indigo-600/15 blur-[120px]" />
+
+        <div className="relative z-10 flex flex-col items-center gap-5 px-4 animate-fade-in">
+          <UsyTaskLogo size="lg" showSubtitle />
+          <div className="flex items-center gap-2 text-xs font-semibold text-slate-400">
+            <span className="size-2 rounded-full bg-purple-500 animate-ping" />
+            <span className="animate-pulse">Cargando tu espacio...</span>
+          </div>
+        </div>
       </div>
     )
   }
+
   return <>{children}</>
 }
 

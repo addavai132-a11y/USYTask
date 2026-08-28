@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Plus, Receipt, CheckCircle2, Clock, AlertTriangle, Trash2, Edit2, X, RefreshCw, Zap, Droplets, Flame, Fuel } from 'lucide-react'
+import { Plus, Receipt, CheckCircle2, Clock, AlertTriangle, Trash2, Edit2, X, RefreshCw, Zap, Droplets, Flame, Fuel, Sparkles } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { CustomSelect } from '@/components/ui/custom-select'
 import { PillTabs } from '@/components/ui/pill-tabs'

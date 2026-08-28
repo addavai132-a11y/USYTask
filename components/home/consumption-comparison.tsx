@@ -22,6 +22,7 @@ const UTILITIES_META: Record<
   agua: { label: 'Agua', unit: 'm³', icon: Droplets, sampleBaseAmount: 32.0, sampleBaseConsumption: 14 },
   gas: { label: 'Gas', unit: 'kWh', icon: Flame, sampleBaseAmount: 45.0, sampleBaseConsumption: 310 },
   combustible: { label: 'Combustible', unit: 'L', icon: Fuel, sampleBaseAmount: 85.0, sampleBaseConsumption: 55 },
+  otro: { label: 'Otros suministros', unit: 'ud', icon: Scale, sampleBaseAmount: 30.0, sampleBaseConsumption: 1 },
 }
 
 export function ConsumptionComparison({ onOpenAddBill }: { onOpenAddBill?: () => void }) {
