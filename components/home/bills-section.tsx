@@ -21,6 +21,40 @@ import { cn } from '@/lib/utils'
 
 type BillsSubTab = 'listado' | 'consumos'
 
+interface UtilityMeta {
+  unit: string
+  unitPriceLabel: string
+  unitPriceSuffix: string
+}
+
+const UTILITY_CONFIG: Record<UtilityType, UtilityMeta> = {
+  electricidad: {
+    unit: 'kWh',
+    unitPriceLabel: 'Precio medio (€/kWh)',
+    unitPriceSuffix: '€/kWh',
+  },
+  agua: {
+    unit: 'm³',
+    unitPriceLabel: 'Precio medio (€/m³)',
+    unitPriceSuffix: '€/m³',
+  },
+  gas: {
+    unit: 'kWh',
+    unitPriceLabel: 'Precio medio (€/kWh)',
+    unitPriceSuffix: '€/kWh',
+  },
+  combustible: {
+    unit: 'L',
+    unitPriceLabel: 'Precio medio (€/L)',
+    unitPriceSuffix: '€/L',
+  },
+  otro: {
+    unit: 'ud',
+    unitPriceLabel: 'Precio medio (€/ud)',
+    unitPriceSuffix: '€/ud',
+  },
+}
+
 export function BillsSection() {
   const { toast } = useToast()
   const { bills, addBill, updateBill, deleteBill, toggleBillStatus, confirmDelete } = useApp()
@@ -34,7 +68,6 @@ export function BillsSection() {
   const [amount, setAmount] = useState('')
   const [billingCycle, setBillingCycle] = useState<BillingCycle>('mensual')
   const [dueDay, setDueDay] = useState('1')
-  const [autopay, setAutopay] = useState(false)
 
   const [category, setCategory] = useState<any>('hogar')
   const [customCategoryInput, setCustomCategoryInput] = useState('')
@@ -42,7 +75,10 @@ export function BillsSection() {
   // Optional consumption fields
   const [hasConsumption, setHasConsumption] = useState(false)
   const [utilityType, setUtilityType] = useState<UtilityType>('electricidad')
+  const [customUtilityName, setCustomUtilityName] = useState('')
+  const [customUtilityUnit, setCustomUtilityUnit] = useState('')
   const [consumptionValue, setConsumptionValue] = useState('')
+  const [unitPrice, setUnitPrice] = useState('')
   const [kilometers, setKilometers] = useState('')
 
   // Current day of month
@@ -61,15 +97,55 @@ export function BillsSection() {
     return sum + b.amount / 12
   }, 0)
 
-  // Real-time calculated unit prices
-  const parsedAmount = parseFloat(amount) || 0
-  const parsedUnits = parseFloat(consumptionValue) || 0
-  const parsedKm = parseFloat(kilometers) || 0
+  const getUtilityMeta = (type: UtilityType, customUnit?: string): UtilityMeta => {
+    if (type === 'otro') {
+      const u = customUnit?.trim() || 'ud'
+      return {
+        unit: u,
+        unitPriceLabel: `Precio medio (€/${u})`,
+        unitPriceSuffix: `€/${u}`,
+      }
+    }
+    return UTILITY_CONFIG[type] || UTILITY_CONFIG.electricidad
+  }
 
-  const calculatedUnitPrice = parsedUnits > 0 ? parsedAmount / parsedUnits : 0
-  const calculatedCostPer100Km = parsedKm > 0 ? (parsedAmount / parsedKm) * 100 : 0
+  const currentUtilityMeta = getUtilityMeta(utilityType, customUtilityUnit)
+  const unitLabel = currentUtilityMeta.unit
 
-  const unitLabel = utilityType === 'electricidad' || utilityType === 'gas' ? 'kWh' : utilityType === 'agua' ? 'm³' : 'L'
+  // ── MANEJADORES DE CÁLCULO BIDIRECCIONAL ──
+  const handleAmountChange = (val: string) => {
+    setAmount(val)
+    const numAmt = parseFloat(val)
+    const numCons = parseFloat(consumptionValue)
+    if (!isNaN(numAmt) && !isNaN(numCons) && numCons > 0) {
+      const calc = numAmt / numCons
+      setUnitPrice(calc.toFixed(4).replace(/\.?0+$/, ''))
+    }
+  }
+
+  const handleConsumptionChange = (val: string) => {
+    setConsumptionValue(val)
+    const numCons = parseFloat(val)
+    const numPrice = parseFloat(unitPrice)
+    const numAmt = parseFloat(amount)
+
+    if (!isNaN(numCons) && numCons > 0) {
+      if (!isNaN(numPrice) && numPrice > 0) {
+        setAmount((numCons * numPrice).toFixed(2))
+      } else if (!isNaN(numAmt) && numAmt > 0) {
+        setUnitPrice((numAmt / numCons).toFixed(4).replace(/\.?0+$/, ''))
+      }
+    }
+  }
+
+  const handleUnitPriceChange = (val: string) => {
+    setUnitPrice(val)
+    const numPrice = parseFloat(val)
+    const numCons = parseFloat(consumptionValue)
+    if (!isNaN(numPrice) && !isNaN(numCons) && numCons > 0) {
+      setAmount((numCons * numPrice).toFixed(2))
+    }
+  }
 
   function handleOpenCreate() {
     setEditingId(null)
@@ -77,12 +153,14 @@ export function BillsSection() {
     setAmount('')
     setBillingCycle('mensual')
     setDueDay('1')
-    setAutopay(false)
     setCategory('hogar')
     setCustomCategoryInput('')
     setHasConsumption(false)
     setUtilityType('electricidad')
+    setCustomUtilityName('')
+    setCustomUtilityUnit('')
     setConsumptionValue('')
+    setUnitPrice('')
     setKilometers('')
     setIsModalOpen(true)
   }
@@ -93,19 +171,32 @@ export function BillsSection() {
     setAmount(bill.amount.toString())
     setBillingCycle(bill.billingCycle)
     setDueDay(bill.dueDay.toString())
-    setAutopay(bill.autopay)
     setCategory(bill.category || 'hogar')
     setCustomCategoryInput(bill.customCategory || '')
 
     if (bill.consumption && bill.consumption.consumptionValue) {
       setHasConsumption(true)
-      setUtilityType(bill.consumption.utilityType || 'electricidad')
-      setConsumptionValue(bill.consumption.consumptionValue.toString())
+      const uType = bill.consumption.utilityType || 'electricidad'
+      setUtilityType(uType)
+      setCustomUtilityName(bill.consumption.customUtilityName || '')
+      setCustomUtilityUnit(bill.consumption.customUtilityUnit || '')
+      const consVal = bill.consumption.consumptionValue.toString()
+      setConsumptionValue(consVal)
+      
+      const calcPrice = bill.consumption.unitPrice
+        ? bill.consumption.unitPrice.toString()
+        : bill.amount && bill.consumption.consumptionValue
+        ? (bill.amount / bill.consumption.consumptionValue).toFixed(4).replace(/\.?0+$/, '')
+        : ''
+      setUnitPrice(calcPrice)
       setKilometers(bill.consumption.kilometers ? bill.consumption.kilometers.toString() : '')
     } else {
       setHasConsumption(false)
       setUtilityType('electricidad')
+      setCustomUtilityName('')
+      setCustomUtilityUnit('')
       setConsumptionValue('')
+      setUnitPrice('')
       setKilometers('')
     }
 
@@ -124,15 +215,20 @@ export function BillsSection() {
     }
 
     const numDueDay = parseInt(dueDay, 10) || 1
+    const parsedUnits = parseFloat(consumptionValue) || 0
+    const parsedPrice = parseFloat(unitPrice) || (parsedUnits > 0 ? numAmount / parsedUnits : 0)
+    const parsedKm = parseFloat(kilometers) || 0
 
     let consumptionData: ConsumptionData | undefined = undefined
     if (hasConsumption && parsedUnits > 0) {
       consumptionData = {
         utilityType,
+        customUtilityName: utilityType === 'otro' ? customUtilityName.trim() : undefined,
+        customUtilityUnit: utilityType === 'otro' ? (customUtilityUnit.trim() || 'ud') : undefined,
         consumptionValue: parsedUnits,
         consumptionUnit: unitLabel,
-        unitPrice: calculatedUnitPrice,
-        kilometers: parsedKm > 0 ? parsedKm : undefined,
+        unitPrice: parsedPrice,
+        kilometers: utilityType === 'combustible' && parsedKm > 0 ? parsedKm : undefined,
       }
     }
 
@@ -144,7 +240,7 @@ export function BillsSection() {
         amount: numAmount,
         billingCycle,
         dueDay: numDueDay,
-        autopay,
+        autopay: false,
         category,
         customCategory: category === 'otros' && customCategoryInput.trim() ? customCategoryInput.trim() : undefined,
         status: 'pendiente',
@@ -157,7 +253,7 @@ export function BillsSection() {
         amount: numAmount,
         billingCycle,
         dueDay: numDueDay,
-        autopay,
+        autopay: false,
         category,
         customCategory: category === 'otros' && customCategoryInput.trim() ? customCategoryInput.trim() : undefined,
         status: 'pendiente',
@@ -179,6 +275,8 @@ export function BillsSection() {
         return <Flame className="size-3.5 text-orange-400" />
       case 'combustible':
         return <Fuel className="size-3.5 text-emerald-400" />
+      case 'otro':
+        return <Sparkles className="size-3.5 text-purple-400" />
       default:
         return <Receipt className="size-3.5 text-purple-400" />
     }
@@ -357,14 +455,14 @@ export function BillsSection() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-2.5">
                 <div className="flex flex-col gap-1">
                   <label className="font-semibold text-slate-500 dark:text-slate-400">Importe (€) <span className="text-red-500">*</span></label>
                   <input
                     type="number"
                     step="any"
                     value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
+                    onChange={(e) => handleAmountChange(e.target.value)}
                     placeholder="0.00"
                     className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-white/[0.04] py-2 px-3 text-xs font-medium text-slate-900 dark:text-white outline-none focus:border-purple-500"
                   />
@@ -383,30 +481,17 @@ export function BillsSection() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-2">
-                <div className="flex flex-col gap-1">
-                  <label className="font-semibold text-slate-500 dark:text-slate-400">Día de cargo (1 - 31)</label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="31"
-                    value={dueDay}
-                    onChange={(e) => setDueDay(e.target.value)}
-                    className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-white/[0.04] py-2 px-3 text-xs font-medium text-slate-900 dark:text-white outline-none focus:border-purple-500"
-                  />
-                </div>
-
-                <div className="flex flex-col justify-end">
-                  <label className="flex items-center gap-2 p-2 rounded-xl bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/5 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={autopay}
-                      onChange={(e) => setAutopay(e.target.checked)}
-                      className="rounded accent-purple-600"
-                    />
-                    <span className="font-semibold text-slate-700 dark:text-slate-300">Pago domiciliado</span>
-                  </label>
-                </div>
+              <div className="flex flex-col gap-1">
+                <label className="font-semibold text-slate-500 dark:text-slate-400">Día habitual de cobro (1 - 31)</label>
+                <input
+                  type="number"
+                  min="1"
+                  max="31"
+                  value={dueDay}
+                  onChange={(e) => setDueDay(e.target.value)}
+                  placeholder="1"
+                  className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-white/[0.04] py-2 px-3 text-xs font-medium text-slate-900 dark:text-white outline-none focus:border-purple-500"
+                />
               </div>
 
               {/* Registro Opcional de Consumo */}
@@ -416,40 +501,117 @@ export function BillsSection() {
                     type="checkbox"
                     checked={hasConsumption}
                     onChange={(e) => setHasConsumption(e.target.checked)}
-                    className="rounded accent-purple-600"
+                    className="rounded accent-purple-600 size-4"
                   />
                   <span className="font-bold text-slate-800 dark:text-slate-200">
-                    Registrar consumo / contador (kWh, m³, L)
+                    Registrar consumo / contador ({unitLabel})
                   </span>
                 </label>
 
                 {hasConsumption && (
-                  <div className="grid grid-cols-2 gap-2 p-2.5 rounded-xl bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/5 animate-fade-in">
-                    <div className="flex flex-col gap-1">
-                      <label className="font-semibold text-slate-500 dark:text-slate-400">Tipo de suministro</label>
-                      <CustomSelect<UtilityType>
-                        value={utilityType}
-                        onChange={(val) => setUtilityType(val)}
-                        options={[
-                          { value: 'electricidad', label: 'Electricidad (kWh)' },
-                          { value: 'agua', label: 'Agua (m³)' },
-                          { value: 'gas', label: 'Gas (kWh)' },
-                          { value: 'combustible', label: 'Combustible (L)' },
-                        ]}
-                      />
+                  <div className="p-3 rounded-2xl bg-slate-50 dark:bg-purple-950/20 border border-slate-200 dark:border-purple-500/25 space-y-2.5 animate-fade-in">
+                    {/* Fila de 3 columnas: Tipo | Consumo | Precio medio */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                      <div className="flex flex-col gap-1">
+                        <label className="font-semibold text-[11px] text-slate-500 dark:text-slate-400">Tipo suministro</label>
+                        <CustomSelect<UtilityType>
+                          value={utilityType}
+                          onChange={(val) => setUtilityType(val)}
+                          options={[
+                            { value: 'electricidad', label: 'Electricidad (kWh)' },
+                            { value: 'agua', label: 'Agua (m³)' },
+                            { value: 'gas', label: 'Gas (kWh)' },
+                            { value: 'combustible', label: 'Combustible (L)' },
+                            { value: 'otro', label: 'Otro (Personalizado)' },
+                          ]}
+                        />
+                      </div>
+
+                      <div className="flex flex-col gap-1">
+                        <label className="font-semibold text-[11px] text-slate-500 dark:text-slate-400">
+                          Consumo ({currentUtilityMeta.unit})
+                        </label>
+                        <div className="relative">
+                          <input
+                            type="number"
+                            step="any"
+                            value={consumptionValue}
+                            onChange={(e) => handleConsumptionChange(e.target.value)}
+                            placeholder="0"
+                            className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-white/[0.04] py-2 pl-3 pr-10 text-xs font-medium text-slate-900 dark:text-white outline-none focus:border-purple-500"
+                          />
+                          <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] font-bold text-purple-600 dark:text-purple-400 pointer-events-none">
+                            {currentUtilityMeta.unit}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col gap-1">
+                        <label className="font-semibold text-[11px] text-slate-500 dark:text-slate-400 truncate" title={currentUtilityMeta.unitPriceLabel}>
+                          {currentUtilityMeta.unitPriceLabel}
+                        </label>
+                        <div className="relative">
+                          <input
+                            type="number"
+                            step="any"
+                            value={unitPrice}
+                            onChange={(e) => handleUnitPriceChange(e.target.value)}
+                            placeholder="0.0000"
+                            className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-white/[0.04] py-2 pl-3 pr-12 text-xs font-medium text-slate-900 dark:text-white outline-none focus:border-purple-500"
+                          />
+                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] font-bold text-purple-600 dark:text-purple-400 pointer-events-none">
+                            {currentUtilityMeta.unitPriceSuffix}
+                          </span>
+                        </div>
+                      </div>
                     </div>
 
-                    <div className="flex flex-col gap-1">
-                      <label className="font-semibold text-slate-500 dark:text-slate-400">Consumo ({unitLabel})</label>
-                      <input
-                        type="number"
-                        step="any"
-                        value={consumptionValue}
-                        onChange={(e) => setConsumptionValue(e.target.value)}
-                        placeholder="Ej: 240"
-                        className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-white/[0.04] py-2 px-3 text-xs font-medium text-slate-900 dark:text-white outline-none focus:border-purple-500"
-                      />
-                    </div>
+                    {/* Campos adicionales para 'Otro (Personalizado)' */}
+                    {utilityType === 'otro' && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2 border-t border-slate-200 dark:border-white/10 animate-fade-in">
+                        <div className="flex flex-col gap-1">
+                          <label className="font-semibold text-[11px] text-slate-500 dark:text-slate-400">
+                            Nombre del suministro
+                          </label>
+                          <input
+                            type="text"
+                            value={customUtilityName}
+                            onChange={(e) => setCustomUtilityName(e.target.value)}
+                            placeholder="Ej: Pellets, Leña, Butano, Internet..."
+                            className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-white/[0.04] py-2 px-3 text-xs font-medium text-slate-900 dark:text-white outline-none focus:border-purple-500"
+                          />
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <label className="font-semibold text-[11px] text-slate-500 dark:text-slate-400">
+                            Unidad de medida
+                          </label>
+                          <input
+                            type="text"
+                            value={customUtilityUnit}
+                            onChange={(e) => setCustomUtilityUnit(e.target.value)}
+                            placeholder="Ej: kg, saco, botellas, GB..."
+                            className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-white/[0.04] py-2 px-3 text-xs font-medium text-slate-900 dark:text-white outline-none focus:border-purple-500"
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Campo adicional para Combustible: Kilometraje */}
+                    {utilityType === 'combustible' && (
+                      <div className="flex flex-col gap-1 pt-1 border-t border-slate-200 dark:border-white/5 animate-fade-in">
+                        <label className="font-semibold text-[11px] text-slate-500 dark:text-slate-400">
+                          Kilómetros recorridos (opcional)
+                        </label>
+                        <input
+                          type="number"
+                          step="any"
+                          value={kilometers}
+                          onChange={(e) => setKilometers(e.target.value)}
+                          placeholder="Ej: 650 km"
+                          className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-white/[0.04] py-2 px-3 text-xs font-medium text-slate-900 dark:text-white outline-none focus:border-purple-500"
+                        />
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

@@ -139,7 +139,7 @@ function RegisterContent() {
     : 'Marcos García'
 
   return (
-    <div className="relative min-h-screen flex flex-col justify-between bg-[#05050a] text-white px-4 py-8 sm:px-6 overflow-hidden">
+    <div className="relative min-h-screen min-h-[100dvh] flex flex-col justify-between bg-[#05050a] text-white px-4 py-8 sm:px-6 overflow-x-hidden">
       {/* Ambient Radial Aurora Glows */}
       <div className="pointer-events-none absolute -top-40 -right-40 size-96 rounded-full bg-purple-600/15 blur-[120px]" />
       <div className="pointer-events-none absolute -bottom-40 -left-40 size-96 rounded-full bg-indigo-600/15 blur-[120px]" />

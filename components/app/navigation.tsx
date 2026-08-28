@@ -67,7 +67,7 @@ export function Sidebar() {
   const { mode, toggleMode } = useThemeMode()
 
   return (
-    <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-slate-200/80 dark:border-purple-500/15 bg-white dark:bg-[#090814]/85 backdrop-blur-2xl px-4 py-6 lg:flex">
+    <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col overflow-y-auto border-r border-slate-200/80 dark:border-purple-500/15 bg-white dark:bg-[#090814]/85 backdrop-blur-2xl px-4 py-6 lg:flex">
       <div className="flex items-center px-2">
         <UsyTaskLogo size="md" />
       </div>

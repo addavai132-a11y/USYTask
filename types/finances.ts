@@ -39,14 +39,16 @@ export const expenseCategoryMeta: Record<ExpenseCategory, { icon: string; label:
   otros: { icon: '✨', label: 'Otros' },
 }
 
-export type UtilityType = 'electricidad' | 'agua' | 'gas' | 'combustible'
+export type UtilityType = 'electricidad' | 'agua' | 'gas' | 'combustible' | 'otro'
 
 export interface ConsumptionData {
   utilityType?: UtilityType
-  consumptionUnit?: string // 'kWh', 'm³', 'L'
+  customUtilityName?: string
+  customUtilityUnit?: string
+  consumptionUnit?: string // 'kWh', 'm³', 'L', o personalizado
   consumptionValue?: number // ej. 36
   kilometers?: number // km para repostajes
-  unitPrice?: number // €/kWh, €/m3, €/L
+  unitPrice?: number // €/kWh, €/m3, €/L, €/ud
 }
 
 export interface Expense {

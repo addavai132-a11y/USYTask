@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { User, Home, Smartphone, Bell, LogOut, Zap, History, Loader2, Sliders } from 'lucide-react'
+import { User, Home, Smartphone, Bell, LogOut, Zap, History, Loader2, Sliders, KeyRound } from 'lucide-react'
 import { Card, CardHeader } from '@/components/ui/card'
 import { ScreenHeader } from '@/components/shared/screen-header'
 import { getActiveUserSession, handleLogout } from '@/lib/supabase-auth'
@@ -11,6 +11,7 @@ import { isDevModeActive, disableDevMode } from '@/lib/dev-mode'
 import { InviteSection } from './invite-section'
 import { SpacesManagementSection } from './spaces-management-section'
 import { NotificationPreferencesModal } from '@/components/notifications/notification-preferences-modal'
+import { ChangePasswordModal } from './change-password-modal'
 import { usePushNotifications } from '@/hooks/use-push-notifications'
 import { useToast } from '@/components/ui/toast'
 import { useApp } from '@/components/app/app-context'
@@ -22,6 +23,7 @@ export function ProfileScreen() {
   const { userName, activeGroup, members, openHistory } = useApp()
   const [session, setSession] = useState<UserProfile | null>(null)
   const [isNotificationModalOpen, setIsNotificationModalOpen] = useState(false)
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false)
 
   const {
     isSubscribed,
@@ -228,6 +230,22 @@ export function ProfileScreen() {
             </div>
           </div>
 
+          {/* Botón Cambiar Contraseña */}
+          <button
+            onClick={() => setIsChangePasswordOpen(true)}
+            className="flex items-center justify-between rounded-2xl bg-purple-500/10 border border-purple-500/20 p-3 text-left transition-colors hover:bg-purple-500/20 text-slate-900 dark:text-white"
+          >
+            <div className="flex items-center gap-3">
+              <div className="flex size-9 items-center justify-center rounded-xl bg-purple-500/20 text-purple-700 dark:text-purple-300 shrink-0">
+                <KeyRound className="size-5" />
+              </div>
+              <div>
+                <p className="text-sm font-bold">Seguridad y contraseña</p>
+                <p className="text-xs text-muted-foreground">Actualizar clave de acceso</p>
+              </div>
+            </div>
+          </button>
+
           <button
             onClick={onSignOut}
             className="mt-2 flex items-center justify-center gap-2 rounded-2xl border border-rose-500/30 bg-rose-500/10 p-3 text-sm font-bold text-rose-600 dark:text-rose-400 transition-colors hover:bg-rose-500/20 active:scale-[0.98]"
@@ -257,6 +275,12 @@ export function ProfileScreen() {
       <NotificationPreferencesModal
         isOpen={isNotificationModalOpen}
         onClose={() => setIsNotificationModalOpen(false)}
+      />
+
+      {/* Modal de Cambio de Contraseña */}
+      <ChangePasswordModal
+        isOpen={isChangePasswordOpen}
+        onClose={() => setIsChangePasswordOpen(false)}
       />
     </div>
   )

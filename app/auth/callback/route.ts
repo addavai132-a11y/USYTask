@@ -43,7 +43,9 @@ export async function GET(request: Request) {
       const hasDateOfBirth = Boolean(
         metadata.date_of_birth || metadata.dateOfBirth || metadata.age
       )
-      const isProfileCompleted = Boolean(metadata.profile_completed) || (hasUsername && hasDateOfBirth)
+      if (next === '/reset-password' || next.startsWith('/reset-password')) {
+        return NextResponse.redirect(`${origin}${next}`)
+      }
 
       if (isProfileCompleted) {
         return NextResponse.redirect(`${origin}${next}`)

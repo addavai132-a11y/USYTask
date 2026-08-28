@@ -168,16 +168,20 @@
     -webkit-overflow-scrolling: touch;
   }
 
+  html,
+  body {
+    min-height: 100%;
+    min-height: 100dvh;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    touch-action: manipulation;
+  }
+
   html {
     /* Suppress the blue flash on tap (iOS/Android) */
     -webkit-tap-highlight-color: transparent;
-    /* Block all horizontal scroll at the root level */
-    overflow-x: hidden;
     width: 100%;
-    /* Lock zoom – reinforces the Viewport export in layout.tsx */
-    touch-action: pan-x pan-y;
-    /* No elastic/rubber-band vertical bounce on the html element */
-    overscroll-behavior: none;
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -185,15 +189,8 @@
   }
 
   body {
-    @apply bg-background text-foreground min-h-screen antialiased transition-colors duration-300 selection:bg-purple-500/25 selection:text-purple-900 dark:selection:bg-purple-500/35 dark:selection:text-purple-200;
-    /* No bounce / overscroll effect on the body */
-    overscroll-behavior-y: none;
-    overscroll-behavior-x: none;
-    /* Block horizontal expansion */
-    overflow-x: hidden;
+    @apply bg-background text-foreground antialiased transition-colors duration-300 selection:bg-purple-500/25 selection:text-purple-900 dark:selection:bg-purple-500/35 dark:selection:text-purple-200;
     width: 100%;
-    /* Limit touch gestures to plain panning (no pinch-zoom propagation) */
-    touch-action: pan-x pan-y;
     font-family: var(--font-sans);
     letter-spacing: -0.012em;
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11', 'tnum';

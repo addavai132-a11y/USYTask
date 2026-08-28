@@ -7,7 +7,7 @@ import { Card } from '@/components/ui/card'
 import { EmptyState } from '@/components/ui/empty-state'
 import { MemberAvatar } from '@/components/ui/member-avatar'
 import { PillTabs } from '@/components/ui/pill-tabs'
-import { MemberFilterDropdown } from '@/components/shared/member-filter-dropdown'
+import { MemberMultiSelectFilter } from '@/components/shared/member-multi-select-filter'
 import type { Task, CalendarEvent, Reminder, Member } from '@/types'
 import { getTodayISO } from '@/lib/date-utils'
 import { cn } from '@/lib/utils'
@@ -67,11 +67,15 @@ export function HistorySection({
   const [filterCategory, setFilterCategory] = useState<FilterCategory>('todo')
   const [timeRangeMode, setTimeRangeMode] = useState<TimeRangeMode>('todos')
   const [specificDate, setSpecificDate] = useState<string>(getTodayISO())
-  const [memberFilter, setMemberFilter] = useState<string>(propMemberFilter || 'all')
+  const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>(
+    propMemberFilter && propMemberFilter !== 'all' ? [propMemberFilter] : []
+  )
 
   // Sync member filter from props
   useEffect(() => {
-    if (propMemberFilter) setMemberFilter(propMemberFilter)
+    if (propMemberFilter) {
+      setSelectedMemberIds(propMemberFilter === 'all' ? [] : [propMemberFilter])
+    }
   }, [propMemberFilter])
 
   // Build unified items array
@@ -135,9 +139,10 @@ export function HistorySection({
     if (filterCategory === 'eventos' && item.type !== 'event') return false
     if (filterCategory === 'recordatorios' && item.type !== 'reminder') return false
 
-    // Member filter
-    if (memberFilter !== 'all') {
-      if (item.memberIds.length > 0 && !item.memberIds.includes(memberFilter)) return false
+    // Multi-member filter
+    if (selectedMemberIds.length > 0 && selectedMemberIds.length < members.length) {
+      const match = item.memberIds.some((mId) => selectedMemberIds.includes(mId))
+      if (!match) return false
     }
 
     // Search query
@@ -244,11 +249,11 @@ export function HistorySection({
             />
           </div>
 
-          <MemberFilterDropdown
-            value={memberFilter}
-            onChange={setMemberFilter}
+          <MemberMultiSelectFilter
+            selectedIds={selectedMemberIds}
+            onChange={setSelectedMemberIds}
             members={members}
-            className="w-full sm:w-48 shrink-0"
+            className="w-full sm:w-56 shrink-0"
           />
         </div>
       </div>

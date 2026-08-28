@@ -30,14 +30,18 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
+      { url: '/favicon.png', sizes: '48x48', type: 'image/png' },
+      { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
       { url: '/icon.svg', type: 'image/svg+xml', sizes: 'any' },
-      { url: '/icon-192.png', type: 'image/png', sizes: '192x192' },
-      { url: '/icon-512.png', type: 'image/png', sizes: '512x512' },
+      { url: '/icon-192x192.png', type: 'image/png', sizes: '192x192' },
+      { url: '/icon-512x512.png', type: 'image/png', sizes: '512x512' },
     ],
     apple: [
+      { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
       { url: '/apple-icon.png', sizes: '180x180', type: 'image/png' },
     ],
-    shortcut: '/icon.svg',
+    shortcut: '/favicon.png',
   },
 }
 
@@ -56,8 +60,8 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="es" className={`${fontSans.variable} dark`}>
-      <body className="font-sans antialiased bg-background text-foreground transition-colors duration-300">
+    <html lang="es" className={`${fontSans.variable} dark min-h-screen min-h-[100dvh]`}>
+      <body className="font-sans antialiased min-h-screen min-h-[100dvh] bg-background text-foreground transition-colors duration-300">
         <ThemeModeProvider>
           {/* Fixed Ambient Aurora Glow Background Layer */}
           <div className="fixed inset-0 pointer-events-none -z-10 overflow-hidden">

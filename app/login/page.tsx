@@ -72,7 +72,7 @@ function LoginContent() {
   }
 
   return (
-    <div className="relative min-h-screen flex flex-col justify-between bg-[#05050a] text-white px-4 py-8 sm:px-6 overflow-hidden">
+    <div className="relative min-h-screen min-h-[100dvh] flex flex-col justify-between bg-[#05050a] text-white px-4 py-8 sm:px-6 overflow-x-hidden">
       {/* Ambient Radial Aurora Glows */}
       <div className="pointer-events-none absolute -top-40 -left-40 size-96 rounded-full bg-purple-600/15 blur-[120px]" />
       <div className="pointer-events-none absolute -bottom-40 -right-40 size-96 rounded-full bg-indigo-600/15 blur-[120px]" />
@@ -139,7 +139,9 @@ function LoginContent() {
                 <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-slate-500" />
                 <input
                   id="login-email"
+                  name="email"
                   type="email"
+                  autoComplete="username email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -155,19 +157,20 @@ function LoginContent() {
                 <label htmlFor="login-password" className="text-xs font-semibold text-slate-400">
                   Contraseña
                 </label>
-                <button
-                  type="button"
-                  onClick={() => alert('Próximamente: Recuperación de contraseña por email.')}
-                  className="text-[11px] font-semibold text-purple-400 hover:underline"
+                <Link
+                  href="/forgot-password"
+                  className="text-[11px] font-semibold text-purple-400 hover:text-purple-300 hover:underline transition-colors"
                 >
                   ¿Has olvidado tu contraseña?
-                </button>
+                </Link>
               </div>
               <div className="relative">
                 <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-slate-500" />
                 <input
                   id="login-password"
+                  name="password"
                   type="password"
+                  autoComplete="current-password"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}

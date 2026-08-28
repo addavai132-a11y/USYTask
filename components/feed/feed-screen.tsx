@@ -2,32 +2,25 @@
 
 import { useMemo } from 'react'
 import {
-  Calendar,
-  AlertTriangle,
   Users,
   UserPlus,
   Star,
   Flame,
   ShieldCheck,
-  Trash2,
-  CheckCircle2,
   Clock,
-  MapPin,
+  Calendar,
+  AlertTriangle,
   ChevronRight,
-  Plus,
-  Sparkles,
-  ListTodo,
 } from 'lucide-react'
-import { Card, CardHeader } from '@/components/ui/card'
-import { EventRow } from '@/components/shared/event-row'
-import { TaskRow } from '@/components/shared/task-row'
+import { Card } from '@/components/ui/card'
 import { MemberAvatar } from '@/components/ui/member-avatar'
 import { FeedHeader } from './feed-header'
+import { TasksBoard } from './tasks-board'
+import { EventsBoard } from './events-board'
 import { ActivityFeed } from './activity-feed'
 import { useApp } from '@/components/app/app-context'
-import { useToast } from '@/components/ui/toast'
 import { getTodayISO } from '@/lib/date-utils'
-import { getEventMemberIds, getReminderMemberIds, type CalendarEvent, type Reminder, type EventCategory } from '@/types'
+import { getEventMemberIds, getReminderMemberIds, type EventCategory } from '@/types'
 import { cn } from '@/lib/utils'
 
 interface UpcomingItem {
@@ -47,50 +40,24 @@ export function FeedScreen() {
   const {
     setTab,
     events,
-    tasks,
     reminders,
     members,
     currentMember,
-    toggleTask,
     getMemberById,
-    deleteTask,
-    deleteEvent,
-    deleteReminder,
     openQuickAdd,
   } = useApp()
-  const { toast } = useToast()
 
   const today = getTodayISO()
 
-  // 1. Elementos de HOY
-  const todayEvents = useMemo(() => {
-    return events
-      .filter((e) => e.date === today)
-      .sort((a, b) => (a.time || '00:00').localeCompare(b.time || '00:00'))
-  }, [events, today])
-
-  const todayReminders = useMemo(() => {
-    return reminders
-      .filter((r) => r.dueDate === today || r.daysLeft === 0)
-      .sort((a, b) => a.title.localeCompare(b.title))
-  }, [reminders, today])
-
-  const pendingTasks = useMemo(() => {
-    return tasks.filter((t) => !t.completed)
-  }, [tasks])
-
-  // ¿Hay algo prioritario para HOY?
-  const hasTodayItems = todayEvents.length > 0 || todayReminders.length > 0
-
-  // 2. Elementos PRÓXIMOS (Días posteriores ordenados cronológicamente por la fecha más cercana)
+  // Elementos Próximos (Días posteriores ordenados cronológicamente)
   const upcomingItems = useMemo(() => {
     const list: UpcomingItem[] = []
 
-    // Eventos futuros (posteriores a hoy)
     events
       .filter((e) => e.date > today)
       .forEach((e) => {
-        const diffTime = new Date(`${e.date}T00:00:00`).getTime() - new Date(`${today}T00:00:00`).getTime()
+        const diffTime =
+          new Date(`${e.date}T00:00:00`).getTime() - new Date(`${today}T00:00:00`).getTime()
         const daysLeft = Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60 * 24)))
         list.push({
           id: `ev-${e.id}`,
@@ -106,7 +73,6 @@ export function FeedScreen() {
         })
       })
 
-    // Recordatorios futuros (posteriores a hoy)
     reminders
       .filter((r) => r.dueDate > today || r.daysLeft > 0)
       .forEach((r) => {
@@ -121,7 +87,6 @@ export function FeedScreen() {
         })
       })
 
-    // Ordenar cronológicamente: fecha más próxima primero
     return list.sort((a, b) => {
       const dateDiff = a.date.localeCompare(b.date)
       if (dateDiff !== 0) return dateDiff
@@ -129,139 +94,30 @@ export function FeedScreen() {
     })
   }, [events, reminders, today])
 
-  // Leaderboard: members sorted by points
-  const leaderboard = [...members].sort((a, b) => (b.points || 0) - (a.points || 0))
+  // Leaderboard ordenado por puntos
+  const leaderboard = useMemo(
+    () => [...members].sort((a, b) => (b.points || 0) - (a.points || 0)),
+    [members]
+  )
 
-  const handleToggle = (taskId: string, title: string) => {
-    const result = toggleTask(taskId)
-    if (result.pointsAwarded > 0) {
-      toast(`¡+${result.pointsAwarded} ⭐ por "${title}"!`, '🎉')
-    } else if (result.pointsAwarded < 0) {
-      toast(`${result.pointsAwarded} ⭐ por desmarcar "${title}"`, '📉')
-    } else {
-      toast(`"${title}" actualizada`, '✅')
-    }
-  }
-
-  // Formato relativo amigable de días restantes
   const formatDaysBadge = (days: number, dateStr: string) => {
     if (days === 1) return 'Mañana'
     if (days === 2) return 'Pasado mañana'
     if (days <= 7) return `En ${days} días`
-    const [_, m, d] = dateStr.split('-')
+    const parts = dateStr.split('-')
+    const m = parts[1] || '01'
+    const d = parts[2] || '01'
     const months = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
     return `${parseInt(d, 10)} ${months[parseInt(m, 10) - 1] || ''}`
   }
 
   return (
-    <div className="w-full max-w-2xl mx-auto space-y-4 animate-fade-in">
+    <div className="w-full space-y-6 animate-fade-in pb-8">
+      {/* 1. Saludo Superior con Acceso a Notificaciones */}
       <FeedHeader />
 
-      {/* ========================================================================= */}
-      {/* 1. SECCIÓN DE PRIORIDAD MÁXIMA PARA HOY (Solo si hay elementos hoy)        */}
-      {/* ========================================================================= */}
-      {hasTodayItems && (
-        <Card className="p-4 sm:p-5 bg-white border border-slate-200 rounded-3xl shadow-sm space-y-3.5 dark:bg-gradient-to-b dark:from-purple-950/40 dark:to-[#121026]/90 dark:border-purple-500/30 dark:shadow-2xl">
-          <div className="flex items-center justify-between pb-2.5 border-b border-slate-200/80 dark:border-purple-500/20">
-            <div className="flex items-center gap-2.5">
-              <div className="flex size-9 items-center justify-center rounded-xl bg-purple-50 border border-purple-200 text-purple-700 dark:bg-purple-500/20 dark:border-purple-500/30 dark:text-purple-300 shrink-0">
-                <Calendar className="size-4.5" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="text-sm sm:text-base font-black text-slate-900 dark:text-white">Hoy en vuestro día</h3>
-                  <span className="rounded-full bg-purple-100 border border-purple-200 px-2 py-0.5 text-[10px] font-black text-purple-800 uppercase tracking-wider dark:bg-purple-500/25 dark:border-purple-500/40 dark:text-purple-300">
-                    {todayEvents.length + todayReminders.length} para hoy
-                  </span>
-                </div>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400">Prioridad para el día de hoy</p>
-              </div>
-            </div>
-
-            <button
-              onClick={() => setTab('organizar')}
-              className="flex items-center gap-1 text-xs font-bold text-purple-700 hover:text-purple-900 dark:text-purple-300 dark:hover:text-white transition-colors"
-            >
-              <span>Ver todo</span>
-              <ChevronRight className="size-3.5" />
-            </button>
-          </div>
-
-          <div className="space-y-2">
-            {/* Eventos de hoy */}
-            {todayEvents.map((e) => (
-              <div
-                key={e.id}
-                className="flex items-center justify-between gap-3 p-2.5 rounded-2xl bg-slate-50 hover:bg-slate-100/80 border border-slate-200 transition-all group dark:bg-white/[0.04] dark:hover:bg-white/[0.07] dark:border-purple-500/20"
-              >
-                <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                  <div className="flex size-8 items-center justify-center rounded-xl bg-purple-100 text-purple-800 shrink-0 text-xs font-mono font-bold dark:bg-purple-500/20 dark:text-purple-300">
-                    {e.time || '📅'}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate">{e.title}</p>
-                    <div className="flex items-center gap-2 text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
-                      <span className="rounded bg-slate-200/80 text-slate-700 px-1.5 py-0.2 font-semibold dark:bg-purple-500/15 dark:text-purple-300">
-                        {e.category}
-                      </span>
-                      {e.location && (
-                        <span className="flex items-center gap-0.5 truncate">
-                          <MapPin className="size-2.5" />
-                          {e.location}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 shrink-0">
-                  {getEventMemberIds(e).map((mId) => {
-                    const m = getMemberById(mId)
-                    return m ? <MemberAvatar key={m.id} member={m} size="sm" ring /> : null
-                  })}
-                  <button
-                    onClick={() => deleteEvent(e.id)}
-                    className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400"
-                    title="Eliminar"
-                  >
-                    <Trash2 className="size-3.5" />
-                  </button>
-                </div>
-              </div>
-            ))}
-
-            {/* Recordatorios de hoy */}
-            {todayReminders.map((r) => (
-              <div
-                key={r.id}
-                className="flex items-center justify-between gap-3 p-2.5 rounded-2xl bg-orange-50 border border-orange-200 transition-all group dark:bg-orange-500/10 dark:border-orange-500/25"
-              >
-                <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                  <div className="flex size-8 items-center justify-center rounded-xl bg-orange-100 text-orange-700 shrink-0 dark:bg-orange-500/20 dark:text-orange-400">
-                    <AlertTriangle className="size-4" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs sm:text-sm font-bold text-orange-950 dark:text-orange-200 truncate">{r.title}</p>
-                    <span className="text-[10px] font-bold text-orange-700 dark:text-orange-400">Vence hoy</span>
-                  </div>
-                </div>
-
-                <button
-                  onClick={() => deleteReminder(r.id)}
-                  className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400"
-                  title="Eliminar recordatorio"
-                >
-                  <Trash2 className="size-3.5" />
-                </button>
-              </div>
-            ))}
-          </div>
-        </Card>
-      )}
-
-      {/* ── BLOQUE DE MIEMBROS DEL HOGAR (LIGHT / DARK THEMED) ── */}
+      {/* 2. Tarjeta: Miembros del Hogar y Puntos */}
       <Card className="p-4 sm:p-5 bg-white border border-slate-200 rounded-3xl shadow-sm space-y-3.5 dark:bg-[#121026]/90 dark:border-purple-500/20 dark:shadow-xl">
-        {/* Cabecera con Título y Botón Invitar */}
         <div className="flex items-center justify-between pb-2.5 border-b border-slate-200/80 dark:border-purple-500/15">
           <div className="flex items-center gap-2.5">
             <div className="flex size-9 items-center justify-center rounded-xl bg-purple-50 border border-purple-200 text-purple-700 dark:bg-purple-500/15 dark:border-purple-500/30 dark:text-purple-400 shrink-0">
@@ -282,13 +138,12 @@ export function FeedScreen() {
           </button>
         </div>
 
-        {/* Lista de Miembros en Grid Responsivo */}
         {leaderboard.length === 0 ? (
           <div className="py-4 text-center text-xs text-slate-400">
             No hay miembros registrados aún.
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
             {leaderboard.map((m) => {
               const isAdult = m.role === 'adult' || m.role === 'adulto'
               const isChild = m.role === 'child' || m.role === 'hijo'
@@ -305,7 +160,6 @@ export function FeedScreen() {
                       : 'bg-slate-50 border-slate-200 hover:bg-slate-100/80 dark:bg-white/[0.02] dark:border-white/5 dark:hover:bg-white/[0.05]'
                   )}
                 >
-                  {/* Avatar y Datos del Miembro */}
                   <div className="flex items-center gap-2.5 min-w-0 flex-1">
                     <div className="relative shrink-0">
                       <MemberAvatar member={m} size="sm" ring />
@@ -353,7 +207,6 @@ export function FeedScreen() {
                     </div>
                   </div>
 
-                  {/* Puntos / Estrellas */}
                   <div className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-purple-50 border border-purple-200 shrink-0 dark:bg-purple-500/10 dark:border-purple-500/20">
                     <Star className="size-3 fill-purple-500 text-purple-500" />
                     <span className="text-xs font-black text-purple-900 dark:text-purple-300 font-mono">
@@ -367,117 +220,24 @@ export function FeedScreen() {
         )}
       </Card>
 
-      {/* ── TIMELINE DE ACTIVIDAD RECIENTE ── */}
-      <ActivityFeed compact />
-
       {/* ========================================================================= */}
-      {/* 2. SECCIÓN DE PRÓXIMOS EVENTOS Y RECORDATORIOS (Cronológico y Compacto)   */}
+      {/* 3. ESTRUCTURA DE 2 COLUMNAS (GRID RESPONSIVE)                              */}
       {/* ========================================================================= */}
-      {upcomingItems.length > 0 && (
-        <Card className="p-4 bg-white border border-slate-200 rounded-3xl shadow-sm space-y-3 dark:bg-[#121026]/90 dark:border-purple-500/20 dark:shadow-lg">
-          <div className="flex items-center justify-between pb-2 border-b border-slate-200/80 dark:border-purple-500/15">
-            <div className="flex items-center gap-2">
-              <Clock className="size-4 text-purple-600 dark:text-purple-400" />
-              <h3 className="text-xs sm:text-sm font-black text-slate-900 dark:text-white">Próximos eventos y recordatorios</h3>
-            </div>
-            <button
-              onClick={() => setTab('organizar')}
-              className="text-xs font-bold text-purple-700 hover:text-purple-900 dark:text-purple-300 dark:hover:text-white transition-colors"
-            >
-              Ver calendario
-            </button>
-          </div>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* COLUMNA PRINCIPAL / IZQUIERDA: Tablón de Tareas + Tablón de Eventos */}
+        <div className="lg:col-span-7 xl:col-span-8 space-y-6">
+          {/* Sección 1: Tablón de Tareas y Recordatorios */}
+          <TasksBoard />
 
-          <div className="space-y-2">
-            {upcomingItems.slice(0, 4).map((item) => (
-              <div
-                key={item.id}
-                className="flex items-center justify-between gap-3 p-2.5 rounded-2xl bg-slate-50 hover:bg-slate-100/80 border border-slate-200 transition-all text-xs dark:bg-white/[0.02] dark:hover:bg-white/[0.05] dark:border-white/5"
-              >
-                <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                  <div
-                    className={cn(
-                      'flex size-7 items-center justify-center rounded-xl shrink-0',
-                      item.type === 'event'
-                        ? 'bg-purple-100 text-purple-800 border border-purple-200 dark:bg-purple-500/15 dark:text-purple-400 dark:border-purple-500/25'
-                        : 'bg-orange-100 text-orange-800 border border-orange-200 dark:bg-orange-500/15 dark:text-orange-400 dark:border-orange-500/25'
-                    )}
-                  >
-                    {item.type === 'event' ? <Calendar className="size-3.5" /> : <AlertTriangle className="size-3.5" />}
-                  </div>
-
-                  <div className="min-w-0 flex-1">
-                    <p className="font-bold text-slate-900 dark:text-white truncate">{item.title}</p>
-                    <div className="flex items-center gap-2 text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
-                      <span className="font-semibold text-purple-800 dark:text-purple-300">
-                        {formatDaysBadge(item.daysLeft, item.date)}
-                      </span>
-                      {item.time && <span>· {item.time}</span>}
-                      {item.location && <span className="truncate">· {item.location}</span>}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-1.5 shrink-0">
-                  {item.memberIds.map((mId) => {
-                    const m = getMemberById(mId)
-                    return m ? <MemberAvatar key={m.id} member={m} size="sm" ring /> : null
-                  })}
-                </div>
-              </div>
-            ))}
-          </div>
-        </Card>
-      )}
-
-      {/* ========================================================================= */}
-      {/* 3. TAREAS PENDIENTES (Compacto)                                           */}
-      {/* ========================================================================= */}
-      {pendingTasks.length > 0 ? (
-        <Card className="p-4 bg-white border border-slate-200 rounded-3xl shadow-sm space-y-3 dark:bg-[#121026]/90 dark:border-purple-500/20 dark:shadow-lg">
-          <div className="flex items-center justify-between pb-2 border-b border-slate-200/80 dark:border-purple-500/15">
-            <div className="flex items-center gap-2">
-              <ListTodo className="size-4 text-purple-600 dark:text-purple-400" />
-              <h3 className="text-xs sm:text-sm font-black text-slate-900 dark:text-white">Tareas pendientes ({pendingTasks.length})</h3>
-            </div>
-            <button
-              onClick={() => setTab('organizar')}
-              className="text-xs font-bold text-purple-700 hover:text-purple-900 dark:text-purple-300 dark:hover:text-white transition-colors"
-            >
-              Ver todas
-            </button>
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            {pendingTasks.slice(0, 4).map((t) => {
-              const canComplete = !currentMember || t.assignedToMemberId === currentMember.id || t.createdBy === currentMember.id
-              return (
-                <TaskRow
-                  key={t.id}
-                  task={t}
-                  member={getMemberById(t.assignedToMemberId)}
-                  checked={t.completed}
-                  onToggle={() => handleToggle(t.id, t.title)}
-                  onDelete={() => deleteTask(t.id)}
-                  disabled={!canComplete}
-                  onDisabledClick={() => toast('Solo la persona asignada o el creador pueden completarla', '🔒')}
-                />
-              )
-            })}
-          </div>
-        </Card>
-      ) : null}
-
-      {/* ========================================================================= */}
-      {/* 4. ESTADO DISCRETO CUANDO NO HAY NADA PENDIENTE NI PRÓXIMO                */}
-      {/* ========================================================================= */}
-      {!hasTodayItems && upcomingItems.length === 0 && pendingTasks.length === 0 && (
-        <div className="flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-white border border-slate-200 text-slate-500 text-xs font-semibold animate-fade-in dark:bg-white/[0.02] dark:border-white/5 dark:text-slate-400">
-          <CheckCircle2 className="size-4 text-emerald-600 dark:text-emerald-400" />
-          <span>No tienes nada pendiente por ahora</span>
+          {/* Sección 2: Tablón de Eventos Próximos */}
+          <EventsBoard />
         </div>
-      )}
+
+        {/* COLUMNA SECUNDARIA / DERECHA: Actividad Reciente */}
+        <div className="lg:col-span-5 xl:col-span-4 space-y-6 sticky top-6">
+          <ActivityFeed compact />
+        </div>
+      </div>
     </div>
   )
 }
-
