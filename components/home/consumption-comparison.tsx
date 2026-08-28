@@ -159,7 +159,7 @@ export function ConsumptionComparison({ onOpenAddBill }: { onOpenAddBill?: () =>
       </div>
 
       {/* ── SELECTOR DE MESES A COMPARAR ── */}
-      <Card className="p-4 bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 rounded-2xl shadow-sm space-y-3">
+      <Card className="p-4 bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 rounded-2xl shadow-sm space-y-3 relative z-20">
         <div className="flex items-center justify-between gap-2 pb-2 border-b border-slate-100 dark:border-white/5">
           <div>
             <h3 className="text-sm font-bold text-slate-900 dark:text-white">
@@ -172,10 +172,10 @@ export function ConsumptionComparison({ onOpenAddBill }: { onOpenAddBill?: () =>
             <button
               type="button"
               onClick={onOpenAddBill}
-              className="flex items-center gap-1 rounded-xl bg-purple-600 hover:bg-purple-500 text-white px-3 py-1.5 text-xs font-bold transition-all active:scale-95 shadow-sm"
+              className="flex items-center gap-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white px-3 py-1.5 text-xs font-bold transition-all active:scale-95 shadow-sm"
             >
-              <Plus className="size-3.5" />
-              <span>+ Factura</span>
+              <Plus className="size-3.5 stroke-[2.5]" />
+              <span>Añadir factura</span>
             </button>
           )}
         </div>
@@ -210,7 +210,7 @@ export function ConsumptionComparison({ onOpenAddBill }: { onOpenAddBill?: () =>
       </Card>
 
       {/* ── 3 TARJETAS COMPARATIVAS COMPACTAS ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 relative z-10">
         {/* 1. Importe Total */}
         <Card className="p-3.5 bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 rounded-2xl shadow-sm flex flex-col justify-between gap-1.5">
           <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">

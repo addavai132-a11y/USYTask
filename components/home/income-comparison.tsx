@@ -77,11 +77,11 @@ export function IncomeComparison({ onOpenAddIncome }: { onOpenAddIncome?: () => 
 
   return (
     <div className="w-full max-w-2xl mx-auto space-y-4 animate-fade-in">
-      {/* ── SELECTOR DE PERIODOS A COMPARAR ── */}
-      <Card className="p-4 bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 rounded-2xl shadow-sm space-y-3">
+      {/* ── SELECTOR DE MESES A COMPARAR ── */}
+      <Card className="p-4 bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 rounded-2xl shadow-sm space-y-3 relative z-20">
         <div className="flex items-center justify-between gap-2 pb-2 border-b border-slate-100 dark:border-white/5">
           <div>
-            <h3 className="text-sm font-bold text-slate-900 dark:text-white">Comparativa de Ingresos</h3>
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white">Comparador de Ingresos</h3>
             <p className="text-xs text-slate-500 dark:text-slate-400">Analiza la evolución entre dos periodos</p>
           </div>
 
@@ -89,10 +89,10 @@ export function IncomeComparison({ onOpenAddIncome }: { onOpenAddIncome?: () => 
             <button
               type="button"
               onClick={onOpenAddIncome}
-              className="flex items-center gap-1 rounded-xl bg-purple-600 hover:bg-purple-500 text-white px-3 py-1.5 text-xs font-bold transition-all active:scale-95 shadow-sm"
+              className="flex items-center gap-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white px-3 py-1.5 text-xs font-bold transition-all active:scale-95 shadow-sm"
             >
-              <Plus className="size-3.5" />
-              <span>+ Ingreso</span>
+              <Plus className="size-3.5 stroke-[2.5]" />
+              <span>Añadir ingreso</span>
             </button>
           )}
         </div>
@@ -128,7 +128,7 @@ export function IncomeComparison({ onOpenAddIncome }: { onOpenAddIncome?: () => 
       </Card>
 
       {/* ── 3 TARJETAS DE COMPARACIÓN COMPACTAS ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 relative z-10">
         {/* 1. Total Ingresos */}
         <Card className="p-3.5 bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 rounded-2xl shadow-sm flex flex-col justify-between gap-1.5">
           <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
