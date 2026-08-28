@@ -640,10 +640,10 @@ export function LiveWorkoutTab({
                           type="button"
                           onClick={() => handleToggleSetComplete(exIdx, setIdx)}
                           className={cn(
-                            'size-8 rounded-full flex items-center justify-center transition-all duration-200 active:scale-90 select-none shrink-0',
+                            'size-8 rounded-full flex items-center justify-center transition-all duration-200 active:scale-90 select-none shrink-0 cursor-pointer',
                             set.completed
-                              ? 'bg-emerald-500 hover:bg-emerald-400 border border-emerald-400 text-white shadow-[0_0_14px_rgba(16,185,129,0.55)] ring-2 ring-emerald-400/40 cursor-pointer'
-                              : 'bg-white/[0.05] border border-white/20 text-slate-400 hover:border-purple-400 hover:text-white hover:bg-purple-500/10 cursor-pointer'
+                              ? 'bg-emerald-600 hover:bg-emerald-500 border border-emerald-500 text-white shadow-[0_0_14px_rgba(16,185,129,0.55)] ring-2 ring-emerald-500/40'
+                              : 'bg-white/[0.05] border border-white/20 text-slate-400 hover:border-purple-400 hover:text-white hover:bg-purple-500/10'
                           )}
                           title={set.completed ? 'Serie completada (clic para desmarcar)' : 'Marcar serie como completada'}
                         >

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { Timer, X, Play, Pause, Plus, Minus, Volume2, Sparkles } from 'lucide-react'
+import { Timer, X, Play, Pause, Plus, Minus, Volume2, Sparkles, FastForward } from 'lucide-react'
 import { useToast } from '@/components/ui/toast'
 import {
   getRestTimer,
@@ -250,7 +250,7 @@ export function FloatingRestTimer() {
               <button
                 type="button"
                 onClick={() => handleAdjustTime(-15)}
-                className="px-2 py-0.5 rounded-lg bg-white/[0.06] text-slate-300 hover:text-white hover:bg-white/15 border border-white/10 active:scale-95 transition-all"
+                className="px-2 py-1 rounded-lg bg-white/[0.06] text-slate-300 hover:text-white hover:bg-white/15 border border-white/10 active:scale-95 transition-all"
                 title="Restar 15 segundos"
               >
                 -15s
@@ -258,35 +258,47 @@ export function FloatingRestTimer() {
               <button
                 type="button"
                 onClick={() => handleAdjustTime(30)}
-                className="px-2 py-0.5 rounded-lg bg-white/[0.06] text-slate-300 hover:text-white hover:bg-white/15 border border-white/10 active:scale-95 transition-all"
+                className="px-2 py-1 rounded-lg bg-white/[0.06] text-slate-300 hover:text-white hover:bg-white/15 border border-white/10 active:scale-95 transition-all"
                 title="Añadir 30 segundos"
               >
                 +30s
               </button>
             </div>
 
-            <button
-              type="button"
-              onClick={handlePauseToggle}
-              className={cn(
-                'px-2.5 py-0.5 rounded-lg text-xs font-extrabold flex items-center gap-1 transition-all active:scale-95 border',
-                timerState.isPaused
-                  ? 'bg-emerald-600/30 border-emerald-500/50 text-emerald-300 hover:bg-emerald-600/40'
-                  : 'bg-purple-600/30 border-purple-500/40 text-purple-200 hover:bg-purple-600/40'
-              )}
-            >
-              {timerState.isPaused ? (
-                <>
-                  <Play className="size-2.5 fill-current" />
-                  <span>Reanudar</span>
-                </>
-              ) : (
-                <>
-                  <Pause className="size-2.5 fill-current" />
-                  <span>Pausar</span>
-                </>
-              )}
-            </button>
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={handlePauseToggle}
+                className={cn(
+                  'px-2 py-1 rounded-lg text-[11px] font-extrabold flex items-center gap-1 transition-all active:scale-95 border',
+                  timerState.isPaused
+                    ? 'bg-emerald-600/30 border-emerald-500/50 text-emerald-300 hover:bg-emerald-600/40'
+                    : 'bg-purple-600/30 border-purple-500/40 text-purple-200 hover:bg-purple-600/40'
+                )}
+              >
+                {timerState.isPaused ? (
+                  <>
+                    <Play className="size-3 fill-current" />
+                    <span>Reanudar</span>
+                  </>
+                ) : (
+                  <>
+                    <Pause className="size-3 fill-current" />
+                    <span>Pausar</span>
+                  </>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={handleClose}
+                className="px-2 py-1 rounded-lg text-[11px] font-extrabold flex items-center gap-1 bg-white/[0.08] hover:bg-rose-500/20 text-slate-300 hover:text-rose-300 border border-white/10 hover:border-rose-500/30 transition-all active:scale-95"
+                title="Omitir descanso y empezar la siguiente serie"
+              >
+                <FastForward className="size-3" />
+                <span>Omitir</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
