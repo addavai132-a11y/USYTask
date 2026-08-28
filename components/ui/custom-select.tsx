@@ -48,7 +48,7 @@ export function CustomSelect<T extends string | number>({
   }, [])
 
   return (
-    <div className={cn('relative inline-block text-left', className)} ref={containerRef}>
+    <div className={cn('relative inline-block text-left', isOpen && 'z-50', className)} ref={containerRef}>
       {/* ── BOTÓN DISPARADOR (TRIGGER) ── */}
       <button
         type="button"
