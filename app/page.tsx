@@ -28,6 +28,24 @@ import { createClient } from '@/lib/supabase'
 export default function LandingPage() {
   const router = useRouter()
 
+  useEffect(() => {
+    if (isDevModeActive()) {
+      router.replace('/app')
+      return
+    }
+    const session = getStoredSession()
+    if (session) {
+      router.replace('/app')
+      return
+    }
+    const supabase = createClient()
+    supabase.auth.getSession().then(({ data: { session: supaSession } }) => {
+      if (supaSession?.user) {
+        router.replace('/app')
+      }
+    })
+  }, [router])
+
   const handleCreateSpace = (e: React.MouseEvent) => {
     if (isDevModeActive()) {
       e.preventDefault()

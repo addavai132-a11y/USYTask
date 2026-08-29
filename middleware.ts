@@ -54,8 +54,8 @@ export async function middleware(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname
 
-  // If user is already authenticated and tries to navigate back to /login or /register, redirect to /app
-  if (user && (pathname === '/login' || pathname === '/register')) {
+  // If user is already authenticated and visits '/', '/login', or '/register', redirect automatically to /app
+  if (user && (pathname === '/' || pathname === '/login' || pathname === '/register')) {
     const nextTarget = request.nextUrl.searchParams.get('next') || '/app'
     const redirectUrl = new URL(nextTarget, request.url)
     return NextResponse.redirect(redirectUrl)
