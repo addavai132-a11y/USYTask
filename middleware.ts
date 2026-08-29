@@ -24,20 +24,24 @@ export async function middleware(request: NextRequest) {
         return request.cookies.getAll()
       },
       setAll(cookiesToSet) {
-        cookiesToSet.forEach(({ name, value }) => {
-          request.cookies.set(name, value)
-        })
-        supabaseResponse = NextResponse.next({
-          request,
-        })
         cookiesToSet.forEach(({ name, value, options }) => {
-          supabaseResponse.cookies.set(name, value, {
+          // FORZAR PERSISTENCIA: 1 año en segundos
+          const maxAge = 31536000
+          const expires = new Date(Date.now() + maxAge * 1000)
+          const persistentOptions = {
             ...options,
-            maxAge: 31536000,
+            maxAge,
+            expires,
             path: '/',
-            sameSite: 'lax',
+            sameSite: 'lax' as const,
             secure: process.env.NODE_ENV === 'production',
+          }
+
+          request.cookies.set({ name, value, ...persistentOptions })
+          supabaseResponse = NextResponse.next({
+            request,
           })
+          supabaseResponse.cookies.set({ name, value, ...persistentOptions })
         })
       },
     },

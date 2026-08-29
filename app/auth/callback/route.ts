@@ -38,15 +38,19 @@ export async function GET(request: Request) {
           },
           setAll(cookiesToSet) {
             try {
-              cookiesToSet.forEach(({ name, value, options }) =>
-                cookieStore.set(name, value, {
+              cookiesToSet.forEach(({ name, value, options }) => {
+                const maxAge = 31536000
+                const expires = new Date(Date.now() + maxAge * 1000)
+                const persistentOptions = {
                   ...options,
-                  maxAge: 31536000,
+                  maxAge,
+                  expires,
                   path: '/',
-                  sameSite: 'lax',
+                  sameSite: 'lax' as const,
                   secure: process.env.NODE_ENV === 'production',
-                })
-              )
+                }
+                cookieStore.set(name, value, persistentOptions)
+              })
             } catch {
               // Ignore cookie mutations from server component contexts
             }
