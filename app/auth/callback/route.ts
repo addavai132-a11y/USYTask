@@ -27,10 +27,10 @@ export async function GET(request: Request) {
 
       const supabase = createServerClient(supabaseUrl, supabaseKey, {
         cookieOptions: {
-          maxAge: 60 * 60 * 24 * 365,
+          maxAge: 31536000, // 1 año en segundos
+          path: '/',
           sameSite: 'lax',
           secure: process.env.NODE_ENV === 'production',
-          path: '/',
         },
         cookies: {
           getAll() {
@@ -41,10 +41,10 @@ export async function GET(request: Request) {
               cookiesToSet.forEach(({ name, value, options }) =>
                 cookieStore.set(name, value, {
                   ...options,
-                  maxAge: 60 * 60 * 24 * 365,
+                  maxAge: 31536000,
+                  path: '/',
                   sameSite: 'lax',
                   secure: process.env.NODE_ENV === 'production',
-                  path: '/',
                 })
               )
             } catch {

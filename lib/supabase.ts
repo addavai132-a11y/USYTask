@@ -15,10 +15,10 @@ export function createClient() {
       detectSessionInUrl: true,
     },
     cookieOptions: {
-      maxAge: 60 * 60 * 24 * 365, // 1 year session duration
+      maxAge: 31536000, // 1 año en segundos
+      path: '/',
       sameSite: 'lax',
       secure: process.env.NODE_ENV === 'production',
-      path: '/',
     },
   })
 }

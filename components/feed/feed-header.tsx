@@ -1,6 +1,6 @@
 'use client'
 
-import { Bell, Loader2, Sparkles } from 'lucide-react'
+import { Bell, BellRing, Loader2 } from 'lucide-react'
 import { useApp } from '@/components/app/app-context'
 import { usePushNotifications } from '@/hooks/use-push-notifications'
 import { useToast } from '@/components/ui/toast'
@@ -31,20 +31,22 @@ export function FeedHeader() {
           <p className="mt-0.5 text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-400">{getTodayLabel()}</p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
           <button
             type="button"
             onClick={handleActivate}
             disabled={pushLoading}
-            className="px-3.5 py-2 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white dark:bg-purple-600 dark:hover:bg-purple-500 font-bold text-xs flex items-center gap-1.5 transition-all shadow-sm active:scale-95 disabled:opacity-50 shrink-0"
+            className="flex items-center gap-1.5 rounded-full border border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20 text-purple-800 dark:bg-purple-600/20 dark:hover:bg-purple-600/30 dark:text-purple-300 px-3 py-1.5 text-xs font-medium transition-all shadow-xs active:scale-95 disabled:opacity-50 shrink-0"
             title="Activar notificaciones Push y enviar prueba"
           >
             {pushLoading ? (
               <Loader2 className="size-3.5 animate-spin" />
             ) : (
-              <Sparkles className="size-3.5" />
+              <BellRing className="size-3.5 text-purple-600 dark:text-purple-400 shrink-0" />
             )}
-            <span className="hidden sm:inline">Activar notificaciones</span>
+            <span className="text-[11px] sm:text-xs font-semibold whitespace-nowrap">
+              Activar notificaciones
+            </span>
           </button>
 
           <ThemeModeToggle />
