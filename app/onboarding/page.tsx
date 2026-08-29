@@ -1,12 +1,17 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Users, Heart, Home as HomeIcon, User, ArrowRight, Copy, Share2, Check, KeyRound, Sparkles, PlusCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useToast, ToastProvider } from '@/components/ui/toast'
 import { UsyTaskLogo } from '@/components/ui/usytask-logo'
 import { validateInvitationToken } from '@/lib/invitation'
+import { getUserFamilyStatus, syncFromSupabaseCloud, syncToSupabaseCloud } from '@/lib/cloud-sync'
+import { createGroup } from '@/lib/group-store'
+import { ensureOwnerMember } from '@/lib/data-store'
+import { getStoredSession } from '@/lib/user-session'
+import type { GroupType } from '@/types'
 
 const spaceTypes = [
   { id: 'family', label: 'Familia', icon: Users, sample: 'Familia García' },
@@ -29,11 +34,35 @@ function OnboardingContent() {
 
   const selectedType = spaceTypes.find((t) => t.id === type)
 
-  const finishOnboarding = () => {
+  // Auto-redirect if user already has a family/group
+  useEffect(() => {
+    async function checkExistingFamily() {
+      await syncFromSupabaseCloud()
+      const { hasFamily } = await getUserFamilyStatus()
+      if (hasFamily) {
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('lifeos-onboarded', '1')
+        }
+        router.replace('/app')
+      }
+    }
+    checkExistingFamily()
+  }, [router])
+
+  const finishOnboarding = async () => {
+    const session = getStoredSession()
+    const userName = session?.username || session?.fullName || 'Usuario'
+    const finalName = name.trim() || selectedType?.sample || 'Mi Familia'
+    const finalType = (type as GroupType) || 'family'
+
+    const newGrp = createGroup(finalName, finalType)
+    ensureOwnerMember(newGrp.id, userName)
+    await syncToSupabaseCloud()
+
     if (typeof window !== 'undefined') {
       localStorage.setItem('lifeos-onboarded', '1')
     }
-    router.push('/app')
+    router.replace('/app')
   }
 
   const handleNext = () => {
@@ -71,7 +100,7 @@ function OnboardingContent() {
 
     toast(`¡Te has unido con éxito a ${valRes.invitation?.household_name || 'tu espacio'}!`, '🎉')
     setTimeout(() => {
-      router.push(`/invite/${cleanToken}`)
+      router.replace(`/invite/${cleanToken}`)
     }, 600)
   }
 

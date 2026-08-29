@@ -186,6 +186,7 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
+    overscroll-behavior-y: none;
   }
 
   body {
@@ -194,6 +195,8 @@
     font-family: var(--font-sans);
     letter-spacing: -0.012em;
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11', 'tnum';
+    overscroll-behavior-y: none;
+    -webkit-overflow-scrolling: touch;
   }
 
   h1, h2, h3, h4, h5, h6 {

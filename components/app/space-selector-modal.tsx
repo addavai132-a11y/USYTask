@@ -4,6 +4,7 @@ import { X, Plus, Check, ChevronRight } from 'lucide-react'
 import { useApp } from './app-context'
 import { groupTypeLabels } from '@/types'
 import { getMembersByGroup } from '@/lib/data-store'
+import { useModalBackHandler } from '@/lib/use-modal-back-handler'
 
 export function SpaceSelectorModal() {
   const {
@@ -14,6 +15,8 @@ export function SpaceSelectorModal() {
     switchGroup,
     openCreateGroupModal,
   } = useApp()
+
+  useModalBackHandler(groupSelectorOpen, closeGroupSelector)
 
   if (!groupSelectorOpen) return null
 
@@ -90,14 +93,21 @@ export function SpaceSelectorModal() {
           })}
         </div>
 
-        {/* Footer Button: + Crear nuevo espacio */}
-        <div className="pt-3 border-t border-border/60">
+        {/* Footer Button: + Crear nuevo espacio y Cancelar */}
+        <div className="pt-3 border-t border-border/60 flex items-center gap-2.5">
+          <button
+            type="button"
+            onClick={closeGroupSelector}
+            className="flex-1 rounded-2xl border border-border bg-secondary/60 hover:bg-secondary py-3 text-xs sm:text-sm font-bold text-muted-foreground hover:text-foreground transition-all active:scale-[0.98]"
+          >
+            Cancelar
+          </button>
           <button
             type="button"
             onClick={openCreateGroupModal}
-            className="flex h-13 w-full items-center justify-center gap-2 rounded-2xl bg-primary font-bold text-primary-foreground shadow-soft transition-transform active:scale-[0.98]"
+            className="flex-1 sm:flex-[2] flex h-12 items-center justify-center gap-2 rounded-2xl bg-primary font-bold text-xs sm:text-sm text-primary-foreground shadow-soft transition-transform active:scale-[0.98]"
           >
-            <Plus className="size-5 stroke-[2.5]" />
+            <Plus className="size-4.5 stroke-[2.5]" />
             <span>Crear nuevo espacio</span>
           </button>
         </div>

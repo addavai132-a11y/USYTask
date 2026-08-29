@@ -3,6 +3,7 @@
 
 import type { FamilyChallenge, FamilyReward, FamilyMemory, FamilyAchievement, Member, Task } from '@/types'
 import { getTodayISO } from './date-utils'
+import { scheduleCloudSync } from './cloud-sync'
 
 const CHALLENGES_KEY = 'usytask_family_challenges'
 const REWARDS_KEY = 'usytask_family_rewards'
@@ -23,6 +24,7 @@ function saveArray<T>(key: string, data: T[]): void {
   if (typeof window === 'undefined') return
   try {
     localStorage.setItem(key, JSON.stringify(data))
+    scheduleCloudSync()
   } catch (err) {
     console.error(`Error saving ${key}`, err)
   }

@@ -91,7 +91,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
       if (event === 'SIGNED_OUT') {
         if (isMounted) {
           setChecked(false)
-          router.replace('/login')
+          router.replace('/')
         }
       } else if (session?.user) {
         await getActiveUserSession()
@@ -129,7 +129,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
 function ShellInner() {
   const { tab, activeGroup } = useApp()
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex min-h-screen min-h-[100dvh] w-full max-w-full bg-background overscroll-y-none">
       <Sidebar />
       <div className="flex flex-1 justify-center min-w-0">
         <div
@@ -141,7 +141,7 @@ function ShellInner() {
           <main
             key={`${tab}_${activeGroup?.id || 'none'}`}
             className={cn(
-              'w-full flex-1 px-4 pb-28 pt-8 sm:pt-6 pt-[max(2rem,env(safe-area-inset-top,2rem))] animate-fade-in lg:pb-10 min-w-0',
+              'w-full flex-1 px-4 pb-28 pt-[max(1.5rem,env(safe-area-inset-top,1.5rem))] sm:pt-6 animate-fade-in lg:pb-10 min-w-0',
               tab === 'organizar' || tab === 'inicio'
                 ? 'max-w-none mx-0'
                 : 'mx-auto max-w-2xl'

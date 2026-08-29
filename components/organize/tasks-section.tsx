@@ -24,6 +24,8 @@ import { TaskRow } from '@/components/shared/task-row'
 import { Card } from '@/components/ui/card'
 import { PillTabs, type PillTabItem } from '@/components/ui/pill-tabs'
 import { MemberAvatar } from '@/components/ui/member-avatar'
+import { MemberMultiSelect } from '@/components/ui/member-multi-select'
+import { BottomSheet } from '@/components/ui/bottom-sheet'
 import { useToast } from '@/components/ui/toast'
 import { useApp } from '@/components/app/app-context'
 import { cn } from '@/lib/utils'
@@ -405,22 +407,22 @@ export function TasksSection({
               <p className="text-xs text-slate-400 max-w-xs">
                 No hay actividades pendientes en este momento.
               </p>
-              <div className="flex items-center gap-1.5 mt-1">
+              <div className="flex flex-wrap items-center justify-center gap-2 mt-2">
                 <button
                   onClick={() => openQuickAdd('tarea', { hideTabs: true })}
-                  className="rounded-xl bg-blue-600/30 text-blue-300 border border-blue-500/30 px-3 py-1.5 text-xs font-bold hover:bg-blue-600/40 transition-all"
+                  className="rounded-xl bg-blue-100 hover:bg-blue-200 text-blue-900 border border-blue-300 dark:bg-blue-500/20 dark:hover:bg-blue-500/30 dark:text-blue-100 dark:border-blue-500/40 px-3.5 py-2 text-xs font-bold transition-all active:scale-95 shadow-xs"
                 >
                   + Tarea
                 </button>
                 <button
                   onClick={() => openQuickAdd('evento', { hideTabs: true })}
-                  className="rounded-xl bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 px-3 py-1.5 text-xs font-bold hover:bg-emerald-600/40 transition-all"
+                  className="rounded-xl bg-emerald-100 hover:bg-emerald-200 text-emerald-900 border border-emerald-300 dark:bg-emerald-500/20 dark:hover:bg-emerald-500/30 dark:text-emerald-100 dark:border-emerald-500/40 px-3.5 py-2 text-xs font-bold transition-all active:scale-95 shadow-xs"
                 >
                   + Evento
                 </button>
                 <button
                   onClick={() => openQuickAdd('recordatorio', { hideTabs: true })}
-                  className="rounded-xl bg-orange-600/30 text-orange-300 border border-orange-500/30 px-3 py-1.5 text-xs font-bold hover:bg-orange-600/40 transition-all"
+                  className="rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 dark:bg-amber-500/20 dark:hover:bg-amber-500/30 dark:text-amber-100 dark:border-amber-500/40 px-3.5 py-2 text-xs font-bold transition-all active:scale-95 shadow-xs"
                 >
                   + Recordatorio
                 </button>
@@ -825,6 +827,58 @@ export function TasksSection({
           )}
         </div>
       )}
+
+      {/* ── MODAL: CREAR CATEGORÍA DE TAREAS ── */}
+      <BottomSheet
+        open={isCreatingCategory}
+        onClose={() => {
+          setIsCreatingCategory(false)
+          setNewCatName('')
+        }}
+        title="Nueva categoría de tareas"
+      >
+        <div className="flex flex-col gap-3.5 text-xs">
+          <div className="flex flex-col gap-1">
+            <label className="font-bold text-muted-foreground">Nombre de la categoría <span className="text-rose-500">*</span></label>
+            <input
+              type="text"
+              value={newCatName}
+              onChange={(e) => setNewCatName(e.target.value)}
+              placeholder="Ej: Jardín, Compras, Mascotas, Coche..."
+              autoFocus
+              className="w-full rounded-xl border border-border bg-card py-2.5 px-3 text-xs font-semibold text-foreground outline-none focus:border-primary"
+            />
+          </div>
+
+          <MemberMultiSelect
+            members={members}
+            selectedIds={selectedMemberIds}
+            onChange={setSelectedMemberIds}
+            label="Integrantes asignados a esta categoría"
+          />
+
+          <div className="mt-3 flex items-center justify-end gap-2.5 pt-2 border-t border-border/40">
+            <button
+              type="button"
+              onClick={() => {
+                setIsCreatingCategory(false)
+                setNewCatName('')
+              }}
+              className="rounded-2xl border border-border bg-secondary/60 hover:bg-secondary px-4 py-2.5 text-xs font-bold text-muted-foreground hover:text-foreground transition-all active:scale-[0.98]"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={handleCreateCategory}
+              disabled={!newCatName.trim()}
+              className="rounded-2xl bg-primary px-5 py-2.5 text-xs font-bold text-primary-foreground shadow-soft transition-transform active:scale-[0.98] disabled:opacity-40"
+            >
+              Crear categoría
+            </button>
+          </div>
+        </div>
+      </BottomSheet>
     </div>
   )
 }

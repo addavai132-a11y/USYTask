@@ -3,6 +3,7 @@
 
 import type { Task, CalendarEvent, Reminder, Member, Activity, TaskCategory, EventPoll, DailyMenu, WeeklyMenu, Income, Expense, BillSubscription, Budget, PiggyBankConfig, AppNotification } from '@/types'
 import { daysUntil } from './date-utils'
+import { scheduleCloudSync } from './cloud-sync'
 
 const TASKS_KEY = 'usytask_tasks'
 const TASK_CATEGORIES_KEY = 'usytask_custom_task_categories'
@@ -28,6 +29,7 @@ function saveArray<T>(key: string, data: T[]): void {
   if (typeof window === 'undefined') return
   try {
     localStorage.setItem(key, JSON.stringify(data))
+    scheduleCloudSync()
   } catch (err) {
     console.error(`Error saving ${key}`, err)
   }

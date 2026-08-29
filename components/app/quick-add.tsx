@@ -68,6 +68,7 @@ export function QuickAdd() {
   // Reminder form
   const [reminderTitle, setReminderTitle] = useState('')
   const [reminderDate, setReminderDate] = useState('')
+  const [reminderTime, setReminderTime] = useState('')
   const [reminderMembers, setReminderMembers] = useState<string[]>([])
 
   // Member form
@@ -87,6 +88,7 @@ export function QuickAdd() {
     setEventMembers([])
     setReminderTitle('')
     setReminderDate('')
+    setReminderTime('')
     setReminderMembers([])
     setMemberName('')
     setMemberColor(0)
@@ -124,7 +126,7 @@ export function QuickAdd() {
       toast('Por favor, rellena los campos obligatorios', '❌')
       return
     }
-    addReminder(reminderTitle.trim(), reminderDate, reminderMembers)
+    addReminder(reminderTitle.trim(), reminderDate, reminderMembers, reminderTime || undefined)
     toast('Recordatorio creado correctamente', '🔔')
     resetForms()
     closeQuickAdd()
@@ -168,7 +170,14 @@ export function QuickAdd() {
   }
 
   return (
-    <BottomSheet open={quickAddOpen} onClose={closeQuickAdd} title={getTitle()}>
+    <BottomSheet
+      open={quickAddOpen}
+      onClose={() => {
+        resetForms()
+        closeQuickAdd()
+      }}
+      title={getTitle()}
+    >
       {/* Tab selector */}
       {!quickAddHideTabs && (
         <div className="mb-5 flex gap-2 overflow-x-auto no-scrollbar">
@@ -229,12 +238,26 @@ export function QuickAdd() {
           {showErrors && taskMembers.length === 0 && (
             <p className="text-[11px] font-bold text-red-500">Selecciona al menos un responsable</p>
           )}
-          <button
-            onClick={handleSaveTask}
-            className="mt-2 flex h-13 w-full items-center justify-center gap-2 rounded-2xl bg-primary font-bold text-primary-foreground shadow-soft transition-transform active:scale-[0.98]"
-          >
-            Crear tarea
-          </button>
+
+          <div className="mt-3 flex items-center justify-end gap-2.5 pt-2 border-t border-border/40">
+            <button
+              type="button"
+              onClick={() => {
+                resetForms()
+                closeQuickAdd()
+              }}
+              className="flex-1 sm:flex-initial rounded-2xl border border-border bg-secondary/60 hover:bg-secondary px-5 py-3 text-xs sm:text-sm font-bold text-muted-foreground hover:text-foreground transition-all active:scale-[0.98]"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={handleSaveTask}
+              className="flex-1 sm:flex-initial rounded-2xl bg-primary px-6 py-3 text-xs sm:text-sm font-bold text-primary-foreground shadow-soft transition-transform active:scale-[0.98]"
+            >
+              Crear tarea
+            </button>
+          </div>
         </div>
       )}
 
@@ -250,7 +273,7 @@ export function QuickAdd() {
               className={cn(inputClass, showErrors && !eventTitle.trim() && 'border-red-500 bg-red-500/10')}
             />
           </div>
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-3">
             <div className="flex flex-1 flex-col gap-1">
               <label className={labelClass}>Fecha <span className="text-red-500">*</span></label>
               <input
@@ -262,8 +285,24 @@ export function QuickAdd() {
               />
             </div>
             <div className="flex flex-1 flex-col gap-1">
-              <label className={labelClass}>Hora (opcional)</label>
-              <input type="time" value={eventTime} onChange={(e) => setEventTime(e.target.value)} className={inputClass} />
+              <div className="flex items-center justify-between">
+                <label className={labelClass}>Hora (opcional)</label>
+                {eventTime && (
+                  <button
+                    type="button"
+                    onClick={() => setEventTime('')}
+                    className="text-[10.5px] font-bold text-rose-500 hover:underline"
+                  >
+                    Borrar hora
+                  </button>
+                )}
+              </div>
+              <input
+                type="time"
+                value={eventTime}
+                onChange={(e) => setEventTime(e.target.value)}
+                className={inputClass}
+              />
             </div>
           </div>
           <div className="flex flex-col gap-1">
@@ -311,12 +350,25 @@ export function QuickAdd() {
             <p className="text-[11px] font-bold text-red-500">Selecciona al menos un miembro</p>
           )}
 
-          <button
-            onClick={handleSaveEvent}
-            className="mt-2 flex h-13 w-full items-center justify-center gap-2 rounded-2xl bg-primary font-bold text-primary-foreground shadow-soft transition-transform active:scale-[0.98]"
-          >
-            Crear evento
-          </button>
+          <div className="mt-3 flex items-center justify-end gap-2.5 pt-2 border-t border-border/40">
+            <button
+              type="button"
+              onClick={() => {
+                resetForms()
+                closeQuickAdd()
+              }}
+              className="flex-1 sm:flex-initial rounded-2xl border border-border bg-secondary/60 hover:bg-secondary px-5 py-3 text-xs sm:text-sm font-bold text-muted-foreground hover:text-foreground transition-all active:scale-[0.98]"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={handleSaveEvent}
+              className="flex-1 sm:flex-initial rounded-2xl bg-primary px-6 py-3 text-xs sm:text-sm font-bold text-primary-foreground shadow-soft transition-transform active:scale-[0.98]"
+            >
+              Crear evento
+            </button>
+          </div>
         </div>
       )}
 
@@ -332,15 +384,37 @@ export function QuickAdd() {
               className={cn(inputClass, showErrors && !reminderTitle.trim() && 'border-red-500 bg-red-500/10')}
             />
           </div>
-          <div className="flex flex-col gap-1">
-            <label className={labelClass}>Fecha límite <span className="text-red-500">*</span></label>
-            <input
-              type="date"
-              min={getTodayISO()}
-              value={reminderDate}
-              onChange={(e) => { setReminderDate(e.target.value); setShowErrors(false) }}
-              className={cn(inputClass, showErrors && !reminderDate && 'border-red-500 bg-red-500/10')}
-            />
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex flex-1 flex-col gap-1">
+              <label className={labelClass}>Fecha límite <span className="text-red-500">*</span></label>
+              <input
+                type="date"
+                min={getTodayISO()}
+                value={reminderDate}
+                onChange={(e) => { setReminderDate(e.target.value); setShowErrors(false) }}
+                className={cn(inputClass, showErrors && !reminderDate && 'border-red-500 bg-red-500/10')}
+              />
+            </div>
+            <div className="flex flex-1 flex-col gap-1">
+              <div className="flex items-center justify-between">
+                <label className={labelClass}>Hora (opcional)</label>
+                {reminderTime && (
+                  <button
+                    type="button"
+                    onClick={() => setReminderTime('')}
+                    className="text-[10.5px] font-bold text-rose-500 hover:underline"
+                  >
+                    Borrar hora
+                  </button>
+                )}
+              </div>
+              <input
+                type="time"
+                value={reminderTime}
+                onChange={(e) => setReminderTime(e.target.value)}
+                className={inputClass}
+              />
+            </div>
           </div>
 
           <MemberMultiSelect
@@ -350,12 +424,25 @@ export function QuickAdd() {
             label="Asignar miembros (opcional)"
           />
 
-          <button
-            onClick={handleSaveReminder}
-            className="mt-2 flex h-13 w-full items-center justify-center gap-2 rounded-2xl bg-primary font-bold text-primary-foreground shadow-soft transition-transform active:scale-[0.98]"
-          >
-            Crear recordatorio
-          </button>
+          <div className="mt-3 flex items-center justify-end gap-2.5 pt-2 border-t border-border/40">
+            <button
+              type="button"
+              onClick={() => {
+                resetForms()
+                closeQuickAdd()
+              }}
+              className="flex-1 sm:flex-initial rounded-2xl border border-border bg-secondary/60 hover:bg-secondary px-5 py-3 text-xs sm:text-sm font-bold text-muted-foreground hover:text-foreground transition-all active:scale-[0.98]"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={handleSaveReminder}
+              className="flex-1 sm:flex-initial rounded-2xl bg-primary px-6 py-3 text-xs sm:text-sm font-bold text-primary-foreground shadow-soft transition-transform active:scale-[0.98]"
+            >
+              Crear recordatorio
+            </button>
+          </div>
         </div>
       )}
 
@@ -387,12 +474,26 @@ export function QuickAdd() {
               ))}
             </div>
           </div>
-          <button
-            onClick={handleSaveMember}
-            className="mt-2 flex h-13 w-full items-center justify-center gap-2 rounded-2xl bg-primary font-bold text-primary-foreground shadow-soft transition-transform active:scale-[0.98]"
-          >
-            Añadir miembro
-          </button>
+
+          <div className="mt-3 flex items-center justify-end gap-2.5 pt-2 border-t border-border/40">
+            <button
+              type="button"
+              onClick={() => {
+                resetForms()
+                closeQuickAdd()
+              }}
+              className="flex-1 sm:flex-initial rounded-2xl border border-border bg-secondary/60 hover:bg-secondary px-5 py-3 text-xs sm:text-sm font-bold text-muted-foreground hover:text-foreground transition-all active:scale-[0.98]"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={handleSaveMember}
+              className="flex-1 sm:flex-initial rounded-2xl bg-primary px-6 py-3 text-xs sm:text-sm font-bold text-primary-foreground shadow-soft transition-transform active:scale-[0.98]"
+            >
+              Añadir miembro
+            </button>
+          </div>
         </div>
       )}
     </BottomSheet>

@@ -46,7 +46,7 @@ export function ProfileScreen() {
   const onSignOut = async () => {
     await handleLogout()
     toast('Sesión cerrada correctamente', '👋')
-    router.push('/login')
+    router.push('/')
   }
 
   const handleToggleNotifications = async (e?: React.MouseEvent) => {

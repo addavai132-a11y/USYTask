@@ -83,7 +83,7 @@ function RegisterContent() {
   const handleGoogleRegister = async () => {
     if (isDevModeActive()) {
       enableDevMode()
-      router.push(nextTarget || '/app')
+      router.replace(nextTarget || '/app')
       return
     }
     setError('')
@@ -148,9 +148,9 @@ function RegisterContent() {
     setTimeout(() => {
       setLoading(false)
       if (nextTarget) {
-        router.push(nextTarget)
+        router.replace(nextTarget)
       } else {
-        router.push('/onboarding')
+        router.replace('/onboarding')
       }
     }, 400)
   }

@@ -22,6 +22,7 @@ import type { GroupType } from '@/types'
 import { generateHouseholdCode } from '@/lib/group-store'
 import { getInvitationUrl } from '@/lib/invitation'
 import { cn } from '@/lib/utils'
+import { useModalBackHandler } from '@/lib/use-modal-back-handler'
 
 interface SpaceTypeOption {
   id: GroupType
@@ -126,6 +127,8 @@ function getRolesForSpaceType(type: GroupType): RoleOption[] {
 export function CreateSpaceModal() {
   const { createGroupModalOpen, closeCreateGroupModal, createGroup, switchGroup } = useApp()
   const { toast } = useToast()
+
+  useModalBackHandler(createGroupModalOpen, closeCreateGroupModal)
 
   // Steps: 1 = Basic Info & Type, 2 = Creator Role, 3 = Success & Code
   const [step, setStep] = useState<1 | 2 | 3>(1)

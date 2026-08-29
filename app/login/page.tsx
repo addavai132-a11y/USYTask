@@ -10,6 +10,7 @@ import { handleGoogleAuth, getActiveUserSession } from '@/lib/supabase-auth'
 import { createClient } from '@/lib/supabase'
 import { findUserByEmail, generateUserId, setStoredSession, getStoredSession } from '@/lib/user-session'
 import { isDevModeActive, enableDevMode } from '@/lib/dev-mode'
+import { getUserFamilyStatus, syncFromSupabaseCloud } from '@/lib/cloud-sync'
 
 function LoginContent() {
   const router = useRouter()
@@ -24,29 +25,32 @@ function LoginContent() {
 
   // Auto redirect if already logged in
   useEffect(() => {
-    if (isDevModeActive()) {
-      router.replace(nextTarget || '/app')
-      return
-    }
-    const session = getStoredSession()
-    if (session) {
-      router.replace(nextTarget || '/app')
-      return
-    }
-    const supabase = createClient()
-    supabase.auth.getSession().then(({ data: { session: supaSession } }) => {
-      if (supaSession?.user) {
-        getActiveUserSession().then(() => {
-          router.replace(nextTarget || '/app')
-        })
+    async function checkSessionAndFamily() {
+      if (isDevModeActive()) {
+        router.replace(nextTarget || '/app')
+        return
       }
-    })
+      const session = getStoredSession()
+      const supabase = createClient()
+      const { data: { session: supaSession } } = await supabase.auth.getSession()
+
+      if (session || supaSession?.user) {
+        await syncFromSupabaseCloud()
+        const { hasFamily } = await getUserFamilyStatus()
+        if (hasFamily) {
+          router.replace(nextTarget || '/app')
+        } else {
+          router.replace('/onboarding')
+        }
+      }
+    }
+    checkSessionAndFamily()
   }, [router, nextTarget])
 
   const handleGoogleLogin = async () => {
     if (isDevModeActive()) {
       enableDevMode()
-      router.push(nextTarget || '/app')
+      router.replace(nextTarget || '/app')
       return
     }
     setError('')
@@ -59,7 +63,7 @@ function LoginContent() {
     }
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
 
@@ -86,11 +90,17 @@ function LoginContent() {
     }
 
     setStoredSession(user)
+    await syncFromSupabaseCloud()
+    const { hasFamily } = await getUserFamilyStatus()
 
     setTimeout(() => {
       setLoading(false)
-      router.push(nextTarget || '/app')
-    }, 400)
+      if (hasFamily) {
+        router.replace(nextTarget || '/app')
+      } else {
+        router.replace('/onboarding')
+      }
+    }, 300)
   }
 
   return (

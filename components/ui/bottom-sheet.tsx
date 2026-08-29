@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react'
 import { cn } from '@/lib/utils'
+import { useModalBackHandler } from '@/lib/use-modal-back-handler'
 
 export function BottomSheet({
   open,
@@ -16,6 +17,8 @@ export function BottomSheet({
   children: React.ReactNode
   className?: string
 }) {
+  useModalBackHandler(open, onClose)
+
   useEffect(() => {
     if (!open) return
     const onKey = (e: KeyboardEvent) => {

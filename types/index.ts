@@ -122,6 +122,8 @@ export interface Task {
   priority: TaskPriority
   needsApproval?: boolean
   recurring?: string
+  dueDate?: string
+  dueTime?: string
   completedAt?: string
   createdBy?: string
 }
@@ -140,6 +142,7 @@ export interface Reminder {
   id: string
   title: string
   dueDate: string // ISO date string
+  time?: string // Optional HH:mm
   daysLeft: number
   groupId: string
   type?: 'itv' | 'documento' | 'medico' | 'factura' | 'otros'

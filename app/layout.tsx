@@ -60,8 +60,8 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="es" className={`${fontSans.variable} dark min-h-screen min-h-[100dvh]`}>
-      <body className="font-sans antialiased min-h-screen min-h-[100dvh] bg-background text-foreground transition-colors duration-300">
+    <html lang="es" className={`${fontSans.variable} dark min-h-screen min-h-[100dvh] overscroll-y-none`}>
+      <body className="font-sans antialiased min-h-screen min-h-[100dvh] bg-background text-foreground transition-colors duration-300 overscroll-y-none">
         <ThemeModeProvider>
           {/* Fixed Ambient Aurora Glow Background Layer */}
           <div className="fixed inset-0 pointer-events-none -z-10 overflow-hidden">

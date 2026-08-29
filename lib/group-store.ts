@@ -4,6 +4,7 @@
 import type { Group, GroupType } from '@/types'
 import { groupTypeLabels } from '@/types'
 import { generateInvitationToken } from './invitation'
+import { scheduleCloudSync } from './cloud-sync'
 
 const GROUPS_KEY = 'usytask_groups'
 const ACTIVE_GROUP_KEY = 'usytask_active_group_id'
@@ -26,6 +27,7 @@ export function saveAllGroups(groups: Group[]): void {
   if (typeof window === 'undefined') return
   try {
     localStorage.setItem(GROUPS_KEY, JSON.stringify(groups))
+    scheduleCloudSync()
   } catch (err) {
     console.error('Error saving groups', err)
   }

@@ -55,16 +55,41 @@ export async function GET(request: Request) {
       const hasDateOfBirth = Boolean(
         metadata.date_of_birth || metadata.dateOfBirth || metadata.age
       )
-      const isProfileCompleted = Boolean(metadata.profile_completed) || (hasUsername && hasDateOfBirth)
+      // Check if user already has a family/groups in cloud backup or DB
+      const cloudBackup = metadata.usytask_cloud_backup
+      const hasCloudGroups = Boolean(
+        cloudBackup && Array.isArray(cloudBackup.groups) && cloudBackup.groups.length > 0
+      )
+
+      let hasDbFamily = false
+      try {
+        const { data: dbMembers } = await supabase
+          .from('group_members')
+          .select('group_id')
+          .eq('user_id', user.id)
+          .limit(1)
+        if (dbMembers && dbMembers.length > 0) {
+          hasDbFamily = true
+        }
+      } catch {
+        // Table not created yet
+      }
+
+      const hasFamily = hasCloudGroups || hasDbFamily
 
       if (next === '/reset-password' || next.startsWith('/reset-password')) {
         return NextResponse.redirect(`${origin}${next}`)
       }
 
       if (isProfileCompleted) {
-        return NextResponse.redirect(`${origin}${next}`)
+        if (hasFamily) {
+          return NextResponse.redirect(`${origin}${next || '/app'}`)
+        } else {
+          return NextResponse.redirect(`${origin}/onboarding`)
+        }
       } else {
-        return NextResponse.redirect(`${origin}/complete-profile?next=${encodeURIComponent(next)}`)
+        const afterProfileTarget = hasFamily ? (next || '/app') : '/onboarding'
+        return NextResponse.redirect(`${origin}/complete-profile?next=${encodeURIComponent(afterProfileTarget)}`)
       }
     }
   }

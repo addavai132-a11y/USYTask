@@ -13,12 +13,12 @@ import { UsyTaskLogo } from '@/components/ui/usytask-logo'
 
 export function AppPreviewMockup() {
   return (
-    <div className="relative mx-auto w-full max-w-sm sm:max-w-md lg:max-w-none">
+    <div className="relative mx-auto w-full max-w-full sm:max-w-md lg:max-w-none overflow-hidden">
       {/* Glow Backdrop */}
-      <div className="absolute -inset-1 rounded-[36px] bg-gradient-to-tr from-primary/30 via-accent/20 to-primary/10 blur-2xl opacity-75" />
+      <div className="absolute -inset-1 rounded-[36px] bg-gradient-to-tr from-primary/30 via-accent/20 to-primary/10 blur-2xl opacity-75 pointer-events-none" />
 
       {/* Phone / Interface Shell */}
-      <div className="relative overflow-hidden rounded-[32px] border border-border/80 bg-card/95 p-4 sm:p-5 shadow-2xl backdrop-blur-xl transition-all">
+      <div className="relative overflow-hidden rounded-3xl sm:rounded-[32px] border border-border/80 bg-card/95 p-3.5 sm:p-5 shadow-2xl backdrop-blur-xl transition-all w-full">
         {/* Mock App Header */}
         <div className="mb-3.5 flex items-center justify-between pb-3 border-b border-border/60">
           <div className="flex items-center gap-2.5">

@@ -32,11 +32,11 @@ function CompleteProfileContent() {
       try {
         const s = await getActiveUserSession()
         if (!s) {
-          router.push(nextTarget ? `/login?next=${encodeURIComponent(nextTarget)}` : '/login')
+          router.replace(nextTarget ? `/login?next=${encodeURIComponent(nextTarget)}` : '/login')
           return
         }
         if (s.profileCompleted && s.username && (s.dateOfBirth || s.age)) {
-          router.push(nextTarget || '/app')
+          router.replace(nextTarget || '/app')
           return
         }
         setSession(s)
@@ -102,9 +102,9 @@ function CompleteProfileContent() {
 
     setLoading(false)
     if (nextTarget) {
-      router.push(nextTarget)
+      router.replace(nextTarget)
     } else {
-      router.push('/onboarding')
+      router.replace('/onboarding')
     }
   }
 

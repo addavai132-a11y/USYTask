@@ -22,6 +22,7 @@ import {
 } from '@/types/notifications'
 import { useToast } from '@/components/ui/toast'
 import { cn } from '@/lib/utils'
+import { useModalBackHandler } from '@/lib/use-modal-back-handler'
 
 interface NotificationPreferencesModalProps {
   isOpen: boolean
@@ -32,6 +33,7 @@ export function NotificationPreferencesModal({
   isOpen,
   onClose,
 }: NotificationPreferencesModalProps) {
+  useModalBackHandler(isOpen, onClose)
   const { toast } = useToast()
   const {
     isSupported,

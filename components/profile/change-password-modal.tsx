@@ -5,6 +5,7 @@ import { X, Lock, KeyRound, CheckCircle2, Eye, EyeOff, Loader2 } from 'lucide-re
 import { createClient } from '@/lib/supabase'
 import { useToast } from '@/components/ui/toast'
 import { getStoredSession } from '@/lib/user-session'
+import { useModalBackHandler } from '@/lib/use-modal-back-handler'
 
 interface ChangePasswordModalProps {
   isOpen: boolean
@@ -12,6 +13,7 @@ interface ChangePasswordModalProps {
 }
 
 export function ChangePasswordModal({ isOpen, onClose }: ChangePasswordModalProps) {
+  useModalBackHandler(isOpen, onClose)
   const { toast } = useToast()
   const [email, setEmail] = useState('')
   const [newPassword, setNewPassword] = useState('')

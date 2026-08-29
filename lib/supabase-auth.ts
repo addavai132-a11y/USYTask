@@ -22,6 +22,7 @@ export async function handleGoogleAuth() {
       redirectTo: redirectUrl,
       queryParams: {
         prompt: 'select_account',
+        access_type: 'offline',
       },
     },
   })

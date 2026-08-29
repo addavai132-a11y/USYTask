@@ -32,21 +32,21 @@ export function LandingHeader() {
   }
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-xl transition-all">
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
+    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/90 backdrop-blur-2xl transition-all pt-[max(0.25rem,env(safe-area-inset-top,0.25rem))]">
+      <div className="mx-auto flex h-16 sm:h-18 max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Logo */}
-        <Link href="/" className="transition-opacity hover:opacity-90">
+        <Link href="/" className="transition-opacity hover:opacity-90 shrink-0">
           <UsyTaskLogo size="md" />
         </Link>
 
         {/* Actions Desktop */}
-        <div className="hidden sm:flex items-center gap-1.5 sm:gap-3">
+        <div className="hidden sm:flex items-center gap-2 sm:gap-3">
           <DevModeSwitch />
 
           <a
             href="#como-funciona"
             onClick={handleScrollToHowItWorks}
-            className="rounded-2xl px-2.5 py-2 text-xs sm:text-sm font-bold text-muted-foreground transition-colors hover:text-foreground active:scale-95"
+            className="rounded-2xl px-3 py-2 text-xs sm:text-sm font-bold text-muted-foreground transition-colors hover:text-foreground active:scale-95"
           >
             Cómo funciona
           </a>
@@ -54,7 +54,7 @@ export function LandingHeader() {
           <Link
             href="/login"
             onClick={(e) => handleCtaClick(e, '/login')}
-            className="rounded-2xl px-2.5 py-2 text-xs sm:text-sm font-bold text-muted-foreground transition-colors hover:text-foreground active:scale-95"
+            className="rounded-2xl px-3 py-2 text-xs sm:text-sm font-bold text-muted-foreground transition-colors hover:text-foreground active:scale-95"
           >
             Iniciar sesión
           </Link>
@@ -62,7 +62,7 @@ export function LandingHeader() {
           <Link
             href="/register"
             onClick={(e) => handleCtaClick(e, '/register')}
-            className="inline-flex items-center gap-1.5 rounded-2xl bg-primary px-3.5 py-2 text-xs sm:text-sm font-bold text-primary-foreground shadow-soft transition-all active:scale-95 hover:bg-primary/90"
+            className="inline-flex items-center gap-1.5 rounded-2xl bg-primary px-4 py-2.5 text-xs sm:text-sm font-bold text-primary-foreground shadow-soft transition-all active:scale-95 hover:bg-primary/90"
           >
             <span>Crear cuenta</span>
             <ArrowRight className="size-4 hidden sm:inline-block" />
@@ -70,21 +70,19 @@ export function LandingHeader() {
         </div>
 
         {/* Actions Mobile */}
-        <div className="flex items-center gap-1.5 sm:hidden">
-          <DevModeSwitch />
-
+        <div className="flex items-center gap-2 sm:hidden">
           <Link
             href="/register"
             onClick={(e) => handleCtaClick(e, '/register')}
-            className="inline-flex items-center gap-1 rounded-xl bg-primary px-2.5 py-1.5 text-xs font-bold text-primary-foreground shadow-soft active:scale-95"
+            className="inline-flex items-center gap-1 rounded-xl bg-primary px-3 py-2 text-xs font-bold text-primary-foreground shadow-soft active:scale-95"
           >
-            <span>Crear cuenta</span>
+            <span>Empezar</span>
             <ArrowRight className="size-3.5" />
           </Link>
 
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="rounded-xl p-1.5 text-muted-foreground hover:text-foreground hover:bg-secondary active:scale-95"
+            className="rounded-xl p-2 text-muted-foreground hover:text-foreground hover:bg-secondary active:scale-95"
             aria-label="Abrir menú"
           >
             {mobileMenuOpen ? <X className="size-5" /> : <Menu className="size-5" />}

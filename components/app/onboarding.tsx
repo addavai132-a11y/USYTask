@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils'
 import { useToast } from '@/components/ui/toast'
 import { UsyTaskLogo } from '@/components/ui/usytask-logo'
 import { validateInvitationToken } from '@/lib/invitation'
+import { getAllGroups } from '@/lib/group-store'
 
 const ONBOARDED_KEY = 'lifeos-onboarded'
 
@@ -31,7 +32,15 @@ export function Onboarding() {
   const [joining, setJoining] = useState(false)
 
   useEffect(() => {
-    if (localStorage.getItem(ONBOARDED_KEY) !== '1') setVisible(true)
+    const existing = getAllGroups()
+    if (existing.length > 0) {
+      localStorage.setItem(ONBOARDED_KEY, '1')
+      setVisible(false)
+      return
+    }
+    if (localStorage.getItem(ONBOARDED_KEY) !== '1') {
+      setVisible(true)
+    }
   }, [])
 
   const finish = () => {

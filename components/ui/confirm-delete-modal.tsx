@@ -3,6 +3,7 @@
 import { useEffect, ReactNode } from 'react'
 import { AlertTriangle, Trash2, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useModalBackHandler } from '@/lib/use-modal-back-handler'
 
 export interface ConfirmDeleteModalProps {
   isOpen: boolean
@@ -29,6 +30,7 @@ export function ConfirmDeleteModal({
   isDestructive = true,
   icon,
 }: ConfirmDeleteModalProps) {
+  useModalBackHandler(isOpen, onClose)
   // Handle ESC key to close safely
   useEffect(() => {
     if (!isOpen) return

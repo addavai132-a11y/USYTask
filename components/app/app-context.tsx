@@ -24,31 +24,31 @@ import {
   saveAllGroups,
 } from '@/lib/group-store'
 import {
-  getMembersByGroup,
+  ensureOwnerMember,
+  addMember as addMemberStore,
+  addTask as addTaskStore,
+  toggleTask as toggleTaskStore,
+  deleteTask as deleteTaskStore,
+  addEvent as addEventStore,
+  deleteEvent as deleteEventStore,
+  addReminder as addReminderStore,
+  deleteReminder as deleteReminderStore,
+  addActivity as addActivityStore,
+  addNotification as addNotificationStore,
+  dismissNotification as dismissNotificationStore,
+  clearNotifications as clearNotificationsStore,
   getTasksByGroup,
   getEventsByGroup,
   getRemindersByGroup,
-  addTask as addTaskStore,
-  addEvent as addEventStore,
-  addReminder as addReminderStore,
-  addMember as addMemberStore,
-  toggleTask as toggleTaskStore,
-  deleteTask as deleteTaskStore,
-  deleteEvent as deleteEventStore,
-  deleteReminder as deleteReminderStore,
-  ensureOwnerMember,
-  getMemberById,
+  getMembersByGroup,
   getActivitiesByGroup,
-  addActivity,
   getNotificationsByGroup,
-  addNotification,
-  deleteNotification,
-  clearNotificationsByGroup,
+  getMemberById as getMemberByIdStore,
   getShoppingListsByGroup,
+  getShoppingItemsByGroup,
   addShoppingList as addShoppingListStore,
   updateShoppingList as updateShoppingListStore,
   deleteShoppingList as deleteShoppingListStore,
-  getShoppingItemsByGroup,
   addShoppingItem as addShoppingItemStore,
   toggleShoppingItem as toggleShoppingItemStore,
   deleteShoppingItem as deleteShoppingItemStore,
@@ -60,36 +60,37 @@ import {
   voteEventPoll as voteEventPollStore,
   deleteEventPoll as deleteEventPollStore,
   getDailyMenusByGroup,
+  getWeeklyMenusByGroup,
   addDailyMenu as addDailyMenuStore,
   updateDailyMenu as updateDailyMenuStore,
   deleteDailyMenu as deleteDailyMenuStore,
-  duplicateDailyMenu as duplicateDailyMenuStore,
-  getWeeklyMenusByGroup,
   addWeeklyMenu as addWeeklyMenuStore,
   updateWeeklyMenu as updateWeeklyMenuStore,
   deleteWeeklyMenu as deleteWeeklyMenuStore,
-  duplicateWeeklyMenu as duplicateWeeklyMenuStore,
   getIncomesByGroup,
+  getExpensesByGroup,
+  getBillsByGroup,
+  getBudgetsByGroup,
   addIncome as addIncomeStore,
   updateIncome as updateIncomeStore,
   deleteIncome as deleteIncomeStore,
-  getExpensesByGroup,
   addExpense as addExpenseStore,
   updateExpense as updateExpenseStore,
   deleteExpense as deleteExpenseStore,
-  getBillsByGroup,
   addBill as addBillStore,
   updateBill as updateBillStore,
   deleteBill as deleteBillStore,
   toggleBillStatus as toggleBillStatusStore,
-  getBudgetsByGroup,
   saveBudget as saveBudgetStore,
   deleteBudget as deleteBudgetStore,
   getPiggyBankBalance,
-  savePiggyBankBalance as savePiggyBankBalanceStore,
+  savePiggyBankBalance,
+  updateMemberInStore,
+  adjustMemberPointsInStore,
   type ShoppingList,
   type ShoppingItem,
 } from '@/lib/data-store'
+import { syncFromSupabaseCloud, scheduleCloudSync } from '@/lib/cloud-sync'
 import type { FamilyChallenge, FamilyReward, FamilyMemory, FamilyAchievement } from '@/types'
 import {
   getChallengesByGroup,
@@ -186,7 +187,7 @@ interface AppState {
   deleteTask: (taskId: string) => void
   addEvent: (title: string, date: string, time: string | undefined, category: EventCategory, assignedMemberIds: string[], location?: string) => void
   deleteEvent: (eventId: string) => void
-  addReminder: (title: string, dueDate: string, assignedMemberIds?: string[]) => void
+  addReminder: (title: string, dueDate: string, assignedMemberIds?: string[], time?: string) => void
   deleteReminder: (reminderId: string) => void
   addMember: (name: string, colorIdx: number) => void
   getMemberById: (memberId: string) => Member | null
@@ -476,11 +477,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userName])
 
-  // Initialize on mount
+  // Initialize on mount: pull data from Supabase cloud first
   useEffect(() => {
-    const group = ensureDefaultGroup(userName)
-    ensureOwnerMember(group.id, userName)
-    refreshData()
+    async function initCloudAndData() {
+      await syncFromSupabaseCloud()
+      const group = ensureDefaultGroup(userName)
+      ensureOwnerMember(group.id, userName)
+      refreshData()
+    }
+    initCloudAndData()
   }, [userName, refreshData])
 
   // Listen for group change events
@@ -657,13 +662,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     bump()
   }
 
-  const handleAddReminder = (title: string, dueDate: string, assignedMemberIds: string[] = []) => {
+  const handleAddReminder = (title: string, dueDate: string, assignedMemberIds: string[] = [], time?: string) => {
     if (!activeGroup) return
     const uniqueId = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `rem_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
     const reminder: Reminder = {
       id: uniqueId,
       title,
       dueDate,
+      time: time || undefined,
       daysLeft: 0, // will be computed on read
       groupId: activeGroup.id,
       assignedMemberIds,
