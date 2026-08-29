@@ -137,7 +137,7 @@ export function FeedScreen() {
       <Card className="p-4 sm:p-5 bg-white border border-slate-200 rounded-3xl shadow-sm space-y-3.5 dark:bg-[#121026]/90 dark:border-purple-500/20 dark:shadow-xl">
         <div className="flex items-center justify-between pb-2.5 border-b border-slate-200/80 dark:border-purple-500/15">
           <div className="flex items-center gap-2.5">
-            <div className="flex size-9 items-center justify-center rounded-xl bg-purple-50 border border-purple-200 text-purple-700 dark:bg-purple-500/15 dark:border-purple-500/30 dark:text-purple-400 shrink-0">
+            <div className="flex size-9 items-center justify-center rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 dark:bg-purple-500/15 dark:border-purple-500/30 dark:text-purple-400 shrink-0">
               <Users className="size-4.5" />
             </div>
             <div>
@@ -148,7 +148,7 @@ export function FeedScreen() {
 
           <button
             onClick={() => openQuickAdd('miembro', { hideTabs: true })}
-            className="flex items-center gap-1.5 rounded-full bg-purple-50 hover:bg-purple-100 border border-purple-200 px-3.5 py-1.5 text-xs font-bold text-purple-800 transition-all active:scale-95 shadow-sm dark:bg-purple-600/20 dark:hover:bg-purple-600/35 dark:border-purple-500/30 dark:text-purple-200"
+            className="flex items-center gap-1.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white border border-emerald-500/30 px-3.5 py-1.5 text-xs font-bold transition-all active:scale-95 shadow-sm dark:bg-purple-600/20 dark:hover:bg-purple-600/35 dark:border-purple-500/30 dark:text-purple-200"
           >
             <UserPlus className="size-3.5" />
             <span>Invitar</span>
@@ -173,7 +173,7 @@ export function FeedScreen() {
                   className={cn(
                     'flex items-center justify-between gap-3 p-2.5 rounded-2xl border transition-all',
                     isCurrent
-                      ? 'bg-purple-50/80 border-purple-300 shadow-2xs dark:bg-purple-600/15 dark:border-purple-500/40 dark:ring-1 dark:ring-purple-500/30'
+                      ? 'bg-emerald-50/80 border-emerald-300 shadow-2xs dark:bg-purple-600/15 dark:border-purple-500/40 dark:ring-1 dark:ring-purple-500/30'
                       : 'bg-slate-50 border-slate-200 hover:bg-slate-100/80 dark:bg-white/[0.02] dark:border-white/5 dark:hover:bg-white/[0.05]'
                   )}
                 >
@@ -182,7 +182,7 @@ export function FeedScreen() {
                       <MemberAvatar member={m} size="sm" ring />
                       {m.isOwner && (
                         <span
-                          className="absolute -bottom-1 -right-1 flex size-3.5 items-center justify-center rounded-full bg-purple-600 text-white ring-1 ring-white dark:bg-purple-600 dark:ring-[#121026]"
+                          className="absolute -bottom-1 -right-1 flex size-3.5 items-center justify-center rounded-full bg-emerald-600 text-white ring-1 ring-white dark:bg-purple-600 dark:ring-[#121026]"
                           title="Propietario"
                         >
                           <ShieldCheck className="size-2.5" />
@@ -194,7 +194,7 @@ export function FeedScreen() {
                       <div className="flex items-center gap-1.5">
                         <span className="text-xs font-bold text-slate-900 dark:text-white truncate">{m.name}</span>
                         {isCurrent && (
-                          <span className="text-[9px] font-bold text-purple-800 bg-purple-100 px-1.5 py-0.2 rounded-full dark:text-purple-300 dark:bg-purple-500/20">
+                          <span className="text-[9px] font-bold text-emerald-800 bg-emerald-100 px-1.5 py-0.2 rounded-full dark:text-purple-300 dark:bg-purple-500/20">
                             Tú
                           </span>
                         )}
@@ -208,7 +208,7 @@ export function FeedScreen() {
                               ? 'bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-500/15 dark:text-blue-300 dark:border-blue-500/20'
                               : isChild
                               ? 'bg-pink-50 text-pink-700 border border-pink-200 dark:bg-pink-500/15 dark:text-pink-300 dark:border-pink-500/20'
-                              : 'bg-purple-50 text-purple-700 border border-purple-200 dark:bg-purple-500/15 dark:text-purple-300 dark:border-purple-500/20'
+                              : 'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-purple-500/15 dark:text-purple-300 dark:border-purple-500/20'
                           )}
                         >
                           {isAdult ? 'Adulto' : isChild ? 'Hijo/a' : 'Miembro'}
@@ -224,9 +224,9 @@ export function FeedScreen() {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-purple-50 border border-purple-200 shrink-0 dark:bg-purple-500/10 dark:border-purple-500/20">
-                    <Star className="size-3 fill-purple-500 text-purple-500" />
-                    <span className="text-xs font-black text-purple-900 dark:text-purple-300 font-mono">
+                  <div className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-emerald-50 border border-emerald-200 shrink-0 dark:bg-purple-500/10 dark:border-purple-500/20">
+                    <Star className="size-3 fill-emerald-500 text-emerald-500 dark:fill-purple-500 dark:text-purple-500" />
+                    <span className="text-xs font-black text-emerald-900 dark:text-purple-300 font-mono">
                       {m.points || 0}
                     </span>
                   </div>
@@ -236,38 +236,6 @@ export function FeedScreen() {
           </div>
         )}
       </Card>
-
-      {/* 2.5 Banner / Botón directo de Activar Notificaciones */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3.5 p-4 rounded-3xl bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-primary/10 border border-emerald-500/25 dark:from-purple-500/15 dark:to-indigo-500/15 dark:border-purple-500/30 shadow-xs">
-        <div className="flex items-center gap-3 min-w-0 w-full sm:w-auto">
-          <div className="flex size-10 items-center justify-center rounded-2xl bg-emerald-500/20 text-emerald-600 dark:bg-purple-500/20 dark:text-purple-300 shrink-0">
-            <Bell className="size-5" />
-          </div>
-          <div className="min-w-0">
-            <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white leading-tight">
-              Notificaciones en tiempo real
-            </h4>
-            <p className="text-[11px] text-muted-foreground truncate">
-              Prueba la recepción de alertas en este dispositivo al instante
-            </p>
-          </div>
-        </div>
-
-        <button
-          type="button"
-          onClick={handleActivateNotifications}
-          disabled={pushLoading || !isSupported}
-          className="w-full sm:w-auto px-4 py-2 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white dark:bg-purple-600 dark:hover:bg-purple-500 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all shadow-md active:scale-95 disabled:opacity-50 shrink-0"
-          title="Activar notificaciones y enviar prueba"
-        >
-          {pushLoading ? (
-            <Loader2 className="size-4 animate-spin" />
-          ) : (
-            <Sparkles className="size-4" />
-          )}
-          <span>Activar notificaciones</span>
-        </button>
-      </div>
 
       {/* ========================================================================= */}
       {/* 3. ESTRUCTURA DE 2 COLUMNAS (GRID RESPONSIVE)                              */}

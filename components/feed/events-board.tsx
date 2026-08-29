@@ -129,7 +129,7 @@ export function EventsBoard() {
       {/* Cabecera del Tablón */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200/80 dark:border-purple-500/15">
         <div className="flex items-center gap-2.5">
-          <div className="flex size-10 items-center justify-center rounded-2xl bg-purple-50 border border-purple-200 text-purple-700 dark:bg-purple-500/20 dark:border-purple-500/30 dark:text-purple-300 shrink-0">
+          <div className="flex size-10 items-center justify-center rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-700 dark:bg-purple-500/20 dark:border-purple-500/30 dark:text-purple-300 shrink-0">
             <Calendar className="size-5" />
           </div>
           <div>
@@ -138,7 +138,7 @@ export function EventsBoard() {
                 Próximos Eventos
               </h3>
               {upcomingEvents.length > 0 && (
-                <span className="rounded-full bg-purple-100 border border-purple-200 px-2 py-0.5 text-[10px] font-black text-purple-800 uppercase tracking-wider dark:bg-purple-500/25 dark:border-purple-500/40 dark:text-purple-300">
+                <span className="rounded-full bg-emerald-100 border border-emerald-200 px-2 py-0.5 text-[10px] font-black text-emerald-800 uppercase tracking-wider dark:bg-purple-500/25 dark:border-purple-500/40 dark:text-purple-300">
                   {upcomingEvents.length} {upcomingEvents.length === 1 ? 'evento' : 'eventos'}
                 </span>
               )}
@@ -152,7 +152,7 @@ export function EventsBoard() {
         {/* Botón Nuevo Evento */}
         <button
           onClick={() => openQuickAdd('evento')}
-          className="flex items-center justify-center gap-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs px-3.5 py-2 transition-all active:scale-95 shadow-md shadow-purple-950/40 border border-purple-400/20"
+          className="flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-3.5 py-2 transition-all active:scale-95 shadow-md shadow-emerald-950/20 border border-emerald-500/30 dark:bg-purple-600 dark:hover:bg-purple-500 dark:shadow-purple-950/40 dark:border-purple-400/20"
         >
           <Plus className="size-4 stroke-[2.5]" />
           <span>+ Nuevo evento</span>

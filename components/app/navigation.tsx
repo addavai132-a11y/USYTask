@@ -35,7 +35,7 @@ export function BottomNav() {
               className={cn(
                 'flex flex-1 flex-col items-center gap-1 rounded-2xl py-1.5 text-[10.5px] font-semibold transition-all active:scale-95 border',
                 active
-                  ? 'bg-purple-600 text-white border-purple-600 shadow-sm dark:bg-purple-600/25 dark:text-purple-200 dark:border-purple-500/50 dark:shadow-[0_0_16px_rgba(168,85,247,0.25)] backdrop-blur-md'
+                  ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm dark:bg-purple-600/25 dark:text-purple-200 dark:border-purple-500/50 dark:shadow-[0_0_16px_rgba(168,85,247,0.25)] backdrop-blur-md'
                   : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               )}
             >
@@ -55,7 +55,7 @@ export function FloatingAddButton() {
     <button
       onClick={() => openQuickAdd()}
       aria-label="Añadir"
-      className="safe-bottom fixed bottom-20 right-4 z-40 flex size-14 items-center justify-center rounded-full bg-purple-600 hover:bg-purple-700 text-white shadow-lg shadow-purple-900/20 dark:bg-gradient-to-r dark:from-purple-600 dark:to-indigo-600 dark:shadow-purple-950/80 border border-purple-500/30 dark:border-purple-400/30 transition-transform active:scale-90 lg:bottom-8 lg:right-8"
+      className="safe-bottom fixed bottom-20 right-4 z-40 flex size-14 items-center justify-center rounded-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-900/20 dark:bg-gradient-to-r dark:from-purple-600 dark:to-indigo-600 dark:shadow-purple-950/80 border border-emerald-500/30 dark:border-purple-400/30 transition-transform active:scale-90 lg:bottom-8 lg:right-8"
     >
       <Plus className="size-7 stroke-[2.5]" />
     </button>
@@ -74,7 +74,7 @@ export function Sidebar() {
 
       <button
         onClick={() => openQuickAdd()}
-        className="mt-6 flex items-center justify-center gap-2 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white dark:bg-gradient-to-r dark:from-purple-600 dark:to-indigo-600 dark:hover:from-purple-500 dark:hover:to-indigo-500 py-3 font-semibold shadow-md shadow-purple-900/10 dark:shadow-purple-950/60 border border-purple-500/30 dark:border-purple-400/30 transition-all active:scale-95"
+        className="mt-6 flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white dark:bg-gradient-to-r dark:from-purple-600 dark:to-indigo-600 dark:hover:from-purple-500 dark:hover:to-indigo-500 py-3 font-semibold shadow-md shadow-emerald-900/10 dark:shadow-purple-950/60 border border-emerald-500/30 dark:border-purple-400/30 transition-all active:scale-95"
       >
         <Plus className="size-5 stroke-[2.5]" />
         Añadir
@@ -91,8 +91,8 @@ export function Sidebar() {
               className={cn(
                 'flex items-center gap-3 rounded-2xl px-3.5 py-2.5 text-xs font-semibold transition-all border',
                 active
-                  ? 'bg-purple-600 text-white border-purple-600 shadow-sm dark:bg-purple-600/25 dark:text-purple-200 dark:border-purple-500/50 dark:shadow-[0_0_16px_rgba(168,85,247,0.2)] backdrop-blur-md'
-                  : 'border-transparent text-slate-600 dark:text-slate-400 hover:bg-purple-50 dark:hover:bg-purple-500/10 hover:text-purple-900 dark:hover:text-white'
+                  ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm dark:bg-purple-600/25 dark:text-purple-200 dark:border-purple-500/50 dark:shadow-[0_0_16px_rgba(168,85,247,0.2)] backdrop-blur-md'
+                  : 'border-transparent text-slate-600 dark:text-slate-400 hover:bg-emerald-50 dark:hover:bg-purple-500/10 hover:text-emerald-900 dark:hover:text-white'
               )}
             >
               <item.icon className={cn('size-5', active ? 'text-white dark:text-purple-300' : 'text-slate-400')} strokeWidth={active ? 2.5 : 2} />
