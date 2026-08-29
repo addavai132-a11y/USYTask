@@ -513,12 +513,53 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener('usytask_group_change', handler)
   }, [refreshData])
 
+  // Tab navigation history & root boundary anchor
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    // Read initial tab from URL search params if provided (e.g. ?tab=fitness)
+    const urlParams = new URLSearchParams(window.location.search)
+    const initialTabParam = urlParams.get('tab') as Tab | null
+    if (initialTabParam && ['inicio', 'organizar', 'hogar', 'fitness', 'familia', 'perfil'].includes(initialTabParam)) {
+      setTabState(initialTabParam)
+      window.history.replaceState({ usyTab: initialTabParam }, '', `/app?tab=${initialTabParam}`)
+    } else if (!window.history.state?.usyTab) {
+      window.history.replaceState({ usyTab: 'inicio', usyRoot: true }, '', '/app')
+    }
+
+    const handlePopState = (event: PopStateEvent) => {
+      // If a modal interceptor handled this popstate (usyModal), ignore here
+      if (event.state?.usyModal) return
+
+      const targetTab = event.state?.usyTab as Tab | undefined
+      if (targetTab) {
+        setTabState(targetTab)
+        window.scrollTo({ top: 0 })
+      } else {
+        // At the root baseline of the app: ensure we switch to 'inicio' and stay within /app
+        setTabState('inicio')
+        window.history.replaceState({ usyTab: 'inicio', usyRoot: true }, '', '/app')
+        window.scrollTo({ top: 0 })
+      }
+    }
+
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [])
+
   const bump = () => setInteractions((n) => n + 1)
 
   const setTab = (t: Tab) => {
+    if (typeof window !== 'undefined') {
+      if (t === 'inicio') {
+        window.history.pushState({ usyTab: 'inicio' }, '', '/app')
+      } else {
+        window.history.pushState({ usyTab: t }, '', `/app?tab=${t}`)
+      }
+      window.scrollTo({ top: 0 })
+    }
     setTabState(t)
     bump()
-    if (typeof window !== 'undefined') window.scrollTo({ top: 0 })
   }
 
   const switchGroup = (groupId: string) => {

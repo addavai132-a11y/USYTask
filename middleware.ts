@@ -44,7 +44,18 @@ export async function middleware(request: NextRequest) {
   })
 
   // Refresh token automatically if needed (validates against Supabase Auth server)
-  await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  const pathname = request.nextUrl.pathname
+
+  // If user is already authenticated and tries to navigate back to /login or /register, redirect to /app
+  if (user && (pathname === '/login' || pathname === '/register')) {
+    const nextTarget = request.nextUrl.searchParams.get('next') || '/app'
+    const redirectUrl = new URL(nextTarget, request.url)
+    return NextResponse.redirect(redirectUrl)
+  }
 
   return supabaseResponse
 }

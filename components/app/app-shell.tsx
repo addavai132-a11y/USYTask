@@ -134,6 +134,16 @@ function AuthGate({ children }: { children: React.ReactNode }) {
 
 function ShellInner() {
   const { tab, activeGroup } = useApp()
+
+  useEffect(() => {
+    // Asegurarse de que el estado actual en el historial sea la raíz de la app
+    if (typeof window !== 'undefined') {
+      if (window.history.state?.idx > 0 && window.location.pathname === '/app') {
+        window.history.replaceState({ usyTab: 'inicio', usyRoot: true }, '', '/app')
+      }
+    }
+  }, [])
+
   return (
     <div className="flex min-h-screen min-h-[100dvh] w-full max-w-full bg-background overscroll-y-none">
       <Sidebar />
