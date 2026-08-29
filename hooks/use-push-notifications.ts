@@ -274,18 +274,17 @@ export function usePushNotifications() {
         console.warn('Fallback local error:', e)
       }
 
-      return { success: true }
+  // 5. Método unificado para activar y enviar prueba de inmediato
+  const activateAndTest = async (): Promise<{ success: boolean; error?: string }> => {
+    setLoading(true)
+    try {
+      await subscribe()
+      const testResult = await sendTestNotification()
+      setLoading(false)
+      return testResult
     } catch (err: unknown) {
-      if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
-        try {
-          new Notification('USYTask 🚀', {
-            body: '¡Notificación de prueba recibida correctamente!',
-            icon: '/icon-192x192.png',
-          })
-          return { success: true }
-        } catch {}
-      }
-      const message = err instanceof Error ? err.message : 'Error enviando prueba.'
+      setLoading(false)
+      const message = err instanceof Error ? err.message : 'Error al activar notificaciones'
       return { success: false, error: message }
     }
   }
@@ -299,6 +298,7 @@ export function usePushNotifications() {
     subscribe,
     unsubscribe,
     sendTestNotification,
+    activateAndTest,
     checkSubscription,
   }
 }

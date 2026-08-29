@@ -32,6 +32,7 @@ export function ProfileScreen() {
     isSupported,
     subscribe,
     unsubscribe,
+    activateAndTest,
   } = usePushNotifications()
 
   useEffect(() => {
@@ -61,20 +62,11 @@ export function ProfileScreen() {
       return
     }
 
-    if (isSubscribed) {
-      const res = await unsubscribe()
-      if (res.success) {
-        toast('Notificaciones desactivadas en este dispositivo', '🔕')
-      } else {
-        toast(res.error || 'Error al desactivar notificaciones', '❌')
-      }
+    const res = await activateAndTest()
+    if (res.success) {
+      toast('¡Notificaciones activadas y prueba enviada con éxito!', '🔔')
     } else {
-      const res = await subscribe()
-      if (res.success) {
-        toast('Notificaciones Push activadas con éxito', '🔔')
-      } else {
-        toast(res.error || 'No se pudo conceder el permiso', '⚠️')
-      }
+      toast(res.error || 'Aviso al activar notificaciones', '⚠️')
     }
   }
 
@@ -168,7 +160,7 @@ export function ProfileScreen() {
             </div>
           </button>
 
-          {/* Switch Interactivo de Notificaciones Push con Acceso al Panel de Preferencias */}
+          {/* Botón Interactivo de Notificaciones Push con Acceso al Panel de Preferencias */}
           <div className="flex items-center justify-between rounded-2xl bg-teal-500/15 border border-teal-500/25 p-3 transition-colors hover:bg-teal-500/20">
             <div
               onClick={() => setIsNotificationModalOpen(true)}
@@ -202,30 +194,17 @@ export function ProfileScreen() {
             <div className="flex items-center gap-2 shrink-0 ml-2">
               <button
                 type="button"
-                role="switch"
-                aria-checked={isSubscribed}
-                disabled={pushLoading || !isSupported}
                 onClick={handleToggleNotifications}
-                className={cn(
-                  'relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none disabled:opacity-50',
-                  isSubscribed
-                    ? 'bg-emerald-600 dark:bg-teal-500'
-                    : 'bg-slate-300 dark:bg-white/20'
-                )}
-                title={isSubscribed ? 'Desactivar notificaciones' : 'Activar notificaciones'}
+                disabled={pushLoading || !isSupported}
+                className="px-3.5 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all shadow-sm active:scale-95 bg-teal-600 hover:bg-teal-700 text-white disabled:opacity-50 shrink-0"
+                title="Activar notificaciones y enviar prueba"
               >
                 {pushLoading ? (
-                  <span className="absolute inset-0 flex items-center justify-center">
-                    <Loader2 className="size-3.5 animate-spin text-white" />
-                  </span>
+                  <Loader2 className="size-3.5 animate-spin" />
                 ) : (
-                  <span
-                    className={cn(
-                      'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out',
-                      isSubscribed ? 'translate-x-5' : 'translate-x-0'
-                    )}
-                  />
+                  <Bell className="size-3.5" />
                 )}
+                <span>Activar notificaciones</span>
               </button>
             </div>
           </div>

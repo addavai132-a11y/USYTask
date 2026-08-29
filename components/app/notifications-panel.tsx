@@ -1,9 +1,11 @@
 'use client'
 
-import { Bell, X, Check, CheckCircle2, CalendarPlus } from 'lucide-react'
+import { Bell, X, Check, CheckCircle2, CalendarPlus, Loader2, Sparkles } from 'lucide-react'
 import { BottomSheet } from '@/components/ui/bottom-sheet'
 import { useApp } from './app-context'
 import { EmptyState } from '@/components/ui/empty-state'
+import { usePushNotifications } from '@/hooks/use-push-notifications'
+import { useToast } from '@/components/ui/toast'
 import type { AppNotification } from '@/types'
 
 // Helper to format relative time
@@ -33,12 +35,54 @@ function getIconForType(type: AppNotification['type']) {
 }
 
 export function NotificationsPanel() {
+  const { toast } = useToast()
   const { notificationsOpen, setNotificationsOpen, notifications, dismissNotification, clearNotifications } = useApp()
+  const { activateAndTest, loading } = usePushNotifications()
+
+  const handleActivateNotifications = async () => {
+    const res = await activateAndTest()
+    if (res.success) {
+      toast('¡Notificación de prueba enviada con éxito!', '🚀')
+    } else {
+      toast(res.error || 'Aviso en notificación', '🔔')
+    }
+  }
 
   return (
     <BottomSheet open={notificationsOpen} onClose={() => setNotificationsOpen(false)} title="Notificaciones">
+      {/* Botón permanente y visible de Activar Notificaciones */}
+      <div className="flex items-center justify-between gap-3 p-3.5 mb-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 dark:bg-purple-500/10 dark:border-purple-500/25 shadow-xs">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="flex size-8 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-600 dark:bg-purple-500/20 dark:text-purple-300 shrink-0">
+            <Bell className="size-4" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-xs font-bold text-slate-900 dark:text-white leading-tight truncate">
+              Alertas del dispositivo
+            </p>
+            <p className="text-[11px] text-muted-foreground truncate">
+              Avisos Push de tareas y eventos
+            </p>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={handleActivateNotifications}
+          disabled={loading}
+          className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white dark:bg-purple-600 dark:hover:bg-purple-500 font-bold text-xs flex items-center gap-1.5 transition-all shadow-sm shrink-0 active:scale-95 disabled:opacity-50"
+        >
+          {loading ? (
+            <Loader2 className="size-3.5 animate-spin" />
+          ) : (
+            <Sparkles className="size-3.5" />
+          )}
+          <span>Activar notificaciones</span>
+        </button>
+      </div>
+
       {notifications.length > 0 && (
-        <div className="flex justify-end mb-4">
+        <div className="flex justify-end mb-3">
           <button
             onClick={clearNotifications}
             className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"

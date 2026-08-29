@@ -41,6 +41,7 @@ export function NotificationPreferencesModal({
     subscribe,
     unsubscribe,
     sendTestNotification,
+    activateAndTest,
   } = usePushNotifications()
 
   const [preferences, setPreferences] = useState<NotificationPreferences>(
@@ -48,7 +49,6 @@ export function NotificationPreferencesModal({
   )
   const [loadingPrefs, setLoadingPrefs] = useState(true)
   const [savingPrefs, setSavingPrefs] = useState(false)
-  const [testingPush, setTestingPush] = useState(false)
 
   // Cargar preferencias del usuario
   useEffect(() => {
@@ -103,35 +103,13 @@ export function NotificationPreferencesModal({
     }
   }
 
-  // Activar / Desactivar notificaciones del dispositivo
-  const handleToggleDeviceSubscription = async () => {
-    if (isSubscribed) {
-      const res = await unsubscribe()
-      if (res.success) {
-        toast('Notificaciones desactivadas en este dispositivo', '🔕')
-      } else {
-        toast(res.error || 'Error al desactivar', '❌')
-      }
-    } else {
-      const res = await subscribe()
-      if (res.success) {
-        toast('¡Dispositivo suscrito con éxito a notificaciones Push!', '🔔')
-      } else {
-        toast(res.error || 'No se pudo activar el permiso', '⚠️')
-      }
-    }
-  }
-
-  // Disparar test
-  const handleSendTest = async () => {
-    setTestingPush(true)
-    const res = await sendTestNotification()
-    setTestingPush(false)
-
+  // Activar notificaciones y enviar prueba en un solo paso
+  const handleActivateAndTest = async () => {
+    const res = await activateAndTest()
     if (res.success) {
-      toast('¡Notificación de prueba enviada! Revisa tu bandeja.', '🚀')
+      toast('¡Notificación de prueba enviada con éxito! Revisa tu pantalla.', '🚀')
     } else {
-      toast(res.error || 'Error enviando prueba', '❌')
+      toast(res.error || 'Aviso en notificación', '🔔')
     }
   }
 
@@ -190,43 +168,22 @@ export function NotificationPreferencesModal({
                 )}
               </div>
 
-              {/* Botón Acción Dispositivo */}
+              {/* Botón Acción Dispositivo: Siempre llamado 'Activar notificaciones' y siempre visible */}
               <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={handleToggleDeviceSubscription}
+                  onClick={handleActivateAndTest}
                   disabled={pushLoading || !isSupported}
-                  className={cn(
-                    'px-3 py-1.5 rounded-xl font-bold transition-all text-xs flex items-center gap-1.5 active:scale-95 shadow-sm',
-                    isSubscribed
-                      ? 'bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 dark:bg-rose-500/15 dark:text-rose-300 dark:border-rose-500/30'
-                      : 'bg-emerald-600 hover:bg-emerald-700 text-white dark:bg-purple-600 dark:hover:bg-purple-500'
-                  )}
+                  className="px-3.5 py-1.5 rounded-xl font-bold transition-all text-xs flex items-center gap-1.5 active:scale-95 shadow-sm bg-emerald-600 hover:bg-emerald-700 text-white dark:bg-purple-600 dark:hover:bg-purple-500 disabled:opacity-50"
+                  title="Gestionar suscripción y enviar notificación de prueba"
                 >
                   {pushLoading ? (
                     <Loader2 className="size-3.5 animate-spin" />
                   ) : (
                     <Bell className="size-3.5" />
                   )}
-                  <span>{isSubscribed ? 'Desactivar notificaciones' : 'Activar notificaciones'}</span>
+                  <span>Activar notificaciones</span>
                 </button>
-
-                {isSubscribed && (
-                  <button
-                    type="button"
-                    onClick={handleSendTest}
-                    disabled={testingPush}
-                    className="px-2.5 py-1.5 rounded-xl bg-slate-200/80 hover:bg-slate-300 text-slate-800 font-bold text-xs flex items-center gap-1 transition-colors dark:bg-white/10 dark:hover:bg-white/15 dark:text-white"
-                    title="Enviar notificación de prueba"
-                  >
-                    {testingPush ? (
-                      <Loader2 className="size-3.5 animate-spin" />
-                    ) : (
-                      <Send className="size-3.5 text-emerald-600 dark:text-purple-400" />
-                    )}
-                    <span className="hidden sm:inline">Probar</span>
-                  </button>
-                )}
               </div>
             </div>
 
