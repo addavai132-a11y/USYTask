@@ -23,6 +23,7 @@ export function QuickAdd() {
     taskCategories,
     closeQuickAdd,
     members,
+    currentMember,
     addTask,
     addEvent,
     addReminder,
