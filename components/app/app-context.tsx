@@ -197,7 +197,11 @@ interface AppState {
   addShoppingList: (name: string) => void
   updateShoppingList: (listId: string, name: string) => void
   deleteShoppingList: (listId: string) => void
-  addShoppingItem: (name: string, listId: string, options?: { price?: number; supermarket?: string }) => void
+  addShoppingItem: (
+    name: string,
+    listId: string,
+    options?: { price?: number; unitPrice?: number; quantity?: number; aisle?: string; supermarket?: string }
+  ) => void
   toggleShoppingItem: (itemId: string) => void
   deleteShoppingItem: (itemId: string) => void
 
@@ -885,7 +889,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     bump()
   }
 
-  const handleAddShoppingItem = (name: string, listId: string, options?: { price?: number; supermarket?: string }) => {
+  const handleAddShoppingItem = (
+    name: string,
+    listId: string,
+    options?: { price?: number; unitPrice?: number; quantity?: number; aisle?: string; supermarket?: string }
+  ) => {
     if (!activeGroup) return
     const item: ShoppingItem = {
       id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `shop_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
@@ -894,7 +902,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       listId,
       groupId: activeGroup.id,
       price: options?.price,
+      unitPrice: options?.unitPrice,
+      quantity: options?.quantity,
+      aisle: options?.aisle,
       supermarket: options?.supermarket,
+      createdAt: new Date().toISOString(),
     }
     addShoppingItemStore(item)
     refreshData()

@@ -117,10 +117,19 @@ export function ShoppingSection({
 
   const [activeListId, setActiveListId] = useState<string>('')
   const [draftName, setDraftName] = useState('')
+  const [draftQuantity, setDraftQuantity] = useState('1')
+  const [draftUnitPrice, setDraftUnitPrice] = useState('')
   const [draftAisle, setDraftAisle] = useState<AisleCategory | 'varios'>('varios')
-  const [draftPrice, setDraftPrice] = useState<string>('')
   const [draftSupermarket, setDraftSupermarket] = useState<string>('')
   const [showCompleted, setShowCompleted] = useState(true)
+
+  // Real-time automatic total calculation
+  const computedTotal = useMemo(() => {
+    const qty = Math.max(1, parseInt(draftQuantity, 10) || 1)
+    const unitP = draftUnitPrice.trim() ? parseFloat(draftUnitPrice.replace(',', '.')) : 0
+    if (isNaN(unitP) || unitP <= 0) return 0
+    return Math.round(qty * unitP * 100) / 100
+  }, [draftQuantity, draftUnitPrice])
 
   // Modals
   const [isCreatingList, setIsCreatingList] = useState(false)
@@ -184,14 +193,14 @@ export function ShoppingSection({
     }
   }, [currentItems])
 
-  // Group pending items by aisle
+  // Group pending items by aisle (respecting manually assigned category first)
   const pendingByAisle = useMemo(() => {
     const map = new Map<AisleCategory, typeof currentItems>()
     AISLES.forEach((a) => map.set(a.id, []))
 
     pendingItems.forEach((item) => {
-      const aisle = detectAisle(item.name)
-      const list = map.get(aisle) || []
+      const aisle = (item.aisle as AisleCategory) || detectAisle(item.name)
+      const list = map.get(aisle) || map.get('otros') || []
       list.push(item)
       map.set(aisle, list)
     })
@@ -199,22 +208,28 @@ export function ShoppingSection({
     return Array.from(map.entries()).filter(([_, items]) => items.length > 0)
   }, [pendingItems])
 
-  // Add Item with optional price and supermarket
+  // Add Item with quantity, unit price, and real-time calculated total
   function handleAddItem() {
     const name = draftName.trim()
     if (!name || !activeList) return
 
-    const parsedPrice = draftPrice.trim() ? parseFloat(draftPrice.replace(',', '.')) : undefined
-    const validPrice = parsedPrice !== undefined && !isNaN(parsedPrice) && parsedPrice >= 0 ? parsedPrice : undefined
-    const supermarket = draftSupermarket.trim() || undefined
+    const qty = Math.max(1, parseInt(draftQuantity, 10) || 1)
+    const parsedUnitPrice = draftUnitPrice.trim() ? parseFloat(draftUnitPrice.replace(',', '.')) : undefined
+    const validUnitPrice = parsedUnitPrice !== undefined && !isNaN(parsedUnitPrice) && parsedUnitPrice >= 0 ? parsedUnitPrice : undefined
+    const totalP = validUnitPrice !== undefined ? Math.round(qty * validUnitPrice * 100) / 100 : undefined
+    const chosenAisle = draftAisle !== 'varios' ? draftAisle : detectAisle(name)
 
     addShoppingItem(name, activeList.id, {
-      price: validPrice,
-      supermarket,
+      quantity: qty,
+      unitPrice: validUnitPrice,
+      price: totalP,
+      aisle: chosenAisle,
+      supermarket: draftSupermarket.trim() || undefined,
     })
 
     setDraftName('')
-    setDraftPrice('')
+    setDraftQuantity('1')
+    setDraftUnitPrice('')
     setDraftSupermarket('')
     setDraftAisle('varios')
     toast(`"${name}" añadido a ${activeList.name}`, '🛒')
@@ -430,44 +445,78 @@ export function ShoppingSection({
           </div>
 
           {/* Quick Add Product Bar */}
-          <div className="flex flex-col gap-2 pt-2 border-t border-border/50">
-            <div className="flex gap-2">
-              <div className="relative flex-1">
+          <div className="flex flex-col gap-2.5 pt-2 border-t border-border/50">
+            <div className="grid grid-cols-1 sm:grid-cols-12 gap-2">
+              <div className="sm:col-span-6 relative">
                 <input
                   value={draftName}
                   onChange={(e) => setDraftName(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') handleAddItem()
                   }}
-                  placeholder="Añadir producto... (ej: Leche 1.20)"
-                  className="w-full rounded-xl border border-border bg-secondary/30 py-2 pl-3 pr-8 text-xs font-semibold text-foreground outline-none focus:border-primary focus:bg-card"
+                  placeholder="Producto... (ej: Leche entera)"
+                  className="w-full rounded-xl border border-border bg-secondary/30 py-2 px-3 text-xs font-semibold text-foreground outline-none focus:border-primary focus:bg-card"
                 />
               </div>
 
-              <div className="w-20 sm:w-24">
-                <input
-                  type="number"
-                  step="any"
-                  value={draftPrice}
-                  onChange={(e) => setDraftPrice(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleAddItem()
-                  }}
-                  placeholder="Precio €"
-                  className="w-full rounded-xl border border-border bg-secondary/30 py-2 px-2.5 text-xs font-semibold text-foreground outline-none focus:border-primary focus:bg-card"
-                />
+              <div className="grid grid-cols-2 sm:col-span-4 gap-2">
+                <div className="relative">
+                  <input
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={draftQuantity}
+                    onChange={(e) => setDraftQuantity(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleAddItem()
+                    }}
+                    placeholder="Cant."
+                    className="w-full rounded-xl border border-border bg-secondary/30 py-2 pl-2.5 pr-7 text-xs font-semibold text-foreground outline-none focus:border-primary focus:bg-card"
+                  />
+                  <span className="absolute right-2 top-2 text-[10px] font-bold text-muted-foreground pointer-events-none">
+                    uds
+                  </span>
+                </div>
+
+                <div className="relative">
+                  <input
+                    type="number"
+                    step="any"
+                    value={draftUnitPrice}
+                    onChange={(e) => setDraftUnitPrice(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleAddItem()
+                    }}
+                    placeholder="€/ud"
+                    className="w-full rounded-xl border border-border bg-secondary/30 py-2 px-2.5 text-xs font-semibold text-foreground outline-none focus:border-primary focus:bg-card"
+                  />
+                </div>
               </div>
 
-              <button
-                type="button"
-                onClick={handleAddItem}
-                disabled={!draftName.trim()}
-                className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 text-xs font-bold transition-all active:scale-95 disabled:opacity-50 flex items-center gap-1 shadow-sm"
-              >
-                <Plus className="size-3.5 stroke-[2.5]" />
-                <span className="hidden sm:inline">Añadir</span>
-              </button>
+              <div className="sm:col-span-2 flex items-center justify-end">
+                <button
+                  type="button"
+                  onClick={handleAddItem}
+                  disabled={!draftName.trim()}
+                  className="w-full rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 text-xs font-bold transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-1 shadow-sm"
+                >
+                  <Plus className="size-3.5 stroke-[2.5]" />
+                  <span>Añadir</span>
+                </button>
+              </div>
             </div>
+
+            {/* Real-Time Total Indicator */}
+            {computedTotal > 0 && (
+              <div className="flex items-center justify-between px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs animate-fade-in">
+                <span className="text-muted-foreground font-semibold">
+                  Cálculo: <span className="text-foreground">{Math.max(1, parseInt(draftQuantity, 10) || 1)} uds</span> × <span className="text-foreground">{parseFloat(draftUnitPrice.replace(',', '.')).toFixed(2).replace('.', ',')} €/ud</span>
+                </span>
+                <span className="font-black text-emerald-400">
+                  Total: {computedTotal.toFixed(2).replace('.', ',')} €
+                </span>
+              </div>
+            )}
 
             {/* Quick Aisles & Supermarket Presets */}
             <div className="flex flex-col gap-1.5 pt-1">
@@ -564,11 +613,21 @@ export function ShoppingSection({
                             <Check className="size-3.5 text-transparent" />
                           </span>
                           <div className="flex flex-wrap items-center gap-2 min-w-0">
+                            {it.quantity && it.quantity > 1 && (
+                              <span className="inline-flex items-center px-1.5 py-0.2 rounded-md bg-emerald-500/15 border border-emerald-500/30 text-[10px] font-black text-emerald-400">
+                                {it.quantity}x
+                              </span>
+                            )}
                             <span className="text-xs sm:text-sm font-bold text-foreground truncate">{it.name}</span>
                             {it.supermarket && (
                               <span className="inline-flex items-center gap-1 rounded-lg bg-white/5 border border-white/10 px-2 py-0.5 text-[11px] font-medium text-slate-300">
                                 <Store className="size-2.5 text-slate-400" />
                                 <span>{it.supermarket}</span>
+                              </span>
+                            )}
+                            {it.unitPrice !== undefined && it.quantity && it.quantity > 1 && (
+                              <span className="text-[10px] text-muted-foreground font-medium">
+                                ({Number(it.unitPrice).toFixed(2).replace('.', ',')} €/ud)
                               </span>
                             )}
                             {it.price !== undefined && it.price !== null && !isNaN(Number(it.price)) && (
@@ -624,6 +683,11 @@ export function ShoppingSection({
                             <Check className="size-3.5" strokeWidth={3} />
                           </span>
                           <div className="flex flex-wrap items-center gap-2 min-w-0">
+                            {it.quantity && it.quantity > 1 && (
+                              <span className="inline-flex items-center px-1.5 py-0.2 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-black text-emerald-400/80">
+                                {it.quantity}x
+                              </span>
+                            )}
                             <span className="text-xs font-semibold text-muted-foreground line-through truncate">
                               {it.name}
                             </span>

@@ -263,7 +263,11 @@ export interface ShoppingItem {
   listId: string
   groupId: string
   price?: number
+  unitPrice?: number
+  quantity?: number
+  aisle?: string
   supermarket?: string
+  createdAt?: string
 }
 
 const SHOPPING_LISTS_KEY = 'usytask_shopping_lists_v2'
