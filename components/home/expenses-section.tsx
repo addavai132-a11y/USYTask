@@ -92,7 +92,12 @@ export function ExpensesSection() {
       return
     }
 
-    const memberIds = selectedMemberIds.length > 0 ? selectedMemberIds : [members[0]?.id || '']
+    if (selectedMemberIds.length === 0) {
+      toast('Debes seleccionar al menos un integrante que asumió o pagó el gasto', '⚠️')
+      return
+    }
+
+    const memberIds = selectedMemberIds
     const customCat = category === 'otros' && customCategoryInput.trim() ? customCategoryInput.trim() : undefined
 
     if (editingId) {
@@ -353,12 +358,19 @@ export function ExpensesSection() {
                 </div>
               </div>
 
-              <MemberMultiSelect
-                members={members}
-                selectedIds={selectedMemberIds}
-                onChange={setSelectedMemberIds}
-                label="Pagado por (integrantes)"
-              />
+              <div>
+                <MemberMultiSelect
+                  members={members}
+                  selectedIds={selectedMemberIds}
+                  onChange={setSelectedMemberIds}
+                  label="Pagado por (integrantes) *"
+                />
+                {selectedMemberIds.length === 0 && (
+                  <p className="text-[11px] font-semibold text-rose-500 mt-1">
+                    * Debes seleccionar al menos un integrante
+                  </p>
+                )}
+              </div>
 
               <div className="flex gap-2 justify-end pt-2">
                 <button
@@ -370,8 +382,9 @@ export function ExpensesSection() {
                 </button>
                 <button
                   type="button"
+                  disabled={!title.trim() || !amount.trim() || selectedMemberIds.length === 0}
                   onClick={handleSave}
-                  className="rounded-xl bg-emerald-600 hover:bg-emerald-700 dark:bg-purple-600 dark:hover:bg-purple-500 px-4 py-2 text-xs font-bold text-white shadow-sm transition-all active:scale-95"
+                  className="rounded-xl bg-emerald-600 hover:bg-emerald-700 dark:bg-purple-600 dark:hover:bg-purple-500 disabled:opacity-40 disabled:pointer-events-none px-4 py-2 text-xs font-bold text-white shadow-sm transition-all active:scale-95"
                 >
                   Guardar
                 </button>

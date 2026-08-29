@@ -131,6 +131,10 @@ export function TasksSection({
   function handleCreateCategory() {
     const name = newCatName.trim()
     if (!name) return
+    if (selectedMemberIds.length === 0) {
+      toast('Debes asignar al menos un integrante a la categoría', '⚠️')
+      return
+    }
     addTaskCategory(name, selectedMemberIds)
     setNewCatName('')
     setIsCreatingCategory(false)
@@ -862,12 +866,19 @@ export function TasksSection({
             />
           </div>
 
-          <MemberMultiSelect
-            members={members}
-            selectedIds={selectedMemberIds}
-            onChange={setSelectedMemberIds}
-            label="Integrantes asignados a esta categoría"
-          />
+          <div>
+            <MemberMultiSelect
+              members={members}
+              selectedIds={selectedMemberIds}
+              onChange={setSelectedMemberIds}
+              label="Integrantes asignados a esta categoría *"
+            />
+            {selectedMemberIds.length === 0 && (
+              <p className="text-[11px] font-semibold text-rose-500 mt-1">
+                * Debes asignar al menos un integrante
+              </p>
+            )}
+          </div>
 
           <div className="mt-3 flex items-center justify-end gap-2.5 pt-2 border-t border-border/40">
             <button
@@ -883,8 +894,8 @@ export function TasksSection({
             <button
               type="button"
               onClick={handleCreateCategory}
-              disabled={!newCatName.trim()}
-              className="rounded-2xl bg-primary px-5 py-2.5 text-xs font-bold text-primary-foreground shadow-soft transition-transform active:scale-[0.98] disabled:opacity-40"
+              disabled={!newCatName.trim() || selectedMemberIds.length === 0}
+              className="rounded-2xl bg-primary px-5 py-2.5 text-xs font-bold text-primary-foreground shadow-soft transition-transform active:scale-[0.98] disabled:opacity-40 disabled:pointer-events-none"
             >
               Crear categoría
             </button>

@@ -1151,15 +1151,35 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // --- Finance Mutations ---
   const handleAddIncome = (data: Omit<Income, 'id' | 'groupId'>) => {
     if (!activeGroup) return
+    const numAmount = typeof data.amount === 'number' ? data.amount : parseFloat(String(data.amount).replace(',', '.'))
+    if (isNaN(numAmount) || numAmount <= 0) return
+    const memberIds = data.memberIds && data.memberIds.length > 0
+      ? data.memberIds
+      : data.memberId ? [data.memberId] : []
+    if (memberIds.length === 0) return
+
     const uniqueId = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `inc_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
-    addIncomeStore({ ...data, id: uniqueId, groupId: activeGroup.id, createdAt: new Date().toISOString() })
+    addIncomeStore({
+      ...data,
+      id: uniqueId,
+      groupId: activeGroup.id,
+      amount: numAmount,
+      memberId: memberIds[0],
+      memberIds,
+      createdAt: new Date().toISOString(),
+    })
     refreshData()
     bump()
   }
 
   const handleUpdateIncome = (income: Income) => {
     if (!activeGroup) return
-    updateIncomeStore(income)
+    const numAmount = typeof income.amount === 'number' ? income.amount : parseFloat(String(income.amount).replace(',', '.'))
+    if (isNaN(numAmount) || numAmount <= 0) return
+    updateIncomeStore({
+      ...income,
+      amount: numAmount,
+    })
     refreshData()
     bump()
   }
@@ -1173,15 +1193,35 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const handleAddExpense = (data: Omit<Expense, 'id' | 'groupId'>) => {
     if (!activeGroup) return
+    const numAmount = typeof data.amount === 'number' ? data.amount : parseFloat(String(data.amount).replace(',', '.'))
+    if (isNaN(numAmount) || numAmount <= 0) return
+    const memberIds = data.paidByMemberIds && data.paidByMemberIds.length > 0
+      ? data.paidByMemberIds
+      : data.paidByMemberId ? [data.paidByMemberId] : []
+    if (memberIds.length === 0) return
+
     const uniqueId = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `exp_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
-    addExpenseStore({ ...data, id: uniqueId, groupId: activeGroup.id, createdAt: new Date().toISOString() })
+    addExpenseStore({
+      ...data,
+      id: uniqueId,
+      groupId: activeGroup.id,
+      amount: numAmount,
+      paidByMemberId: memberIds[0],
+      paidByMemberIds: memberIds,
+      createdAt: new Date().toISOString(),
+    })
     refreshData()
     bump()
   }
 
   const handleUpdateExpense = (expense: Expense) => {
     if (!activeGroup) return
-    updateExpenseStore(expense)
+    const numAmount = typeof expense.amount === 'number' ? expense.amount : parseFloat(String(expense.amount).replace(',', '.'))
+    if (isNaN(numAmount) || numAmount <= 0) return
+    updateExpenseStore({
+      ...expense,
+      amount: numAmount,
+    })
     refreshData()
     bump()
   }

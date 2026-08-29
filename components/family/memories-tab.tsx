@@ -148,6 +148,11 @@ export function MemoriesTab() {
       return
     }
 
+    if (taggedMemberIds.length === 0) {
+      toast('Debes seleccionar al menos un integrante protagonista del recuerdo', '⚠️')
+      return
+    }
+
     setIsUploading(true)
     let uploadedImageUrl: string | undefined = undefined
 
@@ -521,12 +526,19 @@ export function MemoriesTab() {
           </div>
 
           {/* Integrantes Protagonistas */}
-          <MemberMultiSelect
-            members={members}
-            selectedIds={taggedMemberIds}
-            onChange={setTaggedMemberIds}
-            label="Integrantes protagonistas"
-          />
+          <div>
+            <MemberMultiSelect
+              members={members}
+              selectedIds={taggedMemberIds}
+              onChange={setTaggedMemberIds}
+              label="Integrantes protagonistas *"
+            />
+            {taggedMemberIds.length === 0 && (
+              <p className="text-[11px] font-semibold text-rose-500 mt-1">
+                * Debes seleccionar al menos un integrante
+              </p>
+            )}
+          </div>
 
           {/* Botones de Acción */}
           <div className="mt-2 flex gap-2 justify-end">
@@ -540,9 +552,9 @@ export function MemoriesTab() {
             </button>
             <button
               type="button"
-              disabled={isUploading || !title.trim()}
+              disabled={isUploading || !title.trim() || taggedMemberIds.length === 0}
               onClick={handleCreateMemory}
-              className="flex items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white px-5 py-2 text-xs font-bold shadow-sm transition-all active:scale-95 dark:bg-purple-600 dark:hover:bg-purple-500"
+              className="flex items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 disabled:pointer-events-none text-white px-5 py-2 text-xs font-bold shadow-sm transition-all active:scale-95 dark:bg-purple-600 dark:hover:bg-purple-500"
             >
               {isUploading ? (
                 <>

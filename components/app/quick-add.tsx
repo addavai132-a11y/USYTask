@@ -115,19 +115,21 @@ export function QuickAdd() {
       return
     }
 
-    const assigned = taskMembers.length > 0
-      ? taskMembers
-      : [currentMember?.id || members[0]?.id || 'usr_default']
+    if (taskMembers.length === 0) {
+      setShowErrors(true)
+      toast('Debes seleccionar al menos un integrante para la tarea', '⚠️')
+      return
+    }
 
     addTask(
       title,
       parseInt(taskPoints) || 10,
-      assigned[0],
+      taskMembers[0],
       quickAddDefaultSection || 'familia',
       'medium',
       taskDueDate || undefined,
       taskDueTime || undefined,
-      assigned
+      taskMembers
     )
     toast('Tarea creada correctamente', '✅')
     resetForms()
@@ -142,9 +144,11 @@ export function QuickAdd() {
       return
     }
 
-    const assigned = eventMembers.length > 0
-      ? eventMembers
-      : [currentMember?.id || members[0]?.id || 'usr_default']
+    if (eventMembers.length === 0) {
+      setShowErrors(true)
+      toast('Debes seleccionar al menos un integrante para el evento', '⚠️')
+      return
+    }
 
     const finalCat = eventCategory === 'Otros' && eventCustomCategory.trim() ? (eventCustomCategory.trim() as EventCategory) : (eventCategory as EventCategory)
     addEvent(
@@ -152,7 +156,7 @@ export function QuickAdd() {
       eventDate || getTodayISO(),
       eventTime || undefined,
       finalCat,
-      assigned,
+      eventMembers,
       eventLocation || undefined
     )
     toast('Evento creado correctamente', '📅')
@@ -166,6 +170,13 @@ export function QuickAdd() {
       toast('Por favor, rellena los campos obligatorios', '❌')
       return
     }
+
+    if (reminderMembers.length === 0) {
+      setShowErrors(true)
+      toast('Debes seleccionar al menos un integrante para el recordatorio', '⚠️')
+      return
+    }
+
     addReminder(reminderTitle.trim(), reminderDate, reminderMembers, reminderTime || undefined)
     toast('Recordatorio creado correctamente', '🔔')
     resetForms()
@@ -323,8 +334,9 @@ export function QuickAdd() {
             </button>
             <button
               type="button"
+              disabled={!taskTitle.trim() || taskMembers.length === 0}
               onClick={handleSaveTask}
-              className="flex-1 sm:flex-initial rounded-2xl bg-primary px-6 py-3 text-xs sm:text-sm font-bold text-primary-foreground shadow-soft transition-transform active:scale-[0.98]"
+              className="flex-1 sm:flex-initial rounded-2xl bg-primary disabled:opacity-40 disabled:pointer-events-none px-6 py-3 text-xs sm:text-sm font-bold text-primary-foreground shadow-soft transition-transform active:scale-[0.98]"
             >
               Crear tarea
             </button>
@@ -434,8 +446,9 @@ export function QuickAdd() {
             </button>
             <button
               type="button"
+              disabled={!eventTitle.trim() || eventMembers.length === 0}
               onClick={handleSaveEvent}
-              className="flex-1 sm:flex-initial rounded-2xl bg-primary px-6 py-3 text-xs sm:text-sm font-bold text-primary-foreground shadow-soft transition-transform active:scale-[0.98]"
+              className="flex-1 sm:flex-initial rounded-2xl bg-primary disabled:opacity-40 disabled:pointer-events-none px-6 py-3 text-xs sm:text-sm font-bold text-primary-foreground shadow-soft transition-transform active:scale-[0.98]"
             >
               Crear evento
             </button>
@@ -488,12 +501,19 @@ export function QuickAdd() {
             </div>
           </div>
 
-          <MemberMultiSelect
-            members={members}
-            selectedIds={reminderMembers}
-            onChange={setReminderMembers}
-            label="Asignar miembros (opcional)"
-          />
+          <div>
+            <MemberMultiSelect
+              members={members}
+              selectedIds={reminderMembers}
+              onChange={setReminderMembers}
+              label="Asignar integrantes *"
+            />
+            {reminderMembers.length === 0 && (
+              <p className="text-[11px] font-semibold text-rose-500 mt-1">
+                * Debes seleccionar al menos un integrante
+              </p>
+            )}
+          </div>
 
           <div className="mt-3 flex items-center justify-end gap-2.5 pt-2 border-t border-border/40">
             <button
@@ -508,8 +528,9 @@ export function QuickAdd() {
             </button>
             <button
               type="button"
+              disabled={!reminderTitle.trim() || !reminderDate || reminderMembers.length === 0}
               onClick={handleSaveReminder}
-              className="flex-1 sm:flex-initial rounded-2xl bg-primary px-6 py-3 text-xs sm:text-sm font-bold text-primary-foreground shadow-soft transition-transform active:scale-[0.98]"
+              className="flex-1 sm:flex-initial rounded-2xl bg-primary disabled:opacity-40 disabled:pointer-events-none px-6 py-3 text-xs sm:text-sm font-bold text-primary-foreground shadow-soft transition-transform active:scale-[0.98]"
             >
               Crear recordatorio
             </button>

@@ -61,7 +61,10 @@ export function ChallengesTab() {
       return
     }
 
-    const assigned = assignedMemberIds.length > 0 ? assignedMemberIds : members.map((m) => m.id)
+    if (assignedMemberIds.length === 0) {
+      toast('Debes seleccionar al menos un integrante participante para el reto', '⚠️')
+      return
+    }
 
     addFamilyChallenge({
       title: cleanTitle,
@@ -70,7 +73,7 @@ export function ChallengesTab() {
       targetDays: Math.max(1, Number(targetDays) || 7),
       currentDays: 0,
       rewardPoints: Math.max(10, Number(rewardPoints) || 100),
-      assignedMemberIds: assigned,
+      assignedMemberIds,
       status: 'en_progreso',
     })
     setIsCreating(false)
@@ -344,12 +347,19 @@ export function ChallengesTab() {
             </div>
           </div>
 
-          <MemberMultiSelect
-            members={members}
-            selectedIds={assignedMemberIds}
-            onChange={setAssignedMemberIds}
-            label="Integrantes participantes"
-          />
+          <div>
+            <MemberMultiSelect
+              members={members}
+              selectedIds={assignedMemberIds}
+              onChange={setAssignedMemberIds}
+              label="Integrantes participantes *"
+            />
+            {assignedMemberIds.length === 0 && (
+              <p className="text-[11px] font-semibold text-rose-400 mt-1">
+                * Debes seleccionar al menos un integrante
+              </p>
+            )}
+          </div>
 
           <div className="mt-2 flex gap-2 justify-end">
             <button
@@ -361,8 +371,9 @@ export function ChallengesTab() {
             </button>
             <button
               type="button"
+              disabled={!title.trim() || assignedMemberIds.length === 0}
               onClick={handleCreateChallenge}
-              className="rounded-xl bg-emerald-600 hover:bg-emerald-700 px-5 py-2 text-xs font-bold text-white shadow-sm transition-all active:scale-95"
+              className="rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 disabled:pointer-events-none px-5 py-2 text-xs font-bold text-white shadow-sm transition-all active:scale-95"
             >
               Guardar reto
             </button>
