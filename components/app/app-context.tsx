@@ -427,8 +427,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const aEvents: CalendarEvent[] = []
       const cEvents: CalendarEvent[] = []
       for (const e of allEvents) {
-        const eventTime = new Date(`${e.date}T${e.time}`).getTime()
-        if (now - eventTime > THIRTY_MINS) {
+        const timeStr = e.time || '00:00'
+        const eventTime = new Date(`${e.date}T${timeStr}`).getTime()
+        if (!isNaN(eventTime) && now - eventTime > THIRTY_MINS) {
           aEvents.push(e)
         } else {
           cEvents.push(e)

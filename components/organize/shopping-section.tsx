@@ -130,16 +130,17 @@ export function ShoppingSection({
 
   // Sync activeListId
   useEffect(() => {
-    if (shoppingLists.length > 0) {
-      if (!activeListId || !shoppingLists.some((l) => l.id === activeListId)) {
-        setActiveListId(shoppingLists[0].id)
+    const lists = shoppingLists ?? []
+    if (lists.length > 0) {
+      if (!activeListId || !lists.some((l) => l.id === activeListId)) {
+        setActiveListId(lists[0].id)
       }
     } else {
       setActiveListId('')
     }
   }, [shoppingLists, activeListId])
 
-  const activeList = shoppingLists.find((l) => l.id === activeListId) || shoppingLists[0]
+  const activeList = (shoppingLists ?? []).find((l) => l.id === activeListId) || (shoppingLists ?? [])[0]
 
   // Filter items in current list
   const currentItems = useMemo(() => {

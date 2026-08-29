@@ -189,12 +189,13 @@ export function CalendarSection({
     const items: CalendarItem[] = []
 
     // 1. Tasks with date
-    tasks.forEach((t) => {
+    ;(tasks ?? []).forEach((t) => {
+      if (!t) return
       const date = todayISO
       items.push({
         id: `tk-${t.id}`,
         rawId: t.id,
-        title: t.title,
+        title: t.title || 'Tarea',
         date,
         time: '09:00',
         kind: 'task',
@@ -206,11 +207,12 @@ export function CalendarSection({
     })
 
     // 2. Events
-    events.forEach((e) => {
+    ;(events ?? []).forEach((e) => {
+      if (!e) return
       items.push({
         id: `ev-${e.id}`,
         rawId: e.id,
-        title: e.title,
+        title: e.title || 'Evento',
         date: e.date,
         time: e.time || '00:00',
         kind: 'event',
@@ -221,11 +223,12 @@ export function CalendarSection({
     })
 
     // 3. Reminders
-    reminders.forEach((r) => {
+    ;(reminders ?? []).forEach((r) => {
+      if (!r) return
       items.push({
         id: `rm-${r.id}`,
         rawId: r.id,
-        title: r.title,
+        title: r.title || 'Recordatorio',
         date: r.dueDate,
         time: '08:00',
         kind: 'reminder',
@@ -235,8 +238,8 @@ export function CalendarSection({
     })
 
     // 4. Daily Menus
-    dailyMenus.forEach((m) => {
-      if (m.date) {
+    ;(dailyMenus ?? []).forEach((m) => {
+      if (m?.date) {
         items.push({
           id: `ml-${m.id}`,
           rawId: m.id,

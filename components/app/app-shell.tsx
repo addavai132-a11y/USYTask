@@ -89,20 +89,25 @@ function AuthGate({ children }: { children: React.ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_OUT') {
-        if (isMounted) {
-          setChecked(false)
-          router.replace('/')
+      try {
+        if (event === 'SIGNED_OUT') {
+          const local = getStoredSession()
+          if (!local && !isDevModeActive() && isMounted) {
+            setChecked(false)
+            router.replace('/')
+          }
+        } else if (session?.user) {
+          await getActiveUserSession()
+          if (isMounted) setChecked(true)
         }
-      } else if (session?.user) {
-        await getActiveUserSession()
-        if (isMounted) setChecked(true)
+      } catch (err) {
+        console.warn('onAuthStateChange error handled:', err)
       }
     })
 
     return () => {
       isMounted = false
-      subscription.unsubscribe()
+      subscription?.unsubscribe?.()
     }
   }, [router])
 

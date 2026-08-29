@@ -51,10 +51,10 @@ export function EventsBoard() {
 
   // Eventos de hoy en adelante, ordenados cronológicamente
   const upcomingEvents = useMemo(() => {
-    return events
-      .filter((e) => e.date >= today)
+    return (events ?? [])
+      .filter((e) => e?.date && e.date >= today)
       .sort((a, b) => {
-        const dateDiff = a.date.localeCompare(b.date)
+        const dateDiff = (a.date || '').localeCompare(b.date || '')
         if (dateDiff !== 0) return dateDiff
         return (a.time || '00:00').localeCompare(b.time || '00:00')
       })

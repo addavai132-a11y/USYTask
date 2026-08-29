@@ -161,23 +161,25 @@ export function TasksSection({
 
   // Filtered Tasks
   const baseTasksList = useMemo(() => {
-    if (tab === 'recurrentes') return tasks.filter((t) => t.recurring)
+    const taskList = tasks ?? []
+    if (tab === 'recurrentes') return taskList.filter((t) => t?.recurring)
     if (tab === 'mias') {
-      return tasks.filter(
-        (t) => t.section === 'mias' || (currentMember && t.assignedToMemberId === currentMember.id)
+      return taskList.filter(
+        (t) => t?.section === 'mias' || (currentMember && t?.assignedToMemberId === currentMember.id)
       )
     }
-    return tasks.filter((t) => t.section === tab)
+    return taskList.filter((t) => t?.section === tab)
   }, [tab, tasks, currentMember])
 
   const filteredTasks = useMemo(() => {
-    return baseTasksList.filter((t) => {
+    return (baseTasksList ?? []).filter((t) => {
+      if (!t) return false
       if (memberFilter !== 'all') {
         const memberIds = getTaskMemberIds(t)
         if (!memberIds.includes(memberFilter)) return false
       }
       if (searchQuery) {
-        if (!t.title.toLowerCase().includes(searchQuery.toLowerCase())) return false
+        if (!(t.title || '').toLowerCase().includes(searchQuery.toLowerCase())) return false
       }
       return true
     })
@@ -185,47 +187,49 @@ export function TasksSection({
 
   // Filtered Events
   const filteredEvents = useMemo(() => {
-    return events
+    return (events ?? [])
       .filter((e) => {
+        if (!e) return false
         if (memberFilter !== 'all') {
           const memberIds = getEventMemberIds(e)
           if (!memberIds.includes(memberFilter)) return false
         }
         if (searchQuery) {
-          if (!e.title.toLowerCase().includes(searchQuery.toLowerCase())) return false
+          if (!(e.title || '').toLowerCase().includes(searchQuery.toLowerCase())) return false
         }
         return true
       })
-      .sort((a, b) => new Date(`${a.date}T${a.time}`).getTime() - new Date(`${b.date}T${b.time}`).getTime())
+      .sort((a, b) => new Date(`${a.date}T${a.time || '00:00'}`).getTime() - new Date(`${b.date}T${b.time || '00:00'}`).getTime())
   }, [events, memberFilter, searchQuery])
 
   // Filtered Reminders
   const filteredReminders = useMemo(() => {
-    return reminders
+    return (reminders ?? [])
       .filter((r) => {
+        if (!r) return false
         if (memberFilter !== 'all') {
           const memberIds = getReminderMemberIds(r)
           if (memberIds.length > 0 && !memberIds.includes(memberFilter)) return false
         }
         if (searchQuery) {
-          if (!r.title.toLowerCase().includes(searchQuery.toLowerCase())) return false
+          if (!(r.title || '').toLowerCase().includes(searchQuery.toLowerCase())) return false
         }
         return true
       })
-      .sort((a, b) => a.daysLeft - b.daysLeft)
+      .sort((a, b) => (a.daysLeft ?? 0) - (b.daysLeft ?? 0))
   }, [reminders, memberFilter, searchQuery])
 
   const doneCount = useMemo(() => {
-    const allGroupTasks = [...tasks, ...archivedTasks]
+    const allGroupTasks = [...(tasks ?? []), ...(archivedTasks ?? [])]
     if (tab === 'mias') {
       return allGroupTasks.filter(
-        (t) => t.completed && currentMember && t.assignedToMemberId === currentMember.id
+        (t) => t?.completed && currentMember && t?.assignedToMemberId === currentMember.id
       ).length
     }
     if (tab === 'familia') {
-      return allGroupTasks.filter((t) => t.completed).length
+      return allGroupTasks.filter((t) => t?.completed).length
     }
-    return allGroupTasks.filter((t) => t.completed && t.section === tab).length
+    return allGroupTasks.filter((t) => t?.completed && t?.section === tab).length
   }, [tab, tasks, archivedTasks, currentMember])
 
   // Combined Activities for "Todas"

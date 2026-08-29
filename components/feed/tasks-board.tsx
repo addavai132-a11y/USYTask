@@ -81,17 +81,17 @@ export function TasksBoard() {
     const list: DisplayTaskItem[] = []
 
     // 1. Tareas regulares
-    tasks.forEach((t) => {
-      // Determinar si es tipo hábito o tarea regular
-      const isHabit = t.title.toLowerCase().includes('lavar') ||
-        t.title.toLowerCase().includes('ordenar') ||
-        t.title.toLowerCase().includes('comprar') ||
-        t.title.toLowerCase().includes('limpiar')
+    ;(tasks ?? []).forEach((t) => {
+      if (!t) return
+      const isHabit = (t.title || '').toLowerCase().includes('lavar') ||
+        (t.title || '').toLowerCase().includes('ordenar') ||
+        (t.title || '').toLowerCase().includes('comprar') ||
+        (t.title || '').toLowerCase().includes('limpiar')
 
       list.push({
         id: `task-${t.id}`,
         rawId: t.id,
-        title: t.title,
+        title: t.title || 'Tarea',
         type: isHabit ? 'habit' : 'task',
         dueDate: t.dueDate || today,
         dueTime: t.dueTime,
@@ -104,11 +104,12 @@ export function TasksBoard() {
     })
 
     // 2. Recordatorios
-    reminders.forEach((r) => {
+    ;(reminders ?? []).forEach((r) => {
+      if (!r) return
       list.push({
         id: `rem-${r.id}`,
         rawId: r.id,
-        title: r.title,
+        title: r.title || 'Recordatorio',
         type: 'reminder',
         dueDate: r.dueDate || today,
         dueTime: r.daysLeft === 0 ? 'Hoy' : undefined,

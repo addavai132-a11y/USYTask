@@ -70,8 +70,8 @@ export function FeedScreen() {
   const upcomingItems = useMemo(() => {
     const list: UpcomingItem[] = []
 
-    events
-      .filter((e) => e.date > today)
+    ;(events ?? [])
+      .filter((e) => e?.date && e.date > today)
       .forEach((e) => {
         const diffTime =
           new Date(`${e.date}T00:00:00`).getTime() - new Date(`${today}T00:00:00`).getTime()
@@ -80,7 +80,7 @@ export function FeedScreen() {
           id: `ev-${e.id}`,
           rawId: e.id,
           type: 'event',
-          title: e.title,
+          title: e.title || 'Evento',
           date: e.date,
           time: e.time,
           daysLeft,
@@ -90,22 +90,22 @@ export function FeedScreen() {
         })
       })
 
-    reminders
-      .filter((r) => r.dueDate > today || r.daysLeft > 0)
+    ;(reminders ?? [])
+      .filter((r) => r?.dueDate && (r.dueDate > today || (r.daysLeft ?? 0) > 0))
       .forEach((r) => {
         list.push({
           id: `rem-${r.id}`,
           rawId: r.id,
           type: 'reminder',
-          title: r.title,
+          title: r.title || 'Recordatorio',
           date: r.dueDate,
-          daysLeft: r.daysLeft > 0 ? r.daysLeft : 1,
+          daysLeft: (r.daysLeft ?? 0) > 0 ? r.daysLeft : 1,
           memberIds: getReminderMemberIds(r),
         })
       })
 
     return list.sort((a, b) => {
-      const dateDiff = a.date.localeCompare(b.date)
+      const dateDiff = (a.date || '').localeCompare(b.date || '')
       if (dateDiff !== 0) return dateDiff
       return (a.time || '00:00').localeCompare(b.time || '00:00')
     })
@@ -113,7 +113,7 @@ export function FeedScreen() {
 
   // Leaderboard ordenado por puntos
   const leaderboard = useMemo(
-    () => [...members].sort((a, b) => (b.points || 0) - (a.points || 0)),
+    () => [...(members ?? [])].sort((a, b) => (b.points || 0) - (a.points || 0)),
     [members]
   )
 
