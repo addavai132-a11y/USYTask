@@ -110,13 +110,13 @@ export function EventsSection({
       {/* Header Card Glassmorphism Compacto */}
       <div className="w-full flex items-center justify-between p-3.5 px-5 bg-white/[0.03] border border-white/10 rounded-2xl backdrop-blur-xl">
         <div className="flex items-center gap-3">
-          <span className="text-xl font-bold text-white tabular-nums">{sortedEvents.length}</span>
-          <span className="text-xs text-slate-400">eventos programados</span>
+          <span className="text-xl font-bold text-neutral-900 dark:text-white tabular-nums">{sortedEvents.length}</span>
+          <span className="text-xs text-neutral-500">eventos programados</span>
         </div>
 
         <button
           onClick={handleOpenCreatePoll}
-          className="flex items-center gap-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white px-3.5 py-1.5 text-xs font-bold shadow-sm transition-transform active:scale-95"
+          className="flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 text-xs font-bold shadow-sm transition-transform active:scale-95"
         >
           <Vote className="size-3.5" />
           <span>+ Crear encuesta</span>
@@ -130,8 +130,8 @@ export function EventsSection({
           className={cn(
             'rounded-xl px-3 py-1 text-xs font-bold transition-all',
             sectionTab === 'todos'
-              ? 'bg-purple-600 text-white shadow-sm'
-              : 'text-slate-400 hover:text-white'
+              ? 'bg-emerald-600 text-white shadow-sm'
+              : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-white'
           )}
         >
           Todos ({sortedEvents.length + activePollsCount})
@@ -141,8 +141,8 @@ export function EventsSection({
           className={cn(
             'rounded-xl px-3 py-1 text-xs font-bold transition-all',
             sectionTab === 'eventos'
-              ? 'bg-purple-600 text-white shadow-sm'
-              : 'text-slate-400 hover:text-white'
+              ? 'bg-emerald-600 text-white shadow-sm'
+              : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-white'
           )}
         >
           Eventos ({sortedEvents.length})
@@ -152,8 +152,8 @@ export function EventsSection({
           className={cn(
             'rounded-xl px-3 py-1 text-xs font-bold transition-all',
             sectionTab === 'encuestas'
-              ? 'bg-purple-600 text-white shadow-sm'
-              : 'text-slate-400 hover:text-white'
+              ? 'bg-emerald-600 text-white shadow-sm'
+              : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-white'
           )}
         >
           Encuestas ({activePollsCount})
@@ -166,8 +166,8 @@ export function EventsSection({
           {/* Scheduled Events Feed */}
           <div className="flex flex-col gap-3">
             <div className="flex items-center justify-between px-1">
-              <h4 className="text-xs font-black uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                <Calendar className="size-3.5 text-purple-500" />
+              <h4 className="text-xs font-black uppercase tracking-wider text-neutral-500 flex items-center gap-1.5">
+                <Calendar className="size-3.5 text-emerald-600" />
                 Eventos Programados ({sortedEvents.length})
               </h4>
             </div>
@@ -245,13 +245,13 @@ export function EventsSection({
         <>
           {sortedEvents.length === 0 ? (
             <div className="w-full min-h-[200px] sm:min-h-[220px] p-6 flex flex-col items-center justify-center gap-3 bg-white/[0.02] border border-white/10 rounded-2xl text-center">
-              <div className="flex size-10 items-center justify-center rounded-xl bg-purple-500/10 text-purple-400 text-lg">
+              <div className="flex size-10 items-center justify-center rounded-xl bg-slate-100 dark:bg-white/[0.05] text-slate-700 dark:text-slate-300 text-lg">
                 📅
               </div>
               <p className="text-xs text-slate-400 max-w-xs">No hay eventos programados en este grupo.</p>
               <button
                 onClick={() => openQuickAdd('evento', { hideTabs: true })}
-                className="mt-1 rounded-xl bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 text-xs font-bold transition-all active:scale-95 shadow-sm"
+                className="mt-1 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 text-xs font-bold transition-all active:scale-95 shadow-sm"
               >
                 + Añadir evento
               </button>

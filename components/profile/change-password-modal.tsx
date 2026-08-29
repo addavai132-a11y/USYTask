@@ -198,7 +198,7 @@ export function ChangePasswordModal({ isOpen, onClose }: ChangePasswordModalProp
             <button
               type="submit"
               disabled={loading}
-              className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 px-5 py-2.5 text-xs font-bold text-white shadow-lg transition-all active:scale-95 hover:from-purple-500 hover:to-indigo-500 disabled:opacity-50"
+              className="flex items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 dark:bg-gradient-to-r dark:from-purple-600 dark:to-indigo-600 px-5 py-2.5 text-xs font-bold text-white shadow-lg transition-all active:scale-95 disabled:opacity-50"
             >
               {loading && <Loader2 className="size-3.5 animate-spin" />}
               <span>{loading ? 'Guardando...' : 'Actualizar contraseña'}</span>

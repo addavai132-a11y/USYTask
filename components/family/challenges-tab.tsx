@@ -101,7 +101,7 @@ export function ChallengesTab() {
             className={cn(
               'rounded-lg px-3 py-1 text-xs font-bold transition-all',
               filter === 'activos'
-                ? 'bg-purple-600 text-white shadow-sm'
+                ? 'bg-emerald-600 text-white shadow-sm'
                 : 'text-slate-400 hover:text-white'
             )}
           >
@@ -112,7 +112,7 @@ export function ChallengesTab() {
             className={cn(
               'rounded-lg px-3 py-1 text-xs font-bold transition-all',
               filter === 'completados'
-                ? 'bg-purple-600 text-white shadow-sm'
+                ? 'bg-emerald-600 text-white shadow-sm'
                 : 'text-slate-400 hover:text-white'
             )}
           >
@@ -122,7 +122,7 @@ export function ChallengesTab() {
 
         <button
           onClick={handleOpenCreateModal}
-          className="flex items-center gap-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white px-3.5 py-1.5 text-xs font-bold transition-all active:scale-95 shadow-sm"
+          className="flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 text-xs font-bold transition-all active:scale-95 shadow-sm"
         >
           <Plus className="size-3.5" />
           <span>+ Nuevo reto</span>
@@ -138,75 +138,74 @@ export function ChallengesTab() {
               ? 'Sin retos activos en este momento.'
               : 'Aún no hay retos completados.'
           }
-          action={filter === 'activos' ? '+ Crear primer reto' : undefined}
+          action={filter === 'activos' ? '+ Añadir primer reto' : undefined}
           onAction={filter === 'activos' ? handleOpenCreateModal : undefined}
         />
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="flex flex-col gap-3">
           {displayedChallenges.map((c) => {
-            const catInfo = CHALLENGE_CATEGORIES.find((cat) => cat.id === c.category) || CHALLENGE_CATEGORIES[0]
-            const isCheckedToday = c.lastCheckedDate === today
             const isCompleted = c.status === 'completado'
-            const pct = Math.min(100, Math.round((c.currentDays / c.targetDays) * 100))
+            const isCheckedToday = c.lastCheckedDate === today
             const assignedMembers = c.assignedMemberIds.map((id) => getMemberById(id)).filter(Boolean)
 
             return (
               <Card
                 key={c.id}
                 className={cn(
-                  'p-4 bg-white/[0.03] border border-white/10 hover:border-purple-500/30 transition-all rounded-2xl flex flex-col justify-between gap-3 shadow-sm',
-                  isCompleted && 'opacity-75 border-purple-500/20'
+                  'p-4 bg-white/[0.03] border border-white/10 hover:border-emerald-500/30 transition-all rounded-2xl flex flex-col gap-3 shadow-sm',
+                  isCompleted && 'opacity-70'
                 )}
               >
-                <div>
-                  {/* Category & Points header */}
-                  <div className="flex items-center justify-between gap-2 mb-2">
-                    <span className="text-[10px] font-semibold text-slate-300 uppercase tracking-wider px-2 py-0.5 rounded bg-white/[0.04] border border-white/5">
-                      {catInfo.label}
-                    </span>
-
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-purple-300 px-2 py-0.5 rounded-full bg-purple-500/10 border border-purple-500/20 tabular-nums">
-                        +{c.rewardPoints} pts
-                      </span>
-                      <button
-                        onClick={() => handleDelete(c.id, c.title)}
-                        className="rounded-lg p-1 text-slate-400 hover:bg-white/10 hover:text-white transition-colors"
-                        title="Eliminar reto"
-                      >
-                        <Trash2 className="size-3.5" />
-                      </button>
+                {/* Header */}
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-start gap-2.5">
+                    <div className="flex size-9 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shrink-0 mt-0.5">
+                      <Trophy className="size-4" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-bold text-sm text-white tracking-tight leading-snug">
+                          {c.title}
+                        </h4>
+                        <span className="rounded-md bg-white/[0.04] border border-white/10 px-1.5 py-0.5 text-[10px] font-semibold text-slate-300 capitalize">
+                          {c.category}
+                        </span>
+                      </div>
+                      {c.description && (
+                        <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                          {c.description}
+                        </p>
+                      )}
                     </div>
                   </div>
 
-                  {/* Title & Description */}
-                  <h4 className="font-bold text-sm text-white tracking-tight leading-snug">
-                    {c.title}
-                  </h4>
-                  {c.description && (
-                    <p className="mt-1 text-xs text-slate-400 line-clamp-2 leading-relaxed">
-                      {c.description}
-                    </p>
-                  )}
+                  <div className="flex items-center gap-1">
+                    <span className="flex items-center gap-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 text-xs font-bold text-emerald-300 tabular-nums">
+                      +{c.rewardPoints} pts
+                    </span>
+                    <button
+                      onClick={() => handleDelete(c.id, c.title)}
+                      className="rounded-lg p-1 text-slate-400 hover:bg-white/10 hover:text-white transition-colors"
+                      title="Eliminar reto"
+                    >
+                      <Trash2 className="size-3.5" />
+                    </button>
+                  </div>
                 </div>
 
-                {/* Progress & Actions Footer */}
-                <div className="space-y-2 pt-2 border-t border-white/5">
-                  <div className="flex items-center justify-between text-[11px] font-medium text-slate-400">
-                    <span>
-                      Progreso: <strong className="text-white">{c.currentDays}</strong> de {c.targetDays} días
+                {/* Progress Bar & Members */}
+                <div className="space-y-2 pt-1 border-t border-white/5">
+                  <div className="flex items-center justify-between text-xs font-bold">
+                    <span className="text-slate-400">Progreso:</span>
+                    <span className="text-emerald-300 tabular-nums">
+                      {c.currentDays} / {c.targetDays} días ({Math.round((c.currentDays / c.targetDays) * 100)}%)
                     </span>
-                    <span className="font-bold text-purple-300">{pct}%</span>
                   </div>
 
-                  <div className="w-full bg-white/[0.05] rounded-full h-1.5 overflow-hidden">
-                    <div
-                      className="h-full bg-purple-500 rounded-full transition-all duration-300"
-                      style={{ width: `${pct}%` }}
-                    />
-                  </div>
+                  <ProgressBar value={c.currentDays} max={c.targetDays} className="h-2" />
 
-                  <div className="flex items-center justify-between gap-2 pt-1">
+                  {/* Footer Row */}
+                  <div className="flex items-center justify-between gap-2 pt-1 text-xs">
                     <div className="flex items-center -space-x-1.5">
                       {assignedMembers.map((m) => (
                         <div key={m!.id} title={m!.name}>
@@ -223,7 +222,7 @@ export function ChallengesTab() {
                           'flex items-center gap-1 rounded-xl px-3 py-1.5 text-xs font-bold transition-all',
                           isCheckedToday
                             ? 'bg-white/[0.04] text-slate-400 border border-white/5 cursor-not-allowed'
-                            : 'bg-purple-600 hover:bg-purple-500 text-white shadow-sm active:scale-95'
+                            : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm active:scale-95'
                         )}
                       >
                         <CheckCircle2 className="size-3.5" />
@@ -253,7 +252,7 @@ export function ChallengesTab() {
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Ej. Caminar 30 min, Leer 10 páginas, Ordenar habitación..."
               autoFocus
-              className="w-full rounded-xl border border-white/10 bg-white/[0.04] py-2.5 px-3 text-xs font-medium text-white outline-none focus:border-purple-500"
+              className="w-full rounded-xl border border-white/10 bg-white/[0.04] py-2.5 px-3 text-xs font-medium text-white outline-none focus:border-emerald-500"
             />
           </div>
 
@@ -264,7 +263,7 @@ export function ChallengesTab() {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Detalles sobre cómo conseguirlo..."
-              className="w-full rounded-xl border border-white/10 bg-white/[0.04] py-2 px-3 text-xs font-medium text-white outline-none focus:border-purple-500 resize-none"
+              className="w-full rounded-xl border border-white/10 bg-white/[0.04] py-2 px-3 text-xs font-medium text-white outline-none focus:border-emerald-500 resize-none"
             />
           </div>
 
@@ -277,7 +276,7 @@ export function ChallengesTab() {
                 max={365}
                 value={targetDays}
                 onChange={(e) => setTargetDays(Math.max(1, parseInt(e.target.value, 10) || 1))}
-                className="w-full rounded-xl border border-white/10 bg-white/[0.04] py-2 px-3 text-xs font-medium text-white outline-none focus:border-purple-500"
+                className="w-full rounded-xl border border-white/10 bg-white/[0.04] py-2 px-3 text-xs font-medium text-white outline-none focus:border-emerald-500"
               />
             </div>
 
@@ -289,7 +288,7 @@ export function ChallengesTab() {
                 step={10}
                 value={rewardPoints}
                 onChange={(e) => setRewardPoints(Math.max(10, parseInt(e.target.value, 10) || 10))}
-                className="w-full rounded-xl border border-white/10 bg-white/[0.04] py-2 px-3 text-xs font-medium text-white outline-none focus:border-purple-500"
+                className="w-full rounded-xl border border-white/10 bg-white/[0.04] py-2 px-3 text-xs font-medium text-white outline-none focus:border-emerald-500"
               />
             </div>
           </div>
@@ -305,7 +304,7 @@ export function ChallengesTab() {
                   className={cn(
                     'rounded-xl py-2 text-xs font-bold border transition-all truncate text-center',
                     category === cat.id
-                      ? 'border-purple-500/50 bg-purple-500/20 text-purple-200'
+                      ? 'border-emerald-500/50 bg-emerald-500/20 text-emerald-200'
                       : 'border-white/10 bg-white/[0.02] text-slate-400 hover:bg-white/[0.06] hover:text-white'
                   )}
                 >
@@ -333,7 +332,7 @@ export function ChallengesTab() {
             <button
               type="button"
               onClick={handleCreateChallenge}
-              className="rounded-xl bg-purple-600 hover:bg-purple-500 px-5 py-2 text-xs font-bold text-white shadow-sm transition-all active:scale-95"
+              className="rounded-xl bg-emerald-600 hover:bg-emerald-700 px-5 py-2 text-xs font-bold text-white shadow-sm transition-all active:scale-95"
             >
               Guardar reto
             </button>

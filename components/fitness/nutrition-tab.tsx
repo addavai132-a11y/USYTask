@@ -968,7 +968,7 @@ export function NutritionTab({
                 <button
                   type="button"
                   onClick={handleSaveFood}
-                  className="rounded-2xl bg-purple-600 hover:bg-purple-500 px-5 py-2.5 text-xs font-bold text-white shadow-soft transition-transform active:scale-95"
+                  className="rounded-2xl bg-emerald-600 hover:bg-emerald-700 px-5 py-2.5 text-xs font-bold text-white shadow-soft transition-transform active:scale-95"
                 >
                   Añadir al Plato
                 </button>
@@ -1011,7 +1011,7 @@ export function NutritionTab({
                   className={cn(
                     'py-2 px-3 rounded-xl flex items-center justify-center gap-1.5 transition-all',
                     activeGoalTab === 'calculator'
-                      ? 'bg-purple-600 text-white shadow-md'
+                      ? 'bg-emerald-600 text-white shadow-md'
                       : 'text-slate-400 hover:text-white'
                   )}
                 >
@@ -1025,7 +1025,7 @@ export function NutritionTab({
                   className={cn(
                     'py-2 px-3 rounded-xl flex items-center justify-center gap-1.5 transition-all',
                     activeGoalTab === 'manual'
-                      ? 'bg-purple-600 text-white shadow-md'
+                      ? 'bg-emerald-600 text-white shadow-md'
                       : 'text-slate-400 hover:text-white'
                   )}
                 >
@@ -1454,7 +1454,7 @@ export function NutritionTab({
               <button
                 type="button"
                 onClick={handleSaveGoals}
-                className="rounded-2xl bg-purple-600 hover:bg-purple-500 px-5 py-2.5 text-xs font-bold text-white shadow-soft transition-transform active:scale-95"
+                className="rounded-2xl bg-emerald-600 hover:bg-emerald-700 px-5 py-2.5 text-xs font-bold text-white shadow-soft transition-transform active:scale-95"
               >
                 Guardar Metas Nutricionales
               </button>
@@ -1469,7 +1469,7 @@ export function NutritionTab({
           <div className="w-full max-w-md rounded-3xl border border-purple-500/30 bg-[#100e23] p-6 shadow-2xl animate-in zoom-in-95 duration-150 space-y-4 max-h-[90vh] overflow-y-auto no-scrollbar">
             <div className="flex items-center justify-between pb-2 border-b border-purple-500/15">
               <h3 className="text-base font-black text-white flex items-center gap-2">
-                <UtensilsCrossed className="size-4 text-purple-400" />
+                <UtensilsCrossed className="size-4 text-emerald-400" />
                 {editingSectionId ? 'Editar Toma / Comida' : 'Añadir Nueva Toma / Comida'}
               </h3>
               <button
@@ -1495,7 +1495,7 @@ export function NutritionTab({
                     className={cn(
                       'px-2.5 py-1 rounded-lg border text-[11px] font-bold transition-all',
                       sectionName === sug.name
-                        ? 'bg-purple-600 border-purple-400 text-white shadow-xs'
+                        ? 'bg-emerald-600 border-emerald-400 text-white shadow-xs'
                         : 'bg-white/[0.04] border-white/10 text-slate-300 hover:bg-white/[0.08] hover:text-white'
                     )}
                   >
@@ -1513,7 +1513,7 @@ export function NutritionTab({
                   onChange={(e) => setSectionName(e.target.value)}
                   placeholder="Ej: Snack Media Mañana, Post-Entreno..."
                   autoFocus
-                  className="w-full rounded-2xl border border-purple-500/20 bg-white/[0.04] py-2.5 px-3 font-semibold text-white outline-none focus:border-purple-500"
+                  className="w-full rounded-2xl border border-purple-500/20 bg-white/[0.04] py-2.5 px-3 font-semibold text-white outline-none focus:border-emerald-500"
                 />
               </div>
 
@@ -1529,7 +1529,7 @@ export function NutritionTab({
                       className={cn(
                         'size-9 rounded-xl flex items-center justify-center text-lg transition-all',
                         sectionIcon === ico
-                          ? 'bg-purple-600/50 border border-purple-400 scale-110 shadow-sm'
+                          ? 'bg-emerald-600/50 border border-emerald-400 scale-110 shadow-sm'
                           : 'hover:bg-white/10'
                       )}
                     >
@@ -1551,7 +1551,7 @@ export function NutritionTab({
                   type="button"
                   onClick={handleSaveSection}
                   disabled={!sectionName.trim()}
-                  className="rounded-2xl bg-purple-600 hover:bg-purple-500 px-5 py-2.5 text-xs font-bold text-white shadow-soft transition-transform active:scale-95 disabled:opacity-50"
+                  className="rounded-2xl bg-emerald-600 hover:bg-emerald-700 px-5 py-2.5 text-xs font-bold text-white shadow-soft transition-transform active:scale-95 disabled:opacity-50"
                 >
                   {editingSectionId ? 'Guardar Cambios' : 'Crear Toma'}
                 </button>

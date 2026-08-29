@@ -35,7 +35,7 @@ export function MonthNavigator() {
         </button>
 
         <div className="flex items-center gap-2 px-2">
-          <Calendar className="size-4 text-purple-600 dark:text-purple-400" />
+          <Calendar className="size-4 text-emerald-600 dark:text-purple-400" />
           <span className="text-xs sm:text-sm font-black text-slate-900 dark:text-white capitalize tracking-tight">
             {formatMonthLabel(selectedMonthISO)}
           </span>
@@ -53,7 +53,7 @@ export function MonthNavigator() {
       {!isCurrentMonth && (
         <button
           onClick={handleToday}
-          className="rounded-xl bg-purple-50 hover:bg-purple-100 border border-purple-200 dark:bg-purple-600/25 dark:border-purple-500/30 px-3 py-1 text-xs font-bold text-purple-700 dark:text-purple-300 dark:hover:bg-purple-600/35 transition-all active:scale-95 shadow-sm"
+          className="rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 dark:bg-purple-600/25 dark:border-purple-500/30 px-3 py-1 text-xs font-bold text-emerald-800 dark:text-purple-300 dark:hover:bg-purple-600/35 transition-all active:scale-95 shadow-sm"
         >
           Mes Actual
         </button>

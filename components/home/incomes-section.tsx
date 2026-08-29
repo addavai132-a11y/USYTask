@@ -138,7 +138,7 @@ export function IncomesSection() {
             </div>
             <button
               onClick={handleOpenCreate}
-              className="flex items-center gap-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white px-3.5 py-1.5 text-xs font-bold transition-all active:scale-95 shadow-sm"
+              className="flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 text-xs font-bold transition-all active:scale-95 shadow-sm"
             >
               <Plus className="size-3.5" />
               <span>+ Registrar ingreso</span>
@@ -163,7 +163,7 @@ export function IncomesSection() {
                 return (
                   <Card
                     key={inc.id}
-                    className="p-3.5 sm:p-4 border border-slate-200 dark:border-white/10 bg-white dark:bg-white/[0.03] hover:border-purple-500/30 transition-all flex flex-col justify-between gap-3 shadow-sm rounded-2xl"
+                    className="p-3.5 sm:p-4 border border-slate-200 dark:border-white/10 bg-white dark:bg-white/[0.03] hover:border-emerald-500/30 dark:hover:border-purple-500/30 transition-all flex flex-col justify-between gap-3 shadow-sm rounded-2xl"
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div>
@@ -219,7 +219,7 @@ export function IncomesSection() {
                           {memberList.map((m) => m!.name).join(', ') || 'General'}
                         </span>
                       </div>
-                      <span className="text-sm font-bold text-purple-700 dark:text-purple-300 tabular-nums">
+                      <span className="text-sm font-bold text-slate-900 dark:text-white tabular-nums">
                         {formatCurrency(inc.amount)}
                       </span>
                     </div>
@@ -252,7 +252,7 @@ export function IncomesSection() {
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="Ej: Nómina Adrian, Extra freelance..."
-                  className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-white/[0.04] py-2 px-3 text-xs font-medium text-slate-900 dark:text-white outline-none focus:border-purple-500"
+                  className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-white/[0.04] py-2 px-3 text-xs font-medium text-slate-900 dark:text-white outline-none focus:border-emerald-500 dark:focus:border-purple-500"
                 />
               </div>
 
@@ -265,7 +265,7 @@ export function IncomesSection() {
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
                     placeholder="0.00"
-                    className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-white/[0.04] py-2 px-3 text-xs font-medium text-slate-900 dark:text-white outline-none focus:border-purple-500"
+                    className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-white/[0.04] py-2 px-3 text-xs font-medium text-slate-900 dark:text-white outline-none focus:border-emerald-500 dark:focus:border-purple-500"
                   />
                 </div>
 
@@ -304,7 +304,7 @@ export function IncomesSection() {
                     type="date"
                     value={date}
                     onChange={(e) => setDate(e.target.value)}
-                    className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-white/[0.04] py-2 px-3 text-xs font-medium text-slate-900 dark:text-white outline-none focus:border-purple-500"
+                    className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-white/[0.04] py-2 px-3 text-xs font-medium text-slate-900 dark:text-white outline-none focus:border-emerald-500 dark:focus:border-purple-500"
                   />
                 </div>
               </div>
@@ -317,7 +317,7 @@ export function IncomesSection() {
                     value={customCategoryInput}
                     onChange={(e) => setCustomCategoryInput(e.target.value)}
                     placeholder="Ej: Beca, Reembolso..."
-                    className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-white/[0.04] py-2 px-3 text-xs font-medium text-slate-900 dark:text-white outline-none focus:border-purple-500"
+                    className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-white/[0.04] py-2 px-3 text-xs font-medium text-slate-900 dark:text-white outline-none focus:border-emerald-500 dark:focus:border-purple-500"
                   />
                 </div>
               )}
@@ -340,7 +340,7 @@ export function IncomesSection() {
                 <button
                   type="button"
                   onClick={handleSave}
-                  className="rounded-xl bg-purple-600 hover:bg-purple-500 px-4 py-2 text-xs font-bold text-white shadow-sm transition-all active:scale-95"
+                  className="rounded-xl bg-emerald-600 hover:bg-emerald-700 dark:bg-purple-600 dark:hover:bg-purple-500 px-4 py-2 text-xs font-bold text-white shadow-sm transition-all active:scale-95"
                 >
                   Guardar
                 </button>

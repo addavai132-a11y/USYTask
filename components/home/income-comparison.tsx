@@ -89,7 +89,7 @@ export function IncomeComparison({ onOpenAddIncome }: { onOpenAddIncome?: () => 
             <button
               type="button"
               onClick={onOpenAddIncome}
-              className="flex items-center gap-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white px-3 py-1.5 text-xs font-bold transition-all active:scale-95 shadow-sm"
+              className="flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 text-xs font-bold transition-all active:scale-95 shadow-sm"
             >
               <Plus className="size-3.5 stroke-[2.5]" />
               <span>Añadir ingreso</span>
@@ -101,7 +101,7 @@ export function IncomeComparison({ onOpenAddIncome }: { onOpenAddIncome?: () => 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
           <div className="flex flex-col gap-1">
             <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1">
-              <Calendar className="size-3 text-purple-600 dark:text-purple-400" />
+              <Calendar className="size-3 text-emerald-600 dark:text-purple-400" />
               <span>Periodo Principal (A):</span>
             </label>
             <CustomSelect<string>
@@ -114,7 +114,7 @@ export function IncomeComparison({ onOpenAddIncome }: { onOpenAddIncome?: () => 
 
           <div className="flex flex-col gap-1">
             <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1">
-              <Scale className="size-3 text-purple-600 dark:text-purple-400" />
+              <Scale className="size-3 text-emerald-600 dark:text-purple-400" />
               <span>Comparar con (B):</span>
             </label>
             <CustomSelect<string>
@@ -143,7 +143,7 @@ export function IncomeComparison({ onOpenAddIncome }: { onOpenAddIncome?: () => 
             </p>
           </div>
 
-          <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[11px] font-bold w-fit bg-purple-50 dark:bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-500/30">
+          <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[11px] font-bold w-fit bg-emerald-50 dark:bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30">
             {totalDiff >= 0 ? <TrendingUp className="size-3" /> : <TrendingDown className="size-3" />}
             <span>
               {totalDiff >= 0 ? '+' : ''}{totalDiffPercent.toFixed(1)}%
@@ -215,7 +215,7 @@ export function IncomeComparison({ onOpenAddIncome }: { onOpenAddIncome?: () => 
                 </div>
 
                 <div className="text-right">
-                  <span className={cn('font-bold tabular-nums', diff > 0 ? 'text-purple-700 dark:text-purple-300' : diff < 0 ? 'text-rose-600 dark:text-rose-400' : 'text-slate-400')}>
+                  <span className={cn('font-bold tabular-nums', diff > 0 ? 'text-emerald-700 dark:text-emerald-300' : diff < 0 ? 'text-rose-600 dark:text-rose-400' : 'text-slate-400')}>
                     {diff > 0 ? '+' : ''}{formatCurrency(diff)}
                   </span>
                 </div>

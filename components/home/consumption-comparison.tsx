@@ -148,7 +148,7 @@ export function ConsumptionComparison({ onOpenAddBill }: { onOpenAddBill?: () =>
               className={cn(
                 'flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2 px-3 text-xs font-bold transition-all shrink-0',
                 isActive
-                  ? 'bg-purple-600 text-white shadow-sm'
+                  ? 'bg-emerald-600 text-white shadow-sm'
                   : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/[0.04]'
               )}
             >
@@ -173,7 +173,7 @@ export function ConsumptionComparison({ onOpenAddBill }: { onOpenAddBill?: () =>
             <button
               type="button"
               onClick={onOpenAddBill}
-              className="flex items-center gap-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white px-3 py-1.5 text-xs font-bold transition-all active:scale-95 shadow-sm"
+              className="flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 text-xs font-bold transition-all active:scale-95 shadow-sm"
             >
               <Plus className="size-3.5 stroke-[2.5]" />
               <span>Añadir factura</span>
@@ -184,7 +184,7 @@ export function ConsumptionComparison({ onOpenAddBill }: { onOpenAddBill?: () =>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
           <div className="flex flex-col gap-1">
             <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1">
-              <Calendar className="size-3 text-purple-600 dark:text-purple-400" />
+              <Calendar className="size-3 text-emerald-600 dark:text-purple-400" />
               <span>Periodo Principal (A):</span>
             </label>
             <CustomSelect<string>
@@ -197,7 +197,7 @@ export function ConsumptionComparison({ onOpenAddBill }: { onOpenAddBill?: () =>
 
           <div className="flex flex-col gap-1">
             <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1">
-              <Scale className="size-3 text-purple-600 dark:text-purple-400" />
+              <Scale className="size-3 text-emerald-600 dark:text-purple-400" />
               <span>Comparar con (B):</span>
             </label>
             <CustomSelect<string>
@@ -226,7 +226,7 @@ export function ConsumptionComparison({ onOpenAddBill }: { onOpenAddBill?: () =>
             </p>
           </div>
 
-          <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[11px] font-bold w-fit bg-purple-50 dark:bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-500/30">
+          <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[11px] font-bold w-fit bg-slate-100 dark:bg-white/[0.05] text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-white/10">
             {amountDiff > 0 ? <TrendingUp className="size-3 text-rose-500" /> : <TrendingDown className="size-3 text-emerald-500" />}
             <span>
               {amountDiff > 0 ? '+' : ''}{amountDiffPercent.toFixed(1)}%
@@ -248,7 +248,7 @@ export function ConsumptionComparison({ onOpenAddBill }: { onOpenAddBill?: () =>
             </p>
           </div>
 
-          <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[11px] font-bold w-fit bg-purple-50 dark:bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-500/30">
+          <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[11px] font-bold w-fit bg-slate-100 dark:bg-white/[0.05] text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-white/10">
             {unitsDiff > 0 ? <TrendingUp className="size-3 text-rose-500" /> : <TrendingDown className="size-3 text-emerald-500" />}
             <span>
               {unitsDiff > 0 ? '+' : ''}{unitsDiffPercent.toFixed(1)}%
@@ -270,7 +270,7 @@ export function ConsumptionComparison({ onOpenAddBill }: { onOpenAddBill?: () =>
             </p>
           </div>
 
-          <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[11px] font-bold w-fit bg-purple-50 dark:bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-500/30">
+          <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[11px] font-bold w-fit bg-slate-100 dark:bg-white/[0.05] text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-white/10">
             {unitPriceDiff > 0 ? <TrendingUp className="size-3 text-rose-500" /> : <TrendingDown className="size-3 text-emerald-500" />}
             <span>
               {unitPriceDiff > 0 ? '+' : ''}{unitPriceDiffPercent.toFixed(1)}%

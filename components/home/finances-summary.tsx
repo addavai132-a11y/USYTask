@@ -103,11 +103,11 @@ export function FinancesSummary() {
           setBaseBalanceInput(initialPiggyBankBalance.toString())
           setIsHuchaModalOpen(true)
         }}
-        className="p-4 sm:p-5 bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 hover:border-purple-500/30 cursor-pointer transition-all rounded-2xl shadow-sm group"
+        className="p-4 sm:p-5 bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 hover:border-emerald-500/30 dark:hover:border-purple-500/30 cursor-pointer transition-all rounded-2xl shadow-sm group"
       >
         <div className="flex items-center justify-between gap-3 flex-wrap sm:flex-nowrap">
           <div className="flex items-center gap-3">
-            <div className="flex size-10 items-center justify-center rounded-xl bg-purple-50 text-purple-600 dark:bg-purple-500/10 dark:text-purple-400 shrink-0 border border-purple-200 dark:border-purple-500/20">
+            <div className="flex size-10 items-center justify-center rounded-xl bg-slate-100 text-slate-800 dark:bg-white/10 dark:text-slate-200 shrink-0 border border-slate-200 dark:border-white/10">
               <PiggyBank className="size-5" />
             </div>
             <div>
@@ -124,7 +124,7 @@ export function FinancesSummary() {
           </div>
 
           <button className="flex items-center gap-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] border border-slate-200 dark:border-white/10 px-3 py-1.5 text-xs font-bold text-slate-700 dark:text-slate-300 transition-colors shrink-0">
-            <Edit3 className="size-3.5 text-purple-600 dark:text-purple-400" />
+            <Edit3 className="size-3.5 text-slate-700 dark:text-slate-300" />
             <span>Ajustar fondo</span>
           </button>
         </div>
@@ -133,10 +133,10 @@ export function FinancesSummary() {
       {/* ── 4 Metric Cards for Selected Month (Clean, Balanced & Compact) ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {/* 1. Ingresos */}
-        <Card className="p-3.5 sm:p-4 bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 hover:border-purple-500/30 transition-all rounded-2xl flex flex-col justify-between gap-2 shadow-sm">
+        <Card className="p-3.5 sm:p-4 bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 hover:border-emerald-500/30 transition-all rounded-2xl flex flex-col justify-between gap-2 shadow-sm">
           <div className="flex items-center justify-between gap-1 text-slate-500 dark:text-slate-400">
             <span className="text-[11px] font-semibold uppercase tracking-wider">Ingresos</span>
-            <TrendingUp className="size-3.5 text-purple-600 dark:text-purple-400" />
+            <TrendingUp className="size-3.5 text-emerald-600 dark:text-emerald-400" />
           </div>
           <div>
             <p className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white tracking-tight tabular-nums">
@@ -149,10 +149,10 @@ export function FinancesSummary() {
         </Card>
 
         {/* 2. Gastos */}
-        <Card className="p-3.5 sm:p-4 bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 hover:border-purple-500/30 transition-all rounded-2xl flex flex-col justify-between gap-2 shadow-sm">
+        <Card className="p-3.5 sm:p-4 bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 hover:border-emerald-500/30 transition-all rounded-2xl flex flex-col justify-between gap-2 shadow-sm">
           <div className="flex items-center justify-between gap-1 text-slate-500 dark:text-slate-400">
             <span className="text-[11px] font-semibold uppercase tracking-wider">Gastos</span>
-            <TrendingDown className="size-3.5 text-purple-600 dark:text-purple-400" />
+            <TrendingDown className="size-3.5 text-rose-500 dark:text-rose-400" />
           </div>
           <div>
             <p className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white tracking-tight tabular-nums">
@@ -165,13 +165,13 @@ export function FinancesSummary() {
         </Card>
 
         {/* 3. Balance Neto Mes */}
-        <Card className="p-3.5 sm:p-4 bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 hover:border-purple-500/30 transition-all rounded-2xl flex flex-col justify-between gap-2 shadow-sm">
+        <Card className="p-3.5 sm:p-4 bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 hover:border-emerald-500/30 transition-all rounded-2xl flex flex-col justify-between gap-2 shadow-sm">
           <div className="flex items-center justify-between gap-1 text-slate-500 dark:text-slate-400">
             <span className="text-[11px] font-semibold uppercase tracking-wider">Balance Neto</span>
-            <Wallet className="size-3.5 text-purple-600 dark:text-purple-400" />
+            <Wallet className="size-3.5 text-slate-700 dark:text-slate-300" />
           </div>
           <div>
-            <p className="text-lg sm:text-xl font-bold text-purple-600 dark:text-purple-300 tracking-tight tabular-nums">
+            <p className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white tracking-tight tabular-nums">
               {formatCurrency(netBalance)}
             </p>
             <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
@@ -181,10 +181,10 @@ export function FinancesSummary() {
         </Card>
 
         {/* 4. Tasa de Ahorro */}
-        <Card className="p-3.5 sm:p-4 bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 hover:border-purple-500/30 transition-all rounded-2xl flex flex-col justify-between gap-2 shadow-sm">
+        <Card className="p-3.5 sm:p-4 bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 hover:border-emerald-500/30 transition-all rounded-2xl flex flex-col justify-between gap-2 shadow-sm">
           <div className="flex items-center justify-between gap-1 text-slate-500 dark:text-slate-400">
             <span className="text-[11px] font-semibold uppercase tracking-wider">Tasa Ahorro</span>
-            <PiggyBank className="size-3.5 text-purple-600 dark:text-purple-400" />
+            <PiggyBank className="size-3.5 text-slate-700 dark:text-slate-300" />
           </div>
           <div>
             <p className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white tracking-tight tabular-nums">
@@ -227,7 +227,7 @@ export function FinancesSummary() {
                         {meta.label}
                       </span>
                       <div className="flex items-center gap-1.5">
-                        <span className="font-bold text-purple-700 dark:text-purple-300 tabular-nums">
+                        <span className="font-bold text-slate-900 dark:text-slate-100 tabular-nums">
                           {formatCurrency(spent)} / {formatCurrency(b.monthlyLimit)}
                         </span>
                         {isOverLimit && (
@@ -242,7 +242,7 @@ export function FinancesSummary() {
                       <div
                         className={cn(
                           'h-full rounded-full transition-all duration-300',
-                          isOverLimit ? 'bg-rose-500' : 'bg-purple-500'
+                          isOverLimit ? 'bg-rose-500' : 'bg-emerald-500'
                         )}
                         style={{ width: `${percent}%` }}
                       />
@@ -282,9 +282,9 @@ export function FinancesSummary() {
                     </span>
                     <div className="flex items-center gap-2 shrink-0">
                       <div className="w-16 bg-slate-200 dark:bg-white/[0.05] rounded-full h-1.5 overflow-hidden hidden sm:block">
-                        <div className="h-full bg-purple-500 rounded-full" style={{ width: `${sharePercent}%` }} />
+                        <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${sharePercent}%` }} />
                       </div>
-                      <span className="font-bold text-purple-700 dark:text-purple-300 tabular-nums">
+                      <span className="font-bold text-slate-900 dark:text-slate-100 tabular-nums">
                         {formatCurrency(spent)}
                       </span>
                       <span className="text-[10px] text-slate-400 tabular-nums w-7 text-right">
@@ -321,7 +321,7 @@ export function FinancesSummary() {
                 onChange={(e) => setBaseBalanceInput(e.target.value)}
                 placeholder="0.00"
                 autoFocus
-                className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-white/[0.04] py-2 px-3 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-purple-500"
+                className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-white/[0.04] py-2 px-3 text-sm font-bold text-slate-900 dark:text-white outline-none focus:border-emerald-500 dark:focus:border-purple-500"
               />
             </div>
 
@@ -336,7 +336,7 @@ export function FinancesSummary() {
               <button
                 type="button"
                 onClick={handleSaveBaseBalance}
-                className="rounded-xl bg-purple-600 hover:bg-purple-500 px-4 py-2 text-xs font-bold text-white shadow-sm transition-all active:scale-95"
+                className="rounded-xl bg-emerald-600 hover:bg-emerald-700 dark:bg-purple-600 dark:hover:bg-purple-500 px-4 py-2 text-xs font-bold text-white shadow-sm transition-all active:scale-95"
               >
                 Guardar
               </button>

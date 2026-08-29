@@ -37,7 +37,7 @@ export function FamilyScreen() {
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {/* Total Points */}
           <div className="flex items-center gap-3">
-            <div className="flex size-10 items-center justify-center rounded-xl bg-purple-50 text-purple-600 dark:bg-purple-500/10 dark:text-purple-400 shrink-0 border border-purple-200 dark:border-purple-500/20">
+            <div className="flex size-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-purple-500/10 dark:text-purple-400 shrink-0 border border-emerald-200 dark:border-purple-500/20">
               <Star className="size-4" />
             </div>
             <div>
@@ -52,7 +52,7 @@ export function FamilyScreen() {
 
           {/* Top Streak */}
           <div className="flex items-center gap-3">
-            <div className="flex size-10 items-center justify-center rounded-xl bg-purple-50 text-purple-600 dark:bg-purple-500/10 dark:text-purple-400 shrink-0 border border-purple-200 dark:border-purple-500/20">
+            <div className="flex size-10 items-center justify-center rounded-xl bg-amber-50 text-amber-600 dark:bg-purple-500/10 dark:text-purple-400 shrink-0 border border-amber-200 dark:border-purple-500/20">
               <Flame className="size-4" />
             </div>
             <div>
@@ -67,7 +67,7 @@ export function FamilyScreen() {
 
           {/* Active Challenges */}
           <div className="flex items-center gap-3">
-            <div className="flex size-10 items-center justify-center rounded-xl bg-purple-50 text-purple-600 dark:bg-purple-500/10 dark:text-purple-400 shrink-0 border border-purple-200 dark:border-purple-500/20">
+            <div className="flex size-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-purple-500/10 dark:text-purple-400 shrink-0 border border-emerald-200 dark:border-purple-500/20">
               <Trophy className="size-4" />
             </div>
             <div>
@@ -82,7 +82,7 @@ export function FamilyScreen() {
 
           {/* Unlocked Badges */}
           <div className="flex items-center gap-3">
-            <div className="flex size-10 items-center justify-center rounded-xl bg-purple-50 text-purple-600 dark:bg-purple-500/10 dark:text-purple-400 shrink-0 border border-purple-200 dark:border-purple-500/20">
+            <div className="flex size-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-purple-500/10 dark:text-purple-400 shrink-0 border border-emerald-200 dark:border-purple-500/20">
               <Award className="size-4" />
             </div>
             <div>

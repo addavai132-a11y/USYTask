@@ -268,7 +268,7 @@ export function BillsSection() {
   const getUtilityIcon = (type?: UtilityType) => {
     switch (type) {
       case 'electricidad':
-        return <Zap className="size-3.5 text-purple-400" />
+        return <Zap className="size-3.5 text-amber-500" />
       case 'agua':
         return <Droplets className="size-3.5 text-blue-400" />
       case 'gas':
@@ -276,9 +276,9 @@ export function BillsSection() {
       case 'combustible':
         return <Fuel className="size-3.5 text-emerald-400" />
       case 'otro':
-        return <Sparkles className="size-3.5 text-purple-400" />
+        return <Sparkles className="size-3.5 text-slate-600 dark:text-slate-300" />
       default:
-        return <Receipt className="size-3.5 text-purple-400" />
+        return <Receipt className="size-3.5 text-slate-600 dark:text-slate-300" />
     }
   }
 
@@ -311,7 +311,7 @@ export function BillsSection() {
             </div>
             <button
               onClick={handleOpenCreate}
-              className="flex items-center gap-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white px-3.5 py-1.5 text-xs font-bold transition-all active:scale-95 shadow-sm"
+              className="flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 text-xs font-bold transition-all active:scale-95 shadow-sm"
             >
               <Plus className="size-3.5" />
               <span>+ Añadir factura</span>
@@ -350,14 +350,14 @@ export function BillsSection() {
                   <Card
                     key={bill.id}
                     className={cn(
-                      'p-3.5 sm:p-4 border border-slate-200 dark:border-white/10 bg-white dark:bg-white/[0.03] hover:border-purple-500/30 transition-all flex flex-col justify-between gap-3 shadow-sm rounded-2xl',
+                      'p-3.5 sm:p-4 border border-slate-200 dark:border-white/10 bg-white dark:bg-white/[0.03] hover:border-emerald-500/30 dark:hover:border-purple-500/30 transition-all flex flex-col justify-between gap-3 shadow-sm rounded-2xl',
                       isPaid && 'opacity-70'
                     )}
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex items-start gap-2.5">
                         <div className="flex size-8 items-center justify-center rounded-xl bg-slate-100 dark:bg-white/[0.04] border border-slate-200 dark:border-white/5 shrink-0 mt-0.5">
-                          {bill.consumption ? getUtilityIcon(bill.consumption.utilityType) : <Receipt className="size-3.5 text-purple-600 dark:text-purple-400" />}
+                          {bill.consumption ? getUtilityIcon(bill.consumption.utilityType) : <Receipt className="size-3.5 text-slate-700 dark:text-slate-300" />}
                         </div>
                         <div>
                           <h4 className="text-sm font-bold text-slate-900 dark:text-white tracking-tight leading-snug">
@@ -401,22 +401,22 @@ export function BillsSection() {
                       </div>
                     </div>
 
+                    {/* Fila Inferior con Importe y Toggle de Pago */}
                     <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-white/5 text-xs">
-                      <button
-                        onClick={() => {
-                          toggleBillStatus(bill.id)
-                          toast(`Estado cambiado a ${!isPaid ? 'Pagado' : 'Pendiente'}`, '✅')
-                        }}
-                        className={cn(
-                          'flex items-center gap-1 px-2.5 py-1 rounded-xl font-bold transition-all text-xs',
-                          isPaid
-                            ? 'bg-emerald-50 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30'
-                            : 'bg-slate-100 dark:bg-white/[0.04] text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-white/10 hover:bg-slate-200'
-                        )}
-                      >
-                        {isPaid ? <CheckCircle2 className="size-3" /> : <Clock className="size-3" />}
-                        <span>{isPaid ? 'Pagado' : 'Pendiente'}</span>
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => toggleBillStatus(bill.id)}
+                          className={cn(
+                            'flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-bold transition-all active:scale-95',
+                            isPaid
+                              ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300'
+                              : 'bg-amber-50 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300'
+                          )}
+                        >
+                          <CheckCircle2 className="size-3.5" />
+                          <span>{isPaid ? 'Pagado' : 'Pendiente'}</span>
+                        </button>
+                      </div>
 
                       <span className="text-sm font-bold text-slate-900 dark:text-white tabular-nums">
                         {formatCurrency(bill.amount)}
@@ -451,7 +451,7 @@ export function BillsSection() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Ej: Luz Endesa, Internet Fibra, Netflix..."
-                  className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-white/[0.04] py-2 px-3 text-xs font-medium text-slate-900 dark:text-white outline-none focus:border-purple-500"
+                  className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-white/[0.04] py-2 px-3 text-xs font-medium text-slate-900 dark:text-white outline-none focus:border-emerald-500 dark:focus:border-purple-500"
                 />
               </div>
 
@@ -464,7 +464,7 @@ export function BillsSection() {
                     value={amount}
                     onChange={(e) => handleAmountChange(e.target.value)}
                     placeholder="0.00"
-                    className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-white/[0.04] py-2 px-3 text-xs font-medium text-slate-900 dark:text-white outline-none focus:border-purple-500"
+                    className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-white/[0.04] py-2 px-3 text-xs font-medium text-slate-900 dark:text-white outline-none focus:border-emerald-500 dark:focus:border-purple-500"
                   />
                 </div>
 
@@ -490,7 +490,7 @@ export function BillsSection() {
                   value={dueDay}
                   onChange={(e) => setDueDay(e.target.value)}
                   placeholder="1"
-                  className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-white/[0.04] py-2 px-3 text-xs font-medium text-slate-900 dark:text-white outline-none focus:border-purple-500"
+                  className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-white/[0.04] py-2 px-3 text-xs font-medium text-slate-900 dark:text-white outline-none focus:border-emerald-500 dark:focus:border-purple-500"
                 />
               </div>
 
@@ -501,7 +501,7 @@ export function BillsSection() {
                     type="checkbox"
                     checked={hasConsumption}
                     onChange={(e) => setHasConsumption(e.target.checked)}
-                    className="rounded accent-purple-600 size-4"
+                    className="rounded accent-emerald-600 size-4"
                   />
                   <span className="font-bold text-slate-800 dark:text-slate-200">
                     Registrar consumo / contador ({unitLabel})
@@ -538,9 +538,9 @@ export function BillsSection() {
                             value={consumptionValue}
                             onChange={(e) => handleConsumptionChange(e.target.value)}
                             placeholder="0"
-                            className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-white/[0.04] py-2 pl-3 pr-10 text-xs font-medium text-slate-900 dark:text-white outline-none focus:border-purple-500"
+                            className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-white/[0.04] py-2 pl-3 pr-10 text-xs font-medium text-slate-900 dark:text-white outline-none focus:border-emerald-500 dark:focus:border-purple-500"
                           />
-                          <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] font-bold text-purple-600 dark:text-purple-400 pointer-events-none">
+                          <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-600 dark:text-slate-400 pointer-events-none">
                             {currentUtilityMeta.unit}
                           </span>
                         </div>
@@ -557,9 +557,9 @@ export function BillsSection() {
                             value={unitPrice}
                             onChange={(e) => handleUnitPriceChange(e.target.value)}
                             placeholder="0.0000"
-                            className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-white/[0.04] py-2 pl-3 pr-12 text-xs font-medium text-slate-900 dark:text-white outline-none focus:border-purple-500"
+                            className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-white/[0.04] py-2 pl-3 pr-12 text-xs font-medium text-slate-900 dark:text-white outline-none focus:border-emerald-500 dark:focus:border-purple-500"
                           />
-                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] font-bold text-purple-600 dark:text-purple-400 pointer-events-none">
+                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] font-bold text-slate-600 dark:text-slate-400 pointer-events-none">
                             {currentUtilityMeta.unitPriceSuffix}
                           </span>
                         </div>
@@ -578,7 +578,7 @@ export function BillsSection() {
                             value={customUtilityName}
                             onChange={(e) => setCustomUtilityName(e.target.value)}
                             placeholder="Ej: Pellets, Leña, Butano, Internet..."
-                            className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-white/[0.04] py-2 px-3 text-xs font-medium text-slate-900 dark:text-white outline-none focus:border-purple-500"
+                            className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-white/[0.04] py-2 px-3 text-xs font-medium text-slate-900 dark:text-white outline-none focus:border-emerald-500 dark:focus:border-purple-500"
                           />
                         </div>
                         <div className="flex flex-col gap-1">
@@ -590,7 +590,7 @@ export function BillsSection() {
                             value={customUtilityUnit}
                             onChange={(e) => setCustomUtilityUnit(e.target.value)}
                             placeholder="Ej: kg, saco, botellas, GB..."
-                            className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-white/[0.04] py-2 px-3 text-xs font-medium text-slate-900 dark:text-white outline-none focus:border-purple-500"
+                            className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-white/[0.04] py-2 px-3 text-xs font-medium text-slate-900 dark:text-white outline-none focus:border-emerald-500 dark:focus:border-purple-500"
                           />
                         </div>
                       </div>
@@ -608,7 +608,7 @@ export function BillsSection() {
                           value={kilometers}
                           onChange={(e) => setKilometers(e.target.value)}
                           placeholder="Ej: 650 km"
-                          className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-white/[0.04] py-2 px-3 text-xs font-medium text-slate-900 dark:text-white outline-none focus:border-purple-500"
+                          className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-white/[0.04] py-2 px-3 text-xs font-medium text-slate-900 dark:text-white outline-none focus:border-emerald-500 dark:focus:border-purple-500"
                         />
                       </div>
                     )}
@@ -627,7 +627,7 @@ export function BillsSection() {
                 <button
                   type="button"
                   onClick={handleSave}
-                  className="rounded-xl bg-purple-600 hover:bg-purple-500 px-4 py-2 text-xs font-bold text-white shadow-sm transition-all active:scale-95"
+                  className="rounded-xl bg-emerald-600 hover:bg-emerald-700 dark:bg-purple-600 dark:hover:bg-purple-500 px-4 py-2 text-xs font-bold text-white shadow-sm transition-all active:scale-95"
                 >
                   Guardar
                 </button>

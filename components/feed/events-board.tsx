@@ -175,7 +175,7 @@ export function EventsBoard() {
             </p>
             <button
               onClick={() => openQuickAdd('evento')}
-              className="mt-4 inline-flex items-center gap-1.5 text-xs font-bold text-purple-600 hover:text-purple-700 dark:text-purple-300 dark:hover:text-white"
+              className="mt-4 inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 hover:text-emerald-800 dark:text-purple-300 dark:hover:text-white"
             >
               <Plus className="size-3.5" />
               <span>Crear nuevo evento</span>
@@ -193,7 +193,7 @@ export function EventsBoard() {
                 className={cn(
                   'group flex items-center justify-between gap-3 p-3 rounded-2xl border transition-all duration-200',
                   dateBadge.isToday
-                    ? 'bg-purple-50/70 border-purple-200 dark:bg-purple-950/25 dark:border-purple-500/30 dark:shadow-md'
+                    ? 'bg-emerald-50/70 border-emerald-200 dark:bg-purple-950/25 dark:border-purple-500/30 dark:shadow-md'
                     : 'bg-slate-50/80 hover:bg-slate-100/90 border-slate-200/90 dark:bg-white/[0.03] dark:hover:bg-white/[0.06] dark:border-white/5'
                 )}
               >
@@ -204,9 +204,9 @@ export function EventsBoard() {
                     className={cn(
                       'flex flex-col items-center justify-center size-12 rounded-xl border text-center shrink-0 shadow-xs leading-none p-1',
                       dateBadge.isToday
-                        ? 'bg-purple-600 text-white border-purple-500 shadow-purple-900/30'
+                        ? 'bg-emerald-600 text-white border-emerald-500 shadow-emerald-900/30 dark:bg-purple-600 dark:border-purple-500'
                         : dateBadge.isTomorrow
-                        ? 'bg-indigo-600 text-white border-indigo-500'
+                        ? 'bg-teal-600 text-white border-teal-500'
                         : 'bg-slate-200/80 text-slate-800 border-slate-300 dark:bg-white/[0.06] dark:text-slate-200 dark:border-white/10'
                     )}
                   >
@@ -235,7 +235,7 @@ export function EventsBoard() {
 
                     <div className="flex flex-wrap items-center gap-2 text-[10px] text-slate-500 dark:text-slate-400 mt-1">
                       <span className="inline-flex items-center gap-1 font-semibold text-slate-700 dark:text-slate-300">
-                        <Clock className="size-3 text-purple-500" />
+                        <Clock className="size-3 text-emerald-600 dark:text-purple-400" />
                         {timeRange}
                       </span>
 
@@ -284,7 +284,7 @@ export function EventsBoard() {
         </span>
         <button
           onClick={() => setTab('organizar')}
-          className="flex items-center gap-1 font-bold text-purple-600 hover:text-purple-700 dark:text-purple-300 dark:hover:text-white transition-colors"
+          className="flex items-center gap-1 font-bold text-emerald-700 hover:text-emerald-800 dark:text-purple-300 dark:hover:text-white transition-colors"
         >
           <span>Abrir calendario completo</span>
           <ChevronRight className="size-3.5" />

@@ -285,7 +285,7 @@ export function ShoppingSection({
           </div>
           <button
             onClick={() => setIsCreatingList(true)}
-            className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold rounded-xl inline-flex items-center gap-1.5 active:scale-95 transition-all shadow-sm"
+            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl inline-flex items-center gap-1.5 active:scale-95 transition-all shadow-sm"
           >
             <Plus className="size-4" />
             <span>Nueva lista</span>
@@ -294,13 +294,13 @@ export function ShoppingSection({
 
         {/* Tarjeta Central de Estado Vacío */}
         <div className="w-full min-h-[200px] sm:min-h-[220px] p-6 flex flex-col items-center justify-center gap-3 bg-white/[0.02] border border-white/10 rounded-2xl text-center">
-          <div className="flex size-10 items-center justify-center rounded-xl bg-purple-500/10 text-purple-400 text-lg">
+          <div className="flex size-10 items-center justify-center rounded-xl bg-slate-100 dark:bg-white/[0.05] text-slate-700 dark:text-slate-300 text-lg">
             🧺
           </div>
           <p className="text-xs text-slate-400 max-w-xs">No tienes ninguna lista de compras creada.</p>
           <button
             onClick={() => setIsCreatingList(true)}
-            className="mt-1 rounded-xl bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 text-xs font-bold transition-all active:scale-95 shadow-sm"
+            className="mt-1 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 text-xs font-bold transition-all active:scale-95 shadow-sm"
           >
             + Crear mi primera lista
           </button>
@@ -358,7 +358,7 @@ export function ShoppingSection({
         </div>
         <button
           onClick={() => setIsCreatingList(true)}
-          className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold rounded-xl inline-flex items-center gap-1.5 active:scale-95 transition-all shadow-sm"
+          className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl inline-flex items-center gap-1.5 active:scale-95 transition-all shadow-sm"
         >
           <Plus className="size-4" />
           <span>Nueva lista</span>
@@ -376,7 +376,7 @@ export function ShoppingSection({
               className={cn(
                 'flex shrink-0 items-center gap-2 rounded-xl px-3 py-1.5 text-xs font-bold transition-all active:scale-95 border',
                 isActive
-                  ? 'border-purple-500/50 bg-purple-600 text-white shadow-sm'
+                  ? 'border-emerald-500/50 bg-emerald-600 text-white shadow-sm'
                   : 'border-white/10 bg-white/[0.02] text-slate-400 hover:bg-white/[0.06] hover:text-white'
               )}
             >
@@ -389,146 +389,117 @@ export function ShoppingSection({
 
       {/* ── Active List Header & Quick Actions ── */}
       {activeList && (
-        <Card className="p-3.5">
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-3">
-            {editingListId === activeList.id ? (
-              <div className="flex items-center gap-2 flex-1 max-w-sm">
-                <input
-                  value={editingListTitle}
-                  onChange={(e) => setEditingListTitle(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleSaveEditList()
-                    if (e.key === 'Escape') setEditingListId(null)
-                  }}
-                  autoFocus
-                  className="flex-1 rounded-xl border border-primary bg-card px-3 py-1.5 text-xs font-bold outline-none"
-                />
-                <button
-                  onClick={handleSaveEditList}
-                  className="rounded-xl bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground"
-                >
-                  Guardar
-                </button>
-                <button
-                  onClick={() => setEditingListId(null)}
-                  className="rounded-xl bg-secondary px-2.5 py-1.5 text-xs font-bold text-muted-foreground"
-                >
-                  Cancelar
-                </button>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <h3 className="text-base font-black tracking-tight text-foreground">{activeList.name}</h3>
-                <button
-                  onClick={() => {
-                    setEditingListId(activeList.id)
-                    setEditingListTitle(activeList.name)
-                  }}
-                  className="rounded-lg p-1 text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
-                  title="Renombrar lista"
-                >
-                  <Edit2 className="size-3.5" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    confirmDelete({
-                      title: '¿Eliminar lista de compras?',
-                      itemName: activeList.name,
-                      description: 'Se eliminarán todos los artículos contenidos en esta lista.',
-                      confirmText: 'Eliminar Lista',
-                      onConfirm: () => {
-                        deleteShoppingList(activeList.id)
-                        toast(`Lista "${activeList.name}" eliminada`, '🗑️')
-                      },
-                    })
-                  }}
-                  className="rounded-lg p-1 text-muted-foreground/60 hover:bg-rose-500/10 hover:text-rose-500 transition-colors"
-                  title="Eliminar lista"
-                >
-                  <Trash2 className="size-3.5" />
-                </button>
-              </div>
-            )}
+        <Card className="p-3.5 sm:p-4 space-y-3">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-lg">🛒</span>
+              <h3 className="text-sm sm:text-base font-bold text-foreground truncate">{activeList.name}</h3>
+              <span className="text-xs text-muted-foreground tabular-nums">
+                ({currentItems.filter((i) => !i.completed).length} pendientes)
+              </span>
+            </div>
 
-            <div className="flex flex-wrap items-center gap-2">
-              {priceStats.hasPrices && (
-                <div className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-xs font-bold font-mono">
-                  <span>💰 Total: {priceStats.totalPrice.toFixed(2).replace('.', ',')} €</span>
-                  {priceStats.pendingPrice < priceStats.totalPrice && (
-                    <span className="text-emerald-400/70 text-[11px] font-normal">
-                      (Pendiente: {priceStats.pendingPrice.toFixed(2).replace('.', ',')} €)
-                    </span>
-                  )}
-                </div>
-              )}
-
+            <div className="flex items-center gap-1">
               <button
-                onClick={handleImportMealIngredients}
-                className="flex items-center gap-1.5 rounded-xl bg-secondary/80 px-3 py-1.5 text-xs font-bold text-foreground hover:bg-secondary transition-all border border-border self-start sm:self-auto"
-                title="Importar ingredientes configurados en Comidas"
+                onClick={() => setIsCreatingList(true)}
+                className="p-1.5 rounded-xl hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+                title="Nueva lista"
               >
-                <UtensilsCrossed className="size-3.5 text-primary" />
-                <span>Importar de Comidas</span>
+                <Plus className="size-4" />
+              </button>
+              <button
+                onClick={() => {
+                  confirmDelete({
+                    title: '¿Eliminar lista de compras?',
+                    itemName: activeList.name,
+                    confirmText: 'Eliminar Lista',
+                    onConfirm: () => {
+                      deleteShoppingList(activeList.id)
+                      toast('Lista de compras eliminada', '🗑️')
+                    },
+                  })
+                }}
+                className="p-1.5 rounded-xl hover:bg-rose-500/10 text-muted-foreground hover:text-rose-500 transition-colors"
+                title="Eliminar lista"
+              >
+                <Trash2 className="size-4" />
               </button>
             </div>
           </div>
 
-          <ProgressBar value={completedCount} max={totalCount} className="h-1.5 mb-3" />
+          {/* Quick Add Product Bar */}
+          <div className="flex flex-col gap-2 pt-2 border-t border-border/50">
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <input
+                  value={draftName}
+                  onChange={(e) => setDraftName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleAddItem()
+                  }}
+                  placeholder="Añadir producto... (ej: Leche 1.20)"
+                  className="w-full rounded-xl border border-border bg-secondary/30 py-2 pl-3 pr-8 text-xs font-semibold text-foreground outline-none focus:border-primary focus:bg-card"
+                />
+              </div>
 
-          {/* ── Formulario de Añadir Producto con Precio y Supermercado ── */}
-          <div className="rounded-2xl bg-secondary/50 p-2.5 sm:p-3 border border-border/80 space-y-2.5 transition-all">
-            {/* Fila Principal: Nombre del Producto y Botón Añadir */}
-            <div className="flex items-center gap-2">
-              <input
-                value={draftItem}
-                onChange={(e) => {
-                  setDraftItem(e.target.value)
-                  setSelectedAisle(detectAisle(e.target.value))
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') handleAddItem()
-                }}
-                placeholder="Ej. Pechuga de pollo, Huevos, Avena..."
-                className="flex-1 bg-card/60 rounded-xl border border-border/60 px-3 py-2 text-xs sm:text-sm font-semibold text-foreground placeholder:text-muted-foreground outline-none focus:border-primary/70 focus:bg-card"
-              />
+              <div className="w-20 sm:w-24">
+                <input
+                  type="number"
+                  step="any"
+                  value={draftPrice}
+                  onChange={(e) => setDraftPrice(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleAddItem()
+                  }}
+                  placeholder="Precio €"
+                  className="w-full rounded-xl border border-border bg-secondary/30 py-2 px-2.5 text-xs font-semibold text-foreground outline-none focus:border-primary focus:bg-card"
+                />
+              </div>
+
               <button
                 type="button"
                 onClick={handleAddItem}
-                disabled={!draftItem.trim()}
-                className="flex items-center gap-1 rounded-xl bg-primary text-primary-foreground px-4 py-2 text-xs font-bold shadow-soft transition-transform active:scale-95 disabled:opacity-50 shrink-0"
+                disabled={!draftName.trim()}
+                className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 text-xs font-bold transition-all active:scale-95 disabled:opacity-50 flex items-center gap-1 shadow-sm"
               >
                 <Plus className="size-3.5 stroke-[2.5]" />
-                <span>Añadir</span>
+                <span className="hidden sm:inline">Añadir</span>
               </button>
             </div>
 
-            {/* Fila Secundaria: Precio (€) y Píldoras de Supermercados */}
-            <div className="flex flex-wrap items-center justify-between gap-2.5 pt-1 border-t border-border/40 text-xs">
-              {/* Precio Estimado (€) */}
-              <div className="flex items-center gap-1.5">
-                <span className="text-[11px] font-bold text-muted-foreground">Precio (€):</span>
-                <div className="relative flex items-center">
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={draftPrice}
-                    onChange={(e) => setDraftPrice(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') handleAddItem()
-                    }}
-                    placeholder="0.00"
-                    className="w-24 rounded-xl border border-border/60 bg-card/60 py-1 px-2.5 text-xs font-mono font-bold text-emerald-400 placeholder:text-muted-foreground outline-none focus:border-emerald-500 focus:bg-card"
-                  />
-                  <span className="absolute right-2 text-xs font-bold text-emerald-400/80 pointer-events-none">€</span>
+            {/* Quick Aisles & Supermarket Presets */}
+            <div className="flex flex-col gap-1.5 pt-1">
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="text-[11px] font-bold text-muted-foreground flex items-center gap-1">
+                  <Tag className="size-3" /> Pasillo:
+                </span>
+                <div className="flex flex-wrap items-center gap-1">
+                  {AISLES.map((a) => {
+                    const isSelected = draftAisle === a.id
+                    return (
+                      <button
+                        key={a.id}
+                        type="button"
+                        onClick={() => setDraftAisle(isSelected ? 'varios' : a.id)}
+                        className={cn(
+                          'px-2 py-0.5 rounded-lg text-[11px] font-bold border transition-all',
+                          isSelected
+                            ? 'bg-emerald-600/30 border-emerald-400 text-white shadow-xs'
+                            : 'bg-card/40 border-border/60 text-muted-foreground hover:text-foreground hover:bg-card'
+                        )}
+                      >
+                        <span className="mr-1">{a.icon}</span>
+                        <span>{a.label}</span>
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
 
               {/* Selector / Píldoras Rápidas de Supermercado */}
               <div className="flex flex-wrap items-center gap-1.5">
                 <span className="text-[11px] font-bold text-muted-foreground flex items-center gap-1">
-                  <Store className="size-3 text-purple-400" /> Súper:
+                  <Store className="size-3 text-slate-500 dark:text-slate-400" /> Súper:
                 </span>
                 <div className="flex flex-wrap items-center gap-1">
                   {SUPERMARKET_PRESETS.map((s) => {
@@ -541,7 +512,7 @@ export function ShoppingSection({
                         className={cn(
                           'px-2 py-0.5 rounded-lg text-[11px] font-bold border transition-all',
                           isSelected
-                            ? 'bg-purple-600/30 border-purple-400 text-white shadow-xs'
+                            ? 'bg-emerald-600/30 border-emerald-400 text-white shadow-xs'
                             : 'bg-card/40 border-border/60 text-muted-foreground hover:text-foreground hover:bg-card'
                         )}
                       >
@@ -587,14 +558,14 @@ export function ShoppingSection({
                           onClick={() => toggleShoppingItem(it.id)}
                           className="flex items-center gap-3 flex-1 text-left min-w-0"
                         >
-                          <span className="flex size-6 shrink-0 items-center justify-center rounded-full border-2 border-border bg-card transition-all hover:border-primary">
+                          <span className="flex size-6 shrink-0 items-center justify-center rounded-full border-2 border-border bg-card transition-all hover:border-emerald-500">
                             <Check className="size-3.5 text-transparent" />
                           </span>
                           <div className="flex flex-wrap items-center gap-2 min-w-0">
                             <span className="text-xs sm:text-sm font-bold text-foreground truncate">{it.name}</span>
                             {it.supermarket && (
                               <span className="inline-flex items-center gap-1 rounded-lg bg-white/5 border border-white/10 px-2 py-0.5 text-[11px] font-medium text-slate-300">
-                                <Store className="size-2.5 text-purple-400" />
+                                <Store className="size-2.5 text-slate-400" />
                                 <span>{it.supermarket}</span>
                               </span>
                             )}
@@ -647,7 +618,7 @@ export function ShoppingSection({
                           onClick={() => toggleShoppingItem(it.id)}
                           className="flex items-center gap-3 flex-1 text-left min-w-0"
                         >
-                          <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition-all">
+                          <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-white transition-all">
                             <Check className="size-3.5" strokeWidth={3} />
                           </span>
                           <div className="flex flex-wrap items-center gap-2 min-w-0">
@@ -656,7 +627,7 @@ export function ShoppingSection({
                             </span>
                             {it.supermarket && (
                               <span className="inline-flex items-center gap-1 rounded-lg bg-white/5 border border-white/10 px-2 py-0.5 text-[11px] font-medium text-slate-300 opacity-75">
-                                <Store className="size-2.5 text-purple-400" />
+                                <Store className="size-2.5 text-slate-400" />
                                 <span>{it.supermarket}</span>
                               </span>
                             )}

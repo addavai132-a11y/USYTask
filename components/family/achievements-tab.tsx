@@ -48,7 +48,7 @@ export function AchievementsTab() {
 
         <div className="w-full bg-white/[0.05] rounded-full h-1.5 overflow-hidden">
           <div
-            className="h-full bg-purple-500 rounded-full transition-all duration-300"
+            className="h-full bg-emerald-500 rounded-full transition-all duration-300"
             style={{ width: `${completionPct}%` }}
           />
         </div>
@@ -61,7 +61,7 @@ export function AchievementsTab() {
           className={cn(
             'rounded-lg px-3 py-1 text-xs font-bold transition-all',
             filter === 'todos'
-              ? 'bg-purple-600 text-white shadow-sm'
+              ? 'bg-emerald-600 text-white shadow-sm'
               : 'text-slate-400 hover:text-white'
           )}
         >
@@ -72,7 +72,7 @@ export function AchievementsTab() {
           className={cn(
             'rounded-lg px-3 py-1 text-xs font-bold transition-all',
             filter === 'desbloqueados'
-              ? 'bg-purple-600 text-white shadow-sm'
+              ? 'bg-emerald-600 text-white shadow-sm'
               : 'text-slate-400 hover:text-white'
           )}
         >
@@ -83,7 +83,7 @@ export function AchievementsTab() {
           className={cn(
             'rounded-lg px-3 py-1 text-xs font-bold transition-all',
             filter === 'bloqueados'
-              ? 'bg-purple-600 text-white shadow-sm'
+              ? 'bg-emerald-600 text-white shadow-sm'
               : 'text-slate-400 hover:text-white'
           )}
         >

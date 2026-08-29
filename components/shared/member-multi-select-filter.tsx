@@ -117,14 +117,14 @@ export function MemberMultiSelectFilter({
         className={cn(
           'flex w-full items-center justify-between gap-2.5 rounded-2xl border px-3.5 py-2 text-xs font-semibold transition-all active:scale-[0.98] shadow-sm',
           'border-slate-200 bg-white hover:bg-slate-50 text-slate-800 dark:border-purple-500/25 dark:bg-[#110C24] dark:hover:bg-purple-950/40 dark:text-white',
-          isOpen && 'border-purple-500/50 dark:border-purple-400 bg-slate-50 dark:bg-purple-950/50 shadow-md'
+          isOpen && 'border-emerald-500/50 dark:border-purple-400 bg-slate-50 dark:bg-purple-950/50 shadow-md'
         )}
       >
         {renderTriggerContent()}
         <ChevronDown
           className={cn(
             'size-3.5 text-slate-400 transition-transform duration-200 shrink-0',
-            isOpen && 'rotate-180 text-purple-600 dark:text-purple-400'
+            isOpen && 'rotate-180 text-emerald-600 dark:text-purple-400'
           )}
         />
       </button>
@@ -139,14 +139,14 @@ export function MemberMultiSelectFilter({
             className="flex items-center justify-between gap-2.5 rounded-xl px-3 py-2 text-xs font-bold transition-all text-left w-full text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-purple-600/20"
           >
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className="flex size-6 items-center justify-center rounded-lg bg-purple-500/15 text-purple-700 dark:bg-purple-500/20 dark:text-purple-300">
+              <div className="flex size-6 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700 dark:bg-purple-500/20 dark:text-purple-300">
                 <Users className="size-3.5" />
               </div>
               <span className="truncate">
                 {isAllSelected ? 'Desmarcar todos' : 'Seleccionar todos'}
               </span>
             </div>
-            <span className="text-[10px] font-black text-purple-600 dark:text-purple-400">
+            <span className="text-[10px] font-black text-emerald-700 dark:text-purple-400">
               {isAllSelected ? 'Limpiar' : 'Todos'}
             </span>
           </button>
@@ -165,7 +165,7 @@ export function MemberMultiSelectFilter({
                   className={cn(
                     'flex items-center justify-between gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold transition-all cursor-pointer select-none',
                     isChecked
-                      ? 'bg-purple-50 border border-purple-200 text-purple-900 dark:bg-purple-600/20 dark:border-purple-500/30 dark:text-white'
+                      ? 'bg-emerald-50 border border-emerald-200 text-emerald-900 dark:bg-purple-600/20 dark:border-purple-500/30 dark:text-white'
                       : 'text-slate-700 hover:bg-slate-100/80 dark:text-slate-300 dark:hover:bg-white/[0.04]'
                   )}
                 >
@@ -174,12 +174,12 @@ export function MemberMultiSelectFilter({
                     <span className="truncate">{m.name}</span>
                   </div>
 
-                  {/* Checkbox Morado */}
+                  {/* Checkbox Verde Esmeralda */}
                   <div
                     className={cn(
                       'flex size-5 items-center justify-center rounded-md border transition-all',
                       isChecked
-                        ? 'bg-purple-600 border-purple-600 text-white shadow-xs'
+                        ? 'bg-emerald-600 border-emerald-600 text-white shadow-xs'
                         : 'border-slate-300 dark:border-white/20 bg-white dark:bg-black/30'
                     )}
                   >
@@ -200,7 +200,7 @@ export function MemberMultiSelectFilter({
             <button
               type="button"
               onClick={() => setIsOpen(false)}
-              className="rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold px-3 py-1.5 transition-all active:scale-95 shadow-sm"
+              className="rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-1.5 transition-all active:scale-95 shadow-sm"
             >
               Listo
             </button>

@@ -286,7 +286,7 @@ export function MembersTab() {
                 onClick={() => setIsSubtract(false)}
                 className={cn(
                   'flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-bold transition-all',
-                  !isSubtract ? 'bg-purple-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'
+                  !isSubtract ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'
                 )}
               >
                 <PlusCircle className="size-4" />
@@ -317,7 +317,7 @@ export function MembersTab() {
                     className={cn(
                       'flex-1 rounded-xl py-2 text-xs font-bold transition-all border',
                       pointsDelta === amt
-                        ? 'border-purple-500/50 bg-purple-500/20 text-purple-200'
+                        ? 'border-emerald-500/50 bg-emerald-500/20 text-emerald-200'
                         : 'border-white/10 bg-white/[0.02] text-slate-400 hover:bg-white/[0.06] hover:text-white'
                     )}
                   >
@@ -331,7 +331,7 @@ export function MembersTab() {
                 max={5000}
                 value={pointsDelta || ''}
                 onChange={(e) => setPointsDelta(Number(e.target.value))}
-                className="mt-1 w-full rounded-xl border border-white/10 bg-white/[0.04] py-2.5 px-3 text-sm font-bold text-white outline-none focus:border-purple-500"
+                className="mt-1 w-full rounded-xl border border-white/10 bg-white/[0.04] py-2.5 px-3 text-sm font-bold text-white outline-none focus:border-emerald-500"
                 placeholder="Cantidad personalizada"
               />
             </div>
@@ -344,7 +344,7 @@ export function MembersTab() {
                 value={pointsReason}
                 onChange={(e) => setPointsReason(e.target.value)}
                 placeholder="Ej. Colaboración en el hogar, tarea cumplida..."
-                className="w-full rounded-xl border border-white/10 bg-white/[0.04] py-2.5 px-3 text-xs font-medium text-white outline-none focus:border-purple-500"
+                className="w-full rounded-xl border border-white/10 bg-white/[0.04] py-2.5 px-3 text-xs font-medium text-white outline-none focus:border-emerald-500"
               />
             </div>
 
@@ -359,7 +359,7 @@ export function MembersTab() {
               <button
                 type="button"
                 onClick={handleSaveAdjustPoints}
-                className="rounded-xl bg-purple-600 hover:bg-purple-500 px-5 py-2 text-xs font-bold text-white shadow-sm transition-all active:scale-95"
+                className="rounded-xl bg-emerald-600 hover:bg-emerald-700 px-5 py-2 text-xs font-bold text-white shadow-sm transition-all active:scale-95"
               >
                 Confirmar ajuste
               </button>
@@ -382,7 +382,7 @@ export function MembersTab() {
                 type="text"
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
-                className="w-full rounded-xl border border-white/10 bg-white/[0.04] py-2.5 px-3 text-xs font-medium text-white outline-none focus:border-purple-500"
+                className="w-full rounded-xl border border-white/10 bg-white/[0.04] py-2.5 px-3 text-xs font-medium text-white outline-none focus:border-emerald-500"
               />
             </div>
 
@@ -400,7 +400,7 @@ export function MembersTab() {
                     className={cn(
                       'rounded-xl py-2.5 text-xs font-bold border transition-all',
                       editRole === r.id
-                        ? 'border-purple-500/50 bg-purple-500/20 text-purple-200'
+                        ? 'border-emerald-500/50 bg-emerald-500/20 text-emerald-200'
                         : 'border-white/10 bg-white/[0.02] text-slate-400 hover:bg-white/[0.06] hover:text-white'
                     )}
                   >
@@ -421,7 +421,7 @@ export function MembersTab() {
               <button
                 type="button"
                 onClick={handleSaveEditMember}
-                className="rounded-xl bg-purple-600 hover:bg-purple-500 px-5 py-2 text-xs font-bold text-white shadow-sm transition-all active:scale-95"
+                className="rounded-xl bg-emerald-600 hover:bg-emerald-700 px-5 py-2 text-xs font-bold text-white shadow-sm transition-all active:scale-95"
               >
                 Guardar cambios
               </button>

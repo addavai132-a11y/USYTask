@@ -87,7 +87,7 @@ export function HistoryModal() {
                 const m = e.assignedToMemberId ? getMemberById(e.assignedToMemberId) : null
                 return (
                   <div key={`event-${e.id}-${idx}`} className="flex items-start gap-3 rounded-2xl bg-secondary/40 p-3 border border-border/50">
-                    <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-purple-500/20 text-purple-600">
+                    <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-700 dark:bg-purple-500/20 dark:text-purple-300">
                       <CalendarPlus className="size-4" />
                     </div>
                     <div className="flex-1 min-w-0">

@@ -211,7 +211,7 @@ export function TasksBoard() {
       case 'habit':
         return <Home className="size-4 text-teal-500 dark:text-teal-400" />
       default:
-        return <ListTodo className="size-4 text-purple-600 dark:text-purple-400" />
+        return <ListTodo className="size-4 text-slate-700 dark:text-slate-300" />
     }
   }
 
@@ -323,7 +323,7 @@ export function TasksBoard() {
         {filteredItems.length === 0 ? (
           /* Empty State Amigable */
           <div className="flex flex-col items-center justify-center py-10 px-4 text-center rounded-2xl bg-slate-50 dark:bg-white/[0.02] border border-dashed border-slate-200 dark:border-white/10 animate-fade-in">
-            <div className="flex size-14 items-center justify-center rounded-full bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-300 mb-3 shadow-inner">
+            <div className="flex size-14 items-center justify-center rounded-full bg-emerald-50 text-emerald-700 dark:bg-purple-500/20 dark:text-purple-300 mb-3 shadow-inner">
               <Sparkles className="size-7" />
             </div>
             <p className="text-sm font-black text-slate-900 dark:text-white">
@@ -338,7 +338,7 @@ export function TasksBoard() {
             </p>
             <button
               onClick={() => openQuickAdd('tarea')}
-              className="mt-4 inline-flex items-center gap-1.5 text-xs font-bold text-purple-600 hover:text-purple-700 dark:text-purple-300 dark:hover:text-white"
+              className="mt-4 inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 hover:text-emerald-800 dark:text-purple-300 dark:hover:text-white"
             >
               <Plus className="size-3.5" />
               <span>Crear nueva tarea</span>
@@ -367,7 +367,7 @@ export function TasksBoard() {
                       'flex size-5.5 shrink-0 items-center justify-center rounded-lg border transition-all active:scale-90',
                       isCompleted
                         ? 'bg-emerald-500 border-emerald-500 text-white'
-                        : 'border-slate-300 dark:border-purple-400/40 hover:border-purple-500 dark:hover:border-purple-400 bg-white dark:bg-black/40'
+                        : 'border-slate-300 dark:border-purple-400/40 hover:border-emerald-500 dark:hover:border-purple-400 bg-white dark:bg-black/40'
                     )}
                     title={isCompleted ? 'Marcar como pendiente' : 'Completar tarea'}
                   >
@@ -430,7 +430,7 @@ export function TasksBoard() {
         </span>
         <button
           onClick={() => setTab('organizar')}
-          className="flex items-center gap-1 font-bold text-purple-600 hover:text-purple-700 dark:text-purple-300 dark:hover:text-white transition-colors"
+          className="flex items-center gap-1 font-bold text-emerald-700 hover:text-emerald-800 dark:text-purple-300 dark:hover:text-white transition-colors"
         >
           <span>Ir al organizador</span>
           <ChevronRight className="size-3.5" />

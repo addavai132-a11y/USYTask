@@ -108,7 +108,7 @@ export function ConfirmDeleteModal({
               'rounded-xl px-4 py-2.5 text-xs sm:text-sm font-bold text-white shadow-lg shadow-red-950/40 transition-all active:scale-95 flex items-center gap-2',
               isDestructive
                 ? 'bg-red-600 hover:bg-red-700'
-                : 'bg-purple-600 hover:bg-purple-700'
+                : 'bg-emerald-600 hover:bg-emerald-700'
             )}
           >
             <Trash2 className="size-4 shrink-0 stroke-[2.5]" />

@@ -118,7 +118,7 @@ export function RewardsTab() {
 
           <button
             onClick={handleOpenCreateModal}
-            className="flex items-center gap-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white px-3.5 py-1.5 text-xs font-bold transition-all active:scale-95 shadow-sm"
+            className="flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 text-xs font-bold transition-all active:scale-95 shadow-sm"
           >
             <Plus className="size-3.5" />
             <span>+ Nueva recompensa</span>
@@ -142,19 +142,19 @@ export function RewardsTab() {
               <Card
                 key={r.id}
                 className={cn(
-                  'p-4 bg-white/[0.03] border border-white/10 hover:border-purple-500/30 transition-all rounded-2xl flex flex-col justify-between gap-3 shadow-sm',
+                  'p-4 bg-white/[0.03] border border-white/10 hover:border-emerald-500/30 transition-all rounded-2xl flex flex-col justify-between gap-3 shadow-sm',
                   !hasStock && 'opacity-60'
                 )}
               >
                 <div>
                   {/* Top: Icon & Cost */}
                   <div className="flex items-start justify-between gap-2 mb-2">
-                    <div className="flex size-9 items-center justify-center rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/20">
+                    <div className="flex size-9 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
                       <Gift className="size-4" />
                     </div>
 
                     <div className="flex items-center gap-1.5">
-                      <span className="flex items-center gap-1 rounded-full bg-purple-500/10 border border-purple-500/20 px-2.5 py-0.5 text-xs font-bold text-purple-300 tabular-nums">
+                      <span className="flex items-center gap-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 text-xs font-bold text-emerald-700 dark:text-emerald-300 tabular-nums">
                         {r.pointCost} pts
                       </span>
                       <button
@@ -190,7 +190,7 @@ export function RewardsTab() {
                     className={cn(
                       'rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all',
                       hasStock
-                        ? 'bg-purple-600 hover:bg-purple-500 text-white shadow-sm active:scale-95'
+                        ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm active:scale-95'
                         : 'bg-white/[0.04] text-slate-500 border border-white/5 cursor-not-allowed'
                     )}
                   >
@@ -207,37 +207,44 @@ export function RewardsTab() {
       <BottomSheet
         open={Boolean(claimingReward)}
         onClose={() => setClaimingReward(null)}
-        title={claimingReward ? `Canjear · ${claimingReward.title}` : ''}
+        title={`Canjear: ${claimingReward?.title || ''}`}
       >
         {claimingReward && (
           <div className="flex flex-col gap-4 text-xs">
-            <div className="p-3.5 rounded-2xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-between">
-              <span className="font-bold text-purple-200">Coste de la recompensa:</span>
-              <span className="text-base font-black text-purple-300">{claimingReward.pointCost} pts</span>
+            <div className="flex items-center justify-between p-3 rounded-2xl bg-white/[0.04] border border-white/10">
+              <span className="text-slate-400">Coste requerido:</span>
+              <span className="font-bold text-emerald-400 text-sm tabular-nums">
+                {claimingReward.pointCost} puntos
+              </span>
             </div>
 
-            <div className="flex flex-col gap-1.5">
-              <label className="font-bold text-slate-400">Selecciona el miembro que canjea</label>
-              <div className="flex flex-col gap-1.5 max-h-48 overflow-y-auto">
+            <div className="flex flex-col gap-2">
+              <p className="font-bold text-slate-300">¿Quién canjea este premio?</p>
+              <div className="flex flex-col gap-1.5 max-h-48 overflow-y-auto pr-1">
                 {members.map((m) => {
                   const canAfford = (m.points || 0) >= claimingReward.pointCost
+                  const isSelected = selectedMemberId === m.id
+
                   return (
                     <button
                       key={m.id}
                       type="button"
+                      disabled={!canAfford}
                       onClick={() => setSelectedMemberId(m.id)}
                       className={cn(
-                        'flex items-center justify-between p-2.5 rounded-xl border transition-all text-left',
-                        selectedMemberId === m.id
-                          ? 'border-purple-500/50 bg-purple-500/20'
-                          : 'border-white/10 bg-white/[0.02] hover:bg-white/[0.05]'
+                        'flex items-center justify-between p-2.5 rounded-xl border text-left transition-all',
+                        !canAfford
+                          ? 'border-white/5 bg-white/[0.01] opacity-40 cursor-not-allowed'
+                          : isSelected
+                          ? 'border-emerald-500 bg-emerald-500/15 text-white shadow-sm'
+                          : 'border-white/10 bg-white/[0.03] text-slate-300 hover:bg-white/[0.06]'
                       )}
                     >
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2.5">
                         <MemberAvatar member={m} size="sm" />
                         <div>
-                          <p className="font-bold text-white text-xs">{m.name}</p>
-                          <p className={cn('text-[10px]', canAfford ? 'text-purple-300' : 'text-slate-500')}>
+                          <p className="font-bold text-xs">{m.name}</p>
+                          <p className={cn('text-[10px]', canAfford ? 'text-emerald-300' : 'text-slate-500')}>
                             Saldo actual: {m.points || 0} pts
                           </p>
                         </div>
@@ -262,7 +269,7 @@ export function RewardsTab() {
               <button
                 type="button"
                 onClick={handleConfirmClaim}
-                className="rounded-xl bg-purple-600 hover:bg-purple-500 px-5 py-2 text-xs font-bold text-white shadow-sm transition-all active:scale-95"
+                className="rounded-xl bg-emerald-600 hover:bg-emerald-700 px-5 py-2 text-xs font-bold text-white shadow-sm transition-all active:scale-95"
               >
                 Confirmar canje
               </button>
@@ -286,7 +293,7 @@ export function RewardsTab() {
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Ej. Elegir película del viernes, Tarde de videojuegos..."
               autoFocus
-              className="w-full rounded-xl border border-white/10 bg-white/[0.04] py-2.5 px-3 text-xs font-medium text-white outline-none focus:border-purple-500"
+              className="w-full rounded-xl border border-white/10 bg-white/[0.04] py-2.5 px-3 text-xs font-medium text-white outline-none focus:border-emerald-500"
             />
           </div>
 
@@ -297,7 +304,7 @@ export function RewardsTab() {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Condiciones para disfrutar del premio..."
-              className="w-full rounded-xl border border-white/10 bg-white/[0.04] py-2 px-3 text-xs font-medium text-white outline-none focus:border-purple-500 resize-none"
+              className="w-full rounded-xl border border-white/10 bg-white/[0.04] py-2 px-3 text-xs font-medium text-white outline-none focus:border-emerald-500 resize-none"
             />
           </div>
 
@@ -310,7 +317,7 @@ export function RewardsTab() {
                 step={10}
                 value={pointCost}
                 onChange={(e) => setPointCost(Math.max(10, parseInt(e.target.value, 10) || 10))}
-                className="w-full rounded-xl border border-white/10 bg-white/[0.04] py-2 px-3 text-xs font-medium text-white outline-none focus:border-purple-500"
+                className="w-full rounded-xl border border-white/10 bg-white/[0.04] py-2 px-3 text-xs font-medium text-white outline-none focus:border-emerald-500"
               />
             </div>
 
@@ -322,7 +329,7 @@ export function RewardsTab() {
                 value={stock}
                 onChange={(e) => setStock(e.target.value)}
                 placeholder="Ilimitado"
-                className="w-full rounded-xl border border-white/10 bg-white/[0.04] py-2 px-3 text-xs font-medium text-white outline-none focus:border-purple-500"
+                className="w-full rounded-xl border border-white/10 bg-white/[0.04] py-2 px-3 text-xs font-medium text-white outline-none focus:border-emerald-500"
               />
             </div>
           </div>
@@ -338,7 +345,7 @@ export function RewardsTab() {
             <button
               type="button"
               onClick={handleCreateReward}
-              className="rounded-xl bg-purple-600 hover:bg-purple-500 px-5 py-2 text-xs font-bold text-white shadow-sm transition-all active:scale-95"
+              className="rounded-xl bg-emerald-600 hover:bg-emerald-700 px-5 py-2 text-xs font-bold text-white shadow-sm transition-all active:scale-95"
             >
               Guardar recompensa
             </button>

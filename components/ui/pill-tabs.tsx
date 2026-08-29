@@ -90,8 +90,8 @@ export function PillTabs<T extends string>({
                 'group flex shrink-0 items-center gap-1.5 rounded-full text-xs font-bold transition-all duration-200 cursor-pointer active:scale-95 select-none border',
                 t.deletable && onDelete ? 'pl-3.5 pr-2 py-1.5' : 'px-4 py-2',
                 isActive
-                  ? 'bg-purple-600 text-white border-purple-600 shadow-sm dark:bg-gradient-to-r dark:from-purple-600 dark:to-indigo-600 dark:text-white dark:border-purple-500/50 dark:shadow-[0_0_18px_rgba(168,85,247,0.3)]'
-                  : 'bg-white text-slate-700 border-slate-200 hover:bg-purple-50 hover:text-purple-900 dark:bg-card dark:text-muted-foreground dark:border-border dark:hover:bg-secondary dark:hover:text-foreground'
+                  ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm dark:bg-gradient-to-r dark:from-purple-600 dark:to-indigo-600 dark:text-white dark:border-purple-500/50 dark:shadow-[0_0_18px_rgba(168,85,247,0.3)]'
+                  : 'bg-white text-slate-700 border-slate-200 hover:bg-emerald-50 hover:text-emerald-900 dark:bg-card dark:text-muted-foreground dark:border-border dark:hover:bg-secondary dark:hover:text-foreground'
               )}
             >
               <span>{t.label}</span>

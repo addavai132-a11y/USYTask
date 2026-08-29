@@ -329,11 +329,11 @@ export function TasksSection({
             className={cn(
               'flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition-all whitespace-nowrap',
               activityKind === 'eventos'
-                ? 'bg-purple-500/25 text-purple-300 border border-purple-500/30 shadow-sm'
+                ? 'bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 shadow-sm'
                 : 'text-slate-400 hover:text-white'
             )}
           >
-            <span className="size-2 rounded-full bg-purple-500" />
+            <span className="size-2 rounded-full bg-emerald-500" />
             <span>Eventos ({filteredEvents.length})</span>
           </button>
           <button
@@ -354,7 +354,7 @@ export function TasksSection({
         <div className="relative shrink-0">
           <button
             onClick={() => handleDirectAdd()}
-            className="flex items-center gap-1 rounded-xl bg-purple-600 hover:bg-purple-500 text-white px-3 py-1.5 text-xs font-bold transition-all active:scale-95 shadow-sm"
+            className="flex items-center gap-1 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 text-xs font-bold transition-all active:scale-95 shadow-sm"
           >
             <Plus className="size-3.5 stroke-[2.5]" />
             <span className="hidden sm:inline">Añadir</span>
@@ -374,10 +374,10 @@ export function TasksSection({
                 </button>
                 <button
                   onClick={() => handleDirectAdd('evento')}
-                  className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold text-purple-300 hover:bg-purple-500/15 transition-all text-left"
+                  className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold text-emerald-300 hover:bg-emerald-500/15 transition-all text-left"
                 >
-                  <span className="size-2 rounded-full bg-purple-500" />
-                  <span>🟣 Nuevo Evento</span>
+                  <span className="size-2 rounded-full bg-emerald-500" />
+                  <span>🟢 Nuevo Evento</span>
                 </button>
                 <button
                   onClick={() => handleDirectAdd('recordatorio')}
@@ -399,7 +399,7 @@ export function TasksSection({
         <div className="space-y-3">
           {allCombinedActivities.length === 0 ? (
             <div className="w-full min-h-[200px] sm:min-h-[220px] p-6 flex flex-col items-center justify-center gap-3 bg-white/[0.02] border border-white/10 rounded-2xl text-center">
-              <div className="flex size-10 items-center justify-center rounded-xl bg-purple-500/10 text-purple-400 text-lg">
+              <div className="flex size-10 items-center justify-center rounded-xl bg-slate-100 dark:bg-white/[0.05] text-slate-700 dark:text-slate-300 text-lg">
                 ✨
               </div>
               <p className="text-xs text-slate-400 max-w-xs">
@@ -414,7 +414,7 @@ export function TasksSection({
                 </button>
                 <button
                   onClick={() => openQuickAdd('evento', { hideTabs: true })}
-                  className="rounded-xl bg-purple-600/30 text-purple-300 border border-purple-500/30 px-3 py-1.5 text-xs font-bold hover:bg-purple-600/40 transition-all"
+                  className="rounded-xl bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 px-3 py-1.5 text-xs font-bold hover:bg-emerald-600/40 transition-all"
                 >
                   + Evento
                 </button>
@@ -549,7 +549,7 @@ export function TasksSection({
                 onClick={() => setViewMode('list')}
                 className={cn(
                   'flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-bold transition-all',
-                  viewMode === 'list' ? 'bg-purple-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'
+                  viewMode === 'list' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'
                 )}
               >
                 <List className="size-3" />
@@ -559,7 +559,7 @@ export function TasksSection({
                 onClick={() => setViewMode('kanban')}
                 className={cn(
                   'flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-bold transition-all',
-                  viewMode === 'kanban' ? 'bg-purple-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'
+                  viewMode === 'kanban' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'
                 )}
               >
                 <LayoutGrid className="size-3" />
@@ -577,7 +577,7 @@ export function TasksSection({
             rightElement={
               <button
                 onClick={handleOpenCreateModal}
-                className="flex shrink-0 items-center gap-1.5 rounded-xl border border-dashed border-white/20 bg-white/[0.02] px-3 py-1.5 text-xs font-bold text-purple-400 transition-all active:scale-95 hover:bg-white/[0.06]"
+                className="flex shrink-0 items-center gap-1.5 rounded-xl border border-dashed border-white/20 bg-white/[0.02] px-3 py-1.5 text-xs font-bold text-emerald-400 transition-all active:scale-95 hover:bg-white/[0.06]"
                 title="Añadir categoría"
               >
                 <Plus className="size-3" />
@@ -588,13 +588,13 @@ export function TasksSection({
 
           {filteredTasks.length === 0 ? (
             <div className="w-full min-h-[200px] sm:min-h-[220px] p-6 flex flex-col items-center justify-center gap-3 bg-white/[0.02] border border-white/10 rounded-2xl text-center">
-              <div className="flex size-10 items-center justify-center rounded-xl bg-blue-500/10 text-blue-400 text-lg">
+              <div className="flex size-10 items-center justify-center rounded-xl bg-slate-100 dark:bg-white/[0.05] text-slate-700 dark:text-slate-300 text-lg">
                 ✅
               </div>
               <p className="text-xs text-slate-400 max-w-xs">No hay tareas en esta categoría.</p>
               <button
                 onClick={() => openQuickAdd('tarea', { hideTabs: true, defaultSection: tab })}
-                className="mt-1 rounded-xl bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 text-xs font-bold transition-all active:scale-95 shadow-sm"
+                className="mt-1 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 text-xs font-bold transition-all active:scale-95 shadow-sm"
               >
                 + Añadir tarea
               </button>
@@ -649,7 +649,7 @@ export function TasksSection({
                       <p className="text-xs font-bold text-foreground">{t.title}</p>
                       <button
                         onClick={() => handleToggle(t.id, t.title)}
-                        className="size-5 rounded border border-white/20 flex items-center justify-center text-transparent hover:border-blue-400"
+                        className="size-5 rounded border border-white/20 flex items-center justify-center text-transparent hover:border-emerald-400"
                       >
                         <Check className="size-3" />
                       </button>
@@ -669,7 +669,7 @@ export function TasksSection({
                       <p className="text-xs font-bold text-foreground line-through">{t.title}</p>
                       <button
                         onClick={() => handleToggle(t.id, t.title)}
-                        className="size-5 rounded bg-blue-500 text-white flex items-center justify-center"
+                        className="size-5 rounded bg-emerald-500 text-white flex items-center justify-center"
                       >
                         <Check className="size-3" />
                       </button>
@@ -683,19 +683,19 @@ export function TasksSection({
       )}
 
       {/* ========================================================================= */}
-      {/* 3. VISTA: 🟣 EVENTOS ESPECÍFICOS */}
+      {/* 3. VISTA: 🟢 EVENTOS ESPECÍFICOS */}
       {/* ========================================================================= */}
       {activityKind === 'eventos' && (
         <div className="space-y-3">
           {filteredEvents.length === 0 ? (
             <div className="w-full min-h-[200px] sm:min-h-[220px] p-6 flex flex-col items-center justify-center gap-3 bg-white/[0.02] border border-white/10 rounded-2xl text-center">
-              <div className="flex size-10 items-center justify-center rounded-xl bg-purple-500/10 text-purple-400 text-lg">
+              <div className="flex size-10 items-center justify-center rounded-xl bg-slate-100 dark:bg-white/[0.05] text-slate-700 dark:text-slate-300 text-lg">
                 📅
               </div>
               <p className="text-xs text-slate-400 max-w-xs">No hay eventos programados en este grupo.</p>
               <button
                 onClick={() => openQuickAdd('evento', { hideTabs: true })}
-                className="mt-1 rounded-xl bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 text-xs font-bold transition-all active:scale-95 shadow-sm"
+                className="mt-1 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 text-xs font-bold transition-all active:scale-95 shadow-sm"
               >
                 + Añadir evento
               </button>
@@ -712,7 +712,7 @@ export function TasksSection({
                       className="py-2.5 px-2 flex items-center justify-between gap-3 hover:bg-white/[0.02] rounded-xl transition-all"
                     >
                       <div className="flex items-center gap-3 min-w-0 flex-1">
-                        <div className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-purple-500/15 text-purple-400">
+                        <div className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
                           <CalendarDays className="size-4" />
                         </div>
                         <div className="min-w-0 flex-1">

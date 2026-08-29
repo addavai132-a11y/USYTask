@@ -87,7 +87,7 @@ export function CardHeader({
       {action && (
         <button
           onClick={onAction}
-          className="text-xs font-semibold text-purple-600 dark:text-purple-400 hover:underline transition-colors"
+          className="text-xs font-semibold text-emerald-600 hover:text-emerald-700 dark:text-purple-400 hover:underline transition-colors"
         >
           {action}
         </button>

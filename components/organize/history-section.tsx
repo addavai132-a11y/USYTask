@@ -302,7 +302,7 @@ export function HistorySection({
                           </div>
                         )}
                         {item.type === 'event' && (
-                          <div className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-purple-500/10 text-purple-600 font-bold">
+                          <div className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-700 dark:bg-purple-500/10 dark:text-purple-400 font-bold">
                             <CalendarPlus className="size-5" />
                           </div>
                         )}

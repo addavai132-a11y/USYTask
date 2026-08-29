@@ -70,10 +70,10 @@ const kindConfig: Record<
     icon: ListChecks,
   },
   event: {
-    dot: 'bg-purple-500',
-    bg: 'bg-purple-500/15 text-purple-600 dark:text-purple-300',
-    border: 'border-purple-500/30',
-    text: 'text-purple-600 dark:text-purple-400',
+    dot: 'bg-emerald-500',
+    bg: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300',
+    border: 'border-emerald-500/30',
+    text: 'text-emerald-600 dark:text-emerald-400',
     label: 'Eventos',
     icon: CalendarDays,
   },
@@ -350,7 +350,7 @@ export function CalendarSection({
         {/* Header: Pestañas interactivas de Mes / Año, Navegación y Botón Hoy */}
         <div className="flex items-center justify-between mb-3 px-0.5 relative">
           <div className="flex items-center gap-1.5 sm:gap-2">
-            <div className="flex size-7 items-center justify-center rounded-lg bg-purple-50 text-purple-600 dark:bg-purple-500/15 dark:text-purple-400 shrink-0 border border-purple-200 dark:border-purple-500/20">
+            <div className="flex size-7 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 dark:bg-purple-500/15 dark:text-purple-400 shrink-0 border border-emerald-200 dark:border-purple-500/20">
               <CalendarIcon className="size-3.5" />
             </div>
 
@@ -365,12 +365,12 @@ export function CalendarSection({
                 className={cn(
                   'flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold transition-all shadow-sm',
                   isMonthPickerOpen
-                    ? 'border-purple-500 bg-purple-50 text-purple-700 dark:bg-purple-500/20 dark:text-purple-300'
+                    ? 'border-emerald-500 bg-emerald-50 text-emerald-800 dark:bg-purple-500/20 dark:text-purple-300'
                     : 'border-slate-200 dark:border-white/10 bg-white dark:bg-white/[0.04] text-slate-800 dark:text-white hover:bg-slate-50 dark:hover:bg-white/[0.08]'
                 )}
               >
                 <span>{monthNames[viewMonth]}</span>
-                <ChevronDown className={cn('size-3 text-slate-400 transition-transform duration-200', isMonthPickerOpen && 'rotate-180 text-purple-600 dark:text-purple-400')} />
+                <ChevronDown className={cn('size-3 text-slate-400 transition-transform duration-200', isMonthPickerOpen && 'rotate-180 text-emerald-600 dark:text-purple-400')} />
               </button>
 
               {/* Menú de Selección de Mes (12 meses) */}
@@ -389,7 +389,7 @@ export function CalendarSection({
                         className={cn(
                           'rounded-xl px-2.5 py-1.5 text-xs font-semibold text-left transition-all',
                           isSelected
-                            ? 'bg-purple-600 text-white shadow-sm font-bold'
+                            ? 'bg-emerald-600 text-white shadow-sm font-bold'
                             : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10'
                         )}
                       >
@@ -412,12 +412,12 @@ export function CalendarSection({
                 className={cn(
                   'flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold transition-all shadow-sm',
                   isYearPickerOpen
-                    ? 'border-purple-500 bg-purple-50 text-purple-700 dark:bg-purple-500/20 dark:text-purple-300'
+                    ? 'border-emerald-500 bg-emerald-50 text-emerald-800 dark:bg-purple-500/20 dark:text-purple-300'
                     : 'border-slate-200 dark:border-white/10 bg-white dark:bg-white/[0.04] text-slate-800 dark:text-white hover:bg-slate-50 dark:hover:bg-white/[0.08]'
                 )}
               >
                 <span className="tabular-nums">{viewYear}</span>
-                <ChevronDown className={cn('size-3 text-slate-400 transition-transform duration-200', isYearPickerOpen && 'rotate-180 text-purple-600 dark:text-purple-400')} />
+                <ChevronDown className={cn('size-3 text-slate-400 transition-transform duration-200', isYearPickerOpen && 'rotate-180 text-emerald-600 dark:text-purple-400')} />
               </button>
 
               {/* Menú de Selección de Año Consecutivo (2024 - 2060) */}
@@ -440,7 +440,7 @@ export function CalendarSection({
                         className={cn(
                           'w-full rounded-xl px-3 py-1.5 text-xs font-semibold text-left transition-all flex items-center justify-between',
                           isSelected
-                            ? 'bg-purple-600 text-white shadow-sm font-bold'
+                            ? 'bg-emerald-600 text-white shadow-sm font-bold'
                             : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10'
                         )}
                       >
@@ -469,7 +469,7 @@ export function CalendarSection({
               className={cn(
                 'rounded-lg px-2 py-0.5 text-[11px] font-bold transition-all border',
                 isCurrentViewingMonthToday && selectedDateISO === todayISO
-                  ? 'bg-purple-600 text-white border-purple-500 shadow-sm'
+                  ? 'bg-emerald-600 text-white border-emerald-500 shadow-sm'
                   : 'bg-slate-100 dark:bg-white/[0.05] hover:bg-slate-200 dark:hover:bg-white/[0.1] text-slate-700 dark:text-slate-200 border-slate-200 dark:border-white/10'
               )}
             >
@@ -529,12 +529,12 @@ export function CalendarSection({
                 className={cn(
                   'group relative h-10 md:h-11 w-full rounded-lg p-0.5 flex flex-col items-center justify-center gap-0.5 transition-all duration-150 border text-center cursor-pointer',
                   isSelected
-                    ? 'border-purple-500 bg-purple-50 dark:bg-purple-500/20 shadow-sm ring-1 ring-purple-500/40 active:scale-95'
+                    ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-500/20 shadow-sm ring-1 ring-emerald-500/40 active:scale-95'
                     : isToday
-                    ? 'border-purple-500/40 bg-purple-500/10 active:scale-95'
+                    ? 'border-emerald-500/40 bg-emerald-500/10 active:scale-95'
                     : isPast
                     ? 'border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.01] hover:bg-slate-100 dark:hover:bg-white/[0.04] active:scale-95 opacity-80'
-                    : 'border-slate-100 dark:border-white/5 bg-white dark:bg-white/[0.02] hover:bg-slate-50 dark:hover:bg-white/[0.06] hover:border-purple-500/30 active:scale-95'
+                    : 'border-slate-100 dark:border-white/5 bg-white dark:bg-white/[0.02] hover:bg-slate-50 dark:hover:bg-white/[0.06] hover:border-emerald-500/30 active:scale-95'
                 )}
               >
                 {/* Número del día */}
@@ -542,12 +542,12 @@ export function CalendarSection({
                   className={cn(
                     'text-xs font-medium transition-all leading-none tabular-nums',
                     isToday
-                      ? 'w-5 h-5 text-[11px] flex items-center justify-center rounded-full bg-purple-600 font-bold text-white shadow-sm'
+                      ? 'w-5 h-5 text-[11px] flex items-center justify-center rounded-full bg-emerald-600 font-bold text-white shadow-sm'
                       : isSelected
-                      ? 'font-bold text-purple-700 dark:text-purple-300'
+                      ? 'font-bold text-emerald-800 dark:text-emerald-300'
                       : isPast
                       ? 'text-slate-400 dark:text-slate-500'
-                      : 'text-slate-800 dark:text-slate-200 group-hover:text-purple-600 dark:group-hover:text-purple-400'
+                      : 'text-slate-800 dark:text-slate-200 group-hover:text-emerald-600 dark:group-hover:text-purple-400'
                   )}
                 >
                   {dayNum}
@@ -556,7 +556,7 @@ export function CalendarSection({
                 {/* Puntos de colores por tipo de actividad */}
                 <div className="flex items-center justify-center gap-0.5 h-1">
                   {hasEvent && (
-                    <span title="Evento" className="size-1 rounded-full bg-purple-500" />
+                    <span title="Evento" className="size-1 rounded-full bg-emerald-500" />
                   )}
                   {hasTask && (
                     <span title="Tarea" className="size-1 rounded-full bg-blue-500" />
@@ -565,7 +565,7 @@ export function CalendarSection({
                     <span title="Recordatorio" className="size-1 rounded-full bg-orange-500" />
                   )}
                   {hasMeal && (
-                    <span title="Comida / Menú" className="size-1 rounded-full bg-emerald-500" />
+                    <span title="Comida / Menú" className="size-1 rounded-full bg-teal-500" />
                   )}
                 </div>
               </button>
@@ -577,7 +577,7 @@ export function CalendarSection({
       {/* ── BARRA INFERIOR DE FILTROS POR CAPAS ── */}
       <Card className="p-2.5 sm:p-3 bg-white dark:bg-[#0e0d1d]/60 border border-slate-200 dark:border-purple-500/15 rounded-2xl backdrop-blur-xl flex flex-wrap items-center justify-between gap-2 shadow-sm">
         <div className="flex items-center gap-1.5">
-          <Layers className="size-3.5 text-purple-600 dark:text-purple-400" />
+          <Layers className="size-3.5 text-emerald-600 dark:text-purple-400" />
           <span className="text-[11px] font-bold uppercase text-slate-700 dark:text-slate-300 tracking-wider">
             Capas:
           </span>
@@ -696,7 +696,7 @@ function DayDetailModal({
         {/* Cabecera del modal */}
         <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-white/10">
           <div className="flex items-center gap-2.5">
-            <div className="flex size-9 items-center justify-center rounded-xl bg-purple-50 text-purple-600 dark:bg-purple-500/20 dark:text-purple-400 border border-purple-200 dark:border-purple-500/30">
+            <div className="flex size-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-purple-500/20 dark:text-purple-400 border border-emerald-200 dark:border-purple-500/30">
               <CalendarIcon className="size-4" />
             </div>
             <div>
@@ -705,7 +705,7 @@ function DayDetailModal({
                   {dateCapitalized}
                 </h3>
                 {isToday && (
-                  <span className="rounded-full bg-purple-100 dark:bg-purple-500/20 px-2 py-0.5 text-[10px] font-bold text-purple-700 dark:text-purple-300 border border-purple-300 dark:border-purple-500/30">
+                  <span className="rounded-full bg-emerald-100 dark:bg-purple-500/20 px-2 py-0.5 text-[10px] font-bold text-emerald-800 dark:text-purple-300 border border-emerald-300 dark:border-purple-500/30">
                     Hoy
                   </span>
                 )}

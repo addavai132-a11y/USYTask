@@ -63,20 +63,20 @@
 :root,
 .light {
   color-scheme: light;
-  /* Clean High-Contrast Light System with Unified Purple Brand */
+  /* Clean High-Contrast Light System with Unified Emerald Brand */
   --background: #f8fafc;
   --foreground: #0f172a;
   --card: #ffffff;
   --card-foreground: #0f172a;
   --popover: #ffffff;
   --popover-foreground: #0f172a;
-  --primary: #7c3aed; /* Purple 600 */
+  --primary: #059669; /* Emerald 600 */
   --primary-foreground: #ffffff;
   --secondary: #f1f5f9;
   --secondary-foreground: #1e293b;
   --muted: #f8fafc;
   --muted-foreground: #475569;
-  --accent: #7c3aed;
+  --accent: #059669;
   --accent-foreground: #ffffff;
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
@@ -86,29 +86,29 @@
   --warning-foreground: #ffffff;
   --border: #e2e8f0;
   --input: #e2e8f0;
-  --ring: #7c3aed;
+  --ring: #059669;
 
   --member-marcos: #2563eb;
   --member-marieli: #db2777;
   --member-adrian: #ea580c;
-  --member-celia: #9333ea;
+  --member-celia: #059669;
 
-  --chart-1: #7c3aed;
+  --chart-1: #059669;
   --chart-2: #2563eb;
   --chart-3: #d97706;
-  --chart-4: #9333ea;
+  --chart-4: #0d9488;
   --chart-5: #0284c7;
 
   --radius: 1.25rem;
 
   --sidebar: #ffffff;
   --sidebar-foreground: #0f172a;
-  --sidebar-primary: #7c3aed;
+  --sidebar-primary: #059669;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #f3e8ff;
-  --sidebar-accent-foreground: #6b21a8;
+  --sidebar-accent: #ecfdf5;
+  --sidebar-accent-foreground: #065f46;
   --sidebar-border: #e2e8f0;
-  --sidebar-ring: #7c3aed;
+  --sidebar-ring: #059669;
 }
 
 .dark {
@@ -499,7 +499,7 @@ select option:checked {
 }
 
 /* Convert text-white on neutral elements in light mode to deep dark text */
-.light .text-white:not(button):not([class*='bg-purple']):not([class*='bg-emerald']):not([class*='bg-rose']):not([class*='bg-amber']):not([class*='bg-primary']) {
+.light .text-white:not(button):not([class*='bg-purple']):not([class*='bg-emerald']):not([class*='bg-rose']):not([class*='bg-amber']):not([class*='bg-primary']):not([class*='bg-teal']) {
   color: #0f172a !important;
 }
 
@@ -508,13 +508,17 @@ select option:checked {
 .light button[class*='bg-purple-700'],
 .light button[class*='bg-primary'],
 .light button[class*='bg-emerald-600'],
+.light button[class*='bg-emerald-700'],
+.light button[class*='bg-teal-600'],
 .light button[class*='bg-rose-600'],
 .light .bg-purple-600,
+.light .bg-emerald-600,
 .light .bg-primary {
   color: #ffffff !important;
 }
 
 .light button[class*='bg-purple-600'] *,
+.light button[class*='bg-emerald-600'] *,
 .light button[class*='bg-primary'] * {
   color: #ffffff !important;
 }
@@ -530,25 +534,6 @@ select option:checked {
 
 .light .text-slate-300 {
   color: #334155 !important;
-}
-
-/* Purple accent text contrast adjustment in light mode */
-.light .text-purple-300,
-.light .text-purple-200 {
-  color: #6d28d9 !important; /* purple-700 for optimal WCAG AAA contrast */
-}
-
-.light .text-purple-400 {
-  color: #7c3aed !important; /* purple-600 */
-}
-
-/* Purple subtle container backgrounds in light mode */
-.light [class*='bg-purple-500/5'],
-.light [class*='bg-purple-500/10'],
-.light [class*='bg-purple-500/15'],
-.light [class*='bg-purple-500/20'] {
-  background-color: #f5f3ff !important;
-  border-color: #ddd6fe !important;
 }
 
 /* Light mode dropdown and popover crisp shadows */
@@ -571,7 +556,7 @@ select option:checked {
 .light input:not([type='checkbox']):not([type='radio']):not([type='range']):focus,
 .light textarea:focus,
 .light select:focus {
-  border-color: #7c3aed;
+  border-color: #059669;
   background-color: #ffffff;
 }
 
