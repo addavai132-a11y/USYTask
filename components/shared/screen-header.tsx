@@ -1,5 +1,4 @@
 import { SpaceSelectorButton } from '@/components/app/space-selector-button'
-import { ThemeModeToggle } from '@/components/ui/theme-mode-toggle'
 import { cn } from '@/lib/utils'
 
 export function ScreenHeader({
@@ -18,15 +17,16 @@ export function ScreenHeader({
   if (centered) {
     return (
       <header className={cn('flex flex-col items-center justify-center text-center space-y-2 mb-6 w-full', className)}>
-        {/* Fila superior: Selector de espacio y botón de tema */}
+        {/* Fila superior: Selector de espacio y acciones */}
         <div className="w-full flex items-center justify-between sm:justify-center relative">
           <div className="sm:mx-auto">
             <SpaceSelectorButton />
           </div>
-          <div className="flex items-center gap-2 sm:absolute sm:right-0">
-            {action}
-            <ThemeModeToggle />
-          </div>
+          {action && (
+            <div className="flex items-center gap-2 sm:absolute sm:right-0">
+              {action}
+            </div>
+          )}
         </div>
 
         {/* Título y Subtítulo centrados */}
@@ -46,10 +46,11 @@ export function ScreenHeader({
     <header className={cn('mb-4 flex flex-col gap-3', className)}>
       <div className="flex items-center justify-between gap-3">
         <SpaceSelectorButton />
-        <div className="flex items-center gap-2">
-          {action}
-          <ThemeModeToggle />
-        </div>
+        {action && (
+          <div className="flex items-center gap-2">
+            {action}
+          </div>
+        )}
       </div>
       <div>
         <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white text-balance">{title}</h1>

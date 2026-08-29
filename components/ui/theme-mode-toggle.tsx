@@ -1,17 +1,24 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { usePathname } from 'next/navigation'
 import { Sun, Moon } from 'lucide-react'
 import { useTheme } from './theme-mode-context'
 import { cn } from '@/lib/utils'
 
 export function ThemeModeToggle({ className }: { className?: string }) {
+  const pathname = usePathname()
   const [mounted, setMounted] = useState(false)
   const { mode, toggleMode } = useTheme()
 
   useEffect(() => {
     setMounted(true)
   }, [])
+
+  // Bloqueo: Si no estamos en la página principal del dashboard, no renderizamos el switch
+  if (pathname !== '/app') {
+    return null
+  }
 
   if (!mounted) {
     return (

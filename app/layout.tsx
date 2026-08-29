@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from 'next'
 import { Plus_Jakarta_Sans } from 'next/font/google'
 import { ServiceWorkerRegister } from '@/components/pwa/service-worker-register'
 import { ThemeModeProvider } from '@/components/ui/theme-mode-context'
+import { HistoryLock } from '@/components/app/history-lock'
 import './globals.css'
 
 const fontSans = Plus_Jakarta_Sans({
@@ -86,9 +87,10 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="es" className={`${fontSans.variable} dark min-h-screen min-h-[100dvh] overscroll-y-none`}>
-      <body className="font-sans antialiased min-h-screen min-h-[100dvh] bg-background text-foreground transition-colors duration-300 overscroll-y-none">
+    <html lang="es" className={`${fontSans.variable} dark min-h-screen min-h-[100dvh] overscroll-none`}>
+      <body className="font-sans antialiased min-h-screen min-h-[100dvh] bg-background text-foreground transition-colors duration-300 overscroll-none touch-pan-y">
         <ThemeModeProvider>
+          <HistoryLock />
           {/* Fixed Ambient Aurora Glow Background Layer */}
           <div className="fixed inset-0 pointer-events-none -z-10 overflow-hidden">
             <div className="absolute top-[10%] left-[15%] size-[550px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,_rgba(147,51,234,0.14)_0%,_transparent_70%)] blur-3xl" />
