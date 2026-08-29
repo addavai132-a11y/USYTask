@@ -159,6 +159,11 @@ export function TasksBoard() {
       return
     }
 
+    if (item.completed) {
+      toast('Esta tarea ya está completada', '🔒')
+      return
+    }
+
     const canComplete =
       !currentMember ||
       item.assignedToMemberId === currentMember.id ||
@@ -348,6 +353,7 @@ export function TasksBoard() {
         ) : (
           filteredItems.map((item) => {
             const member = item.assignedToMemberId ? getMemberById(item.assignedToMemberId) : null
+            const creator = item.createdBy ? getMemberById(item.createdBy) : null
             const isCompleted = item.completed
 
             return (
@@ -363,14 +369,15 @@ export function TasksBoard() {
                 {/* Checkbox y Título */}
                 <div className="flex items-center gap-3 min-w-0 flex-1">
                   <button
+                    disabled={isCompleted}
                     onClick={() => handleToggle(item)}
                     className={cn(
-                      'flex size-5.5 shrink-0 items-center justify-center rounded-lg border transition-all active:scale-90',
+                      'flex size-5.5 shrink-0 items-center justify-center rounded-lg border transition-all',
                       isCompleted
-                        ? 'bg-emerald-500 border-emerald-500 text-white'
-                        : 'border-slate-300 dark:border-purple-400/40 hover:border-emerald-500 dark:hover:border-purple-400 bg-white dark:bg-black/40'
+                        ? 'bg-emerald-500 border-emerald-500 text-white cursor-default opacity-90'
+                        : 'border-slate-300 dark:border-purple-400/40 hover:border-emerald-500 dark:hover:border-purple-400 bg-white dark:bg-black/40 active:scale-90'
                     )}
-                    title={isCompleted ? 'Marcar como pendiente' : 'Completar tarea'}
+                    title={isCompleted ? 'Tarea completada (bloqueada)' : 'Completar tarea'}
                   >
                     {isCompleted && <Check className="size-3.5 stroke-[3]" />}
                   </button>
@@ -397,6 +404,19 @@ export function TasksBoard() {
                       {item.points && (
                         <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 flex items-center gap-0.5">
                           ⭐ +{item.points} pts
+                        </span>
+                      )}
+
+                      {creator && (
+                        <span
+                          className="inline-flex items-center gap-1 rounded-full bg-slate-100 dark:bg-white/[0.06] border border-slate-200 dark:border-white/10 px-2 py-0.5 text-[10px] font-medium text-slate-600 dark:text-slate-300"
+                          title={`Creado por ${creator.name}`}
+                        >
+                          <span className="text-slate-400">Creado por:</span>
+                          <MemberAvatar member={creator} size="xs" />
+                          <span className="font-bold text-slate-700 dark:text-slate-200 truncate max-w-[70px]">
+                            {creator.name.split(' ')[0]}
+                          </span>
                         </span>
                       )}
                     </div>

@@ -596,6 +596,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   ) => {
     if (!activeGroup) return
     const uniqueId = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `task_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
+    
+    // Current user's member in this group
+    const groupMembers = getMembersByGroup(activeGroup.id)
+    const actingMember =
+      groupMembers.find((m) => m.name === userName) ||
+      groupMembers[0] ||
+      { id: currentMember?.id || 'usr_default', name: userName || 'Usuario' }
+
     const task: Task = {
       id: uniqueId,
       title,
@@ -608,16 +616,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       priority,
       dueDate: dueDate || undefined,
       dueTime: dueTime || undefined,
-      createdBy: currentMember?.id,
+      createdBy: currentMember?.id || actingMember.id,
     }
     addTaskStore(task)
-
-    // Current user's member in this group
-    const groupMembers = getMembersByGroup(activeGroup.id)
-    const actingMember =
-      groupMembers.find((m) => m.name === userName) ||
-      groupMembers[0] ||
-      { id: currentMember?.id || 'usr_default', name: userName || 'Usuario' }
 
     try {
       addActivity({
@@ -643,6 +644,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const handleToggleTask = (taskId: string) => {
     if (!activeGroup) return { pointsAwarded: 0, memberId: null }
+    const existingTask = getTasksByGroup(activeGroup.id).find((t) => t.id === taskId)
+    if (existingTask?.completed) {
+      return { pointsAwarded: 0, memberId: null }
+    }
+
     const result = toggleTaskStore(taskId, activeGroup.id)
     
     if (result.pointsAwarded > 0 && result.memberId) {

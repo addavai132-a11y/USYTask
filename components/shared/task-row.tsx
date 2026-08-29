@@ -8,6 +8,7 @@ import { MemberAvatar } from '@/components/ui/member-avatar'
 export function TaskRow({
   task,
   member,
+  creator,
   checked,
   onToggle,
   onDelete,
@@ -16,30 +17,37 @@ export function TaskRow({
 }: {
   task: Task
   member?: Member | null
+  creator?: Member | null
   checked: boolean
   onToggle: () => void
   onDelete?: () => void
   disabled?: boolean
   onDisabledClick?: () => void
 }) {
+  const isLocked = checked || disabled
+
   return (
-    <div className={cn("flex items-center gap-3 py-1", disabled && "opacity-70")}>
+    <div className={cn("flex items-center gap-3 py-1", isLocked && "opacity-75")}>
       <button
+        disabled={checked}
         onClick={() => {
           if (disabled) {
             onDisabledClick?.()
-          } else {
+          } else if (!checked) {
             onToggle()
           }
         }}
         aria-pressed={checked}
-        aria-disabled={disabled}
-        aria-label={checked ? `Marcar ${task.title} como pendiente` : `Completar ${task.title}`}
+        aria-disabled={isLocked}
+        aria-label={checked ? `Tarea ${task.title} completada` : `Completar ${task.title}`}
         className={cn(
           'flex size-7 shrink-0 items-center justify-center rounded-full border-2 transition-all',
-          !disabled && 'active:scale-90',
-          disabled && 'cursor-not-allowed',
-          checked ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-card',
+          !isLocked && 'active:scale-90',
+          checked
+            ? 'border-emerald-500 bg-emerald-500 text-white cursor-default'
+            : disabled
+            ? 'cursor-not-allowed border-border bg-card'
+            : 'border-border bg-card hover:border-emerald-500'
         )}
       >
         <Check className={cn('size-4 transition-transform', checked ? 'scale-100' : 'scale-0')} strokeWidth={3} />
@@ -48,13 +56,22 @@ export function TaskRow({
         <span className={cn('block text-sm font-medium transition-colors truncate', checked && 'text-muted-foreground line-through')}>
           {task.title}
         </span>
-        {(task.dueDate || task.dueTime) && (
-          <div className="flex items-center gap-1.5 mt-0.5 text-[10px] font-semibold text-muted-foreground">
-            <Clock className="size-3 text-purple-400 shrink-0" />
-            <span>{task.dueDate ? task.dueDate : 'Hoy'}</span>
-            {task.dueTime && <span className="text-foreground/90 font-bold">· {task.dueTime}</span>}
-          </div>
-        )}
+        <div className="flex flex-wrap items-center gap-2 mt-0.5 text-[10px] font-semibold text-muted-foreground">
+          {(task.dueDate || task.dueTime) && (
+            <div className="flex items-center gap-1">
+              <Clock className="size-3 text-purple-400 shrink-0" />
+              <span>{task.dueDate ? task.dueDate : 'Hoy'}</span>
+              {task.dueTime && <span className="text-foreground/90 font-bold">· {task.dueTime}</span>}
+            </div>
+          )}
+          {creator && (
+            <div className="inline-flex items-center gap-1 text-[10px] text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-white/5 px-2 py-0.5 rounded-full" title={`Creado por ${creator.name}`}>
+              <span className="text-slate-400">Creado por:</span>
+              <MemberAvatar member={creator} size="xs" />
+              <span className="font-bold text-slate-700 dark:text-slate-200 truncate max-w-[75px]">{creator.name.split(' ')[0]}</span>
+            </div>
+          )}
+        </div>
       </div>
       {task.points ? (
         <span className="text-xs font-bold text-accent shrink-0">+{task.points} ⭐</span>

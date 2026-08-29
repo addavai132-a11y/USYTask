@@ -119,22 +119,21 @@ export function toggleTask(taskId: string, groupId: string): { pointsAwarded: nu
   if (idx < 0) return { pointsAwarded: 0, memberId: null }
 
   const task = all[idx]
-  const wasCompleted = task.completed
+  // Bloqueo permanente: Si la tarea ya está completada, no se puede desmarcar
+  if (task.completed) {
+    return { pointsAwarded: 0, memberId: null }
+  }
+
   all[idx] = { 
     ...task, 
-    completed: !wasCompleted,
-    completedAt: !wasCompleted ? new Date().toISOString() : undefined,
+    completed: true,
+    completedAt: new Date().toISOString(),
   }
   saveArray(TASKS_KEY, all)
 
-  if (!wasCompleted && task.points > 0) {
+  if (task.points > 0) {
     updateMemberPoints(task.assignedToMemberId, groupId, task.points)
     return { pointsAwarded: task.points, memberId: task.assignedToMemberId }
-  }
-  if (wasCompleted && task.points > 0) {
-    // Un-completing: subtract points
-    updateMemberPoints(task.assignedToMemberId, groupId, -task.points)
-    return { pointsAwarded: -task.points, memberId: task.assignedToMemberId }
   }
   return { pointsAwarded: 0, memberId: null }
 }

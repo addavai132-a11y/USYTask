@@ -629,6 +629,7 @@ export function TasksSection({
                           <TaskRow
                             task={t}
                             member={getMemberById(t.assignedToMemberId)}
+                            creator={t.createdBy ? getMemberById(t.createdBy) : null}
                             checked={t.completed}
                             onToggle={() => handleToggle(t.id, t.title)}
                             onDelete={() => {
