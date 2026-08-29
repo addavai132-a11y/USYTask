@@ -116,8 +116,8 @@ export function ShoppingSection({
   } = useApp()
 
   const [activeListId, setActiveListId] = useState<string>('')
-  const [draftItem, setDraftItem] = useState('')
-  const [selectedAisle, setSelectedAisle] = useState<AisleCategory>('otros')
+  const [draftName, setDraftName] = useState('')
+  const [draftAisle, setDraftAisle] = useState<AisleCategory | 'varios'>('varios')
   const [draftPrice, setDraftPrice] = useState<string>('')
   const [draftSupermarket, setDraftSupermarket] = useState<string>('')
   const [showCompleted, setShowCompleted] = useState(true)
@@ -201,7 +201,7 @@ export function ShoppingSection({
 
   // Add Item with optional price and supermarket
   function handleAddItem() {
-    const name = draftItem.trim()
+    const name = draftName.trim()
     if (!name || !activeList) return
 
     const parsedPrice = draftPrice.trim() ? parseFloat(draftPrice.replace(',', '.')) : undefined
@@ -213,9 +213,10 @@ export function ShoppingSection({
       supermarket,
     })
 
-    setDraftItem('')
+    setDraftName('')
     setDraftPrice('')
     setDraftSupermarket('')
+    setDraftAisle('varios')
     toast(`"${name}" añadido a ${activeList.name}`, '🛒')
   }
 
