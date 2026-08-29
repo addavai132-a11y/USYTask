@@ -30,9 +30,10 @@ export function FinancesSummary() {
   // Helper to compute total incomes for a specific monthISO
   function getMonthIncomesSum(monthISO: string): number {
     return incomes.reduce((sum, inc) => {
-      if (inc.frequency === 'mensual') return sum + inc.amount
-      if (inc.frequency === 'quincenal') return sum + inc.amount * 2
-      if (inc.frequency === 'puntual' && inc.date && inc.date.startsWith(monthISO)) return sum + inc.amount
+      const amt = Number(inc.amount) || 0
+      if (inc.frequency === 'mensual') return sum + amt
+      if (inc.frequency === 'quincenal') return sum + amt * 2
+      if (inc.frequency === 'puntual' && inc.date && inc.date.startsWith(monthISO)) return sum + amt
       return sum
     }, 0)
   }
@@ -40,14 +41,16 @@ export function FinancesSummary() {
   // Helper to compute total expenses for a specific monthISO
   function getMonthExpensesSum(monthISO: string): number {
     const directExpensesSum = expenses.reduce((sum, e) => {
-      if (e.isRecurring) return sum + e.amount
-      if (!e.isRecurring && e.date && e.date.startsWith(monthISO)) return sum + e.amount
+      const amt = Number(e.amount) || 0
+      if (e.isRecurring) return sum + amt
+      if (!e.isRecurring && e.date && e.date.startsWith(monthISO)) return sum + amt
       return sum
     }, 0)
 
     const billsSum = bills.reduce((sum, b) => {
-      if (b.billingCycle === 'mensual') return sum + b.amount
-      return sum + b.amount / 12
+      const amt = Number(b.amount) || 0
+      if (b.billingCycle === 'mensual') return sum + amt
+      return sum + amt / 12
     }, 0)
 
     return directExpensesSum + billsSum
@@ -69,8 +72,9 @@ export function FinancesSummary() {
   })
 
   expenses.forEach((e) => {
+    const amt = Number(e.amount) || 0
     if (e.isRecurring || (e.date && e.date.startsWith(selectedMonthISO))) {
-      categorySpentMap[e.category] = (categorySpentMap[e.category] || 0) + e.amount
+      categorySpentMap[e.category] = (categorySpentMap[e.category] || 0) + amt
     }
   })
 

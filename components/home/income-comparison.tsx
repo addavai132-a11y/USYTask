@@ -54,7 +54,7 @@ export function IncomeComparison({ onOpenAddIncome }: { onOpenAddIncome?: () => 
       let multiplier = 1
       if (inc.frequency === 'quincenal') multiplier = 2
 
-      const val = inc.amount * multiplier
+      const val = (Number(inc.amount) || 0) * multiplier
       total += val
       byCategory[inc.category] = (byCategory[inc.category] || 0) + val
     })

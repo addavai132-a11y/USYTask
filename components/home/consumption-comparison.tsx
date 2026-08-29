@@ -16,13 +16,13 @@ import { cn } from '@/lib/utils'
 
 const UTILITIES_META: Record<
   UtilityType,
-  { label: string; unit: string; icon: any; sampleBaseAmount: number; sampleBaseConsumption: number }
+  { label: string; unit: string; icon: any }
 > = {
-  electricidad: { label: 'Electricidad', unit: 'kWh', icon: Zap, sampleBaseAmount: 68.5, sampleBaseConsumption: 240 },
-  agua: { label: 'Agua', unit: 'm³', icon: Droplets, sampleBaseAmount: 32.0, sampleBaseConsumption: 14 },
-  gas: { label: 'Gas', unit: 'kWh', icon: Flame, sampleBaseAmount: 45.0, sampleBaseConsumption: 310 },
-  combustible: { label: 'Combustible', unit: 'L', icon: Fuel, sampleBaseAmount: 85.0, sampleBaseConsumption: 55 },
-  otro: { label: 'Otros suministros', unit: 'ud', icon: Scale, sampleBaseAmount: 30.0, sampleBaseConsumption: 1 },
+  electricidad: { label: 'Electricidad', unit: 'kWh', icon: Zap },
+  agua: { label: 'Agua', unit: 'm³', icon: Droplets },
+  gas: { label: 'Gas', unit: 'kWh', icon: Flame },
+  combustible: { label: 'Combustible', unit: 'L', icon: Fuel },
+  otro: { label: 'Otros suministros', unit: 'ud', icon: Scale },
 }
 
 export function ConsumptionComparison({ onOpenAddBill }: { onOpenAddBill?: () => void }) {
@@ -52,8 +52,6 @@ export function ConsumptionComparison({ onOpenAddBill }: { onOpenAddBill?: () =>
 
   // Helper to extract data for a specific utility in a given month
   const getUtilityDataForMonth = (utilType: UtilityType, monthISO: string) => {
-    const meta = UTILITIES_META[utilType]
-
     const matchingBills = bills.filter((b) => {
       const name = b.name.toLowerCase()
       return (
@@ -82,30 +80,22 @@ export function ConsumptionComparison({ onOpenAddBill }: { onOpenAddBill?: () =>
     let count = 0
 
     matchingBills.forEach((b) => {
-      totalAmount += b.billingCycle === 'mensual' ? b.amount : b.amount / 12
+      const amt = Number(b.amount) || 0
+      totalAmount += b.billingCycle === 'mensual' ? amt : amt / 12
       if (b.consumption?.consumptionValue) {
-        totalUnits += b.consumption.consumptionValue
+        totalUnits += Number(b.consumption.consumptionValue) || 0
       }
       count++
     })
 
     matchingExpenses.forEach((e) => {
-      totalAmount += e.amount
+      const amt = Number(e.amount) || 0
+      totalAmount += amt
       if (e.consumption?.consumptionValue) {
-        totalUnits += e.consumption.consumptionValue
+        totalUnits += Number(e.consumption.consumptionValue) || 0
       }
       count++
     })
-
-    if (totalAmount === 0) {
-      const monthSeed = parseInt(monthISO.replace('-', ''), 10) % 7
-      const variance = (monthSeed - 3) * 0.08
-      totalAmount = Math.max(20, Math.round(meta.sampleBaseAmount * (1 + variance) * 100) / 100)
-      totalUnits = Math.max(5, Math.round(meta.sampleBaseConsumption * (1 + variance * 0.9)))
-    } else if (totalUnits === 0 && totalAmount > 0) {
-      const avgUnitCost = meta.sampleBaseAmount / meta.sampleBaseConsumption
-      totalUnits = Math.round(totalAmount / avgUnitCost)
-    }
 
     const unitPrice = totalUnits > 0 ? totalAmount / totalUnits : 0
 
