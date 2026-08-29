@@ -35,7 +35,7 @@ export function MemberFilterDropdown({
   }, [])
 
   return (
-    <div className={cn('relative inline-block text-left', className)} ref={dropdownRef}>
+    <div className={cn('relative inline-block text-left', isOpen && 'z-[70]', className)} ref={dropdownRef}>
       {/* ── BOTÓN DISPARADOR (TRIGGER) ── */}
       <button
         type="button"
@@ -67,7 +67,7 @@ export function MemberFilterDropdown({
 
       {/* ── MENÚ DESPLEGABLE FLOTANTE (PANEL) ── */}
       {isOpen && (
-        <div className="absolute right-0 top-full mt-1.5 z-50 w-56 max-h-48 md:max-h-56 overflow-y-auto pr-1 dropdown-scroll rounded-2xl bg-white border border-slate-200 shadow-xl p-2 space-y-1 animate-in fade-in zoom-in-95 duration-150 dark:bg-[#100e23]/95 dark:backdrop-blur-xl dark:border-purple-500/30 dark:shadow-2xl">
+        <div className="absolute right-0 top-full mt-1.5 z-[70] w-56 max-h-48 md:max-h-56 overflow-y-auto pr-1 dropdown-scroll rounded-2xl bg-white border border-slate-200 shadow-2xl p-2 space-y-1 animate-in fade-in zoom-in-95 duration-150 dark:bg-[#100e23]/95 dark:backdrop-blur-xl dark:border-purple-500/30 dark:shadow-2xl">
           {/* Opción: Todos los miembros */}
           <button
             type="button"

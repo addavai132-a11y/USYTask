@@ -106,13 +106,13 @@ export function QuickAdd() {
   }
 
   const handleSaveEvent = () => {
-    if (!eventTitle.trim() || !eventDate || !eventTime || !eventCategory || eventMembers.length === 0) {
+    if (!eventTitle.trim() || !eventDate || !eventCategory || eventMembers.length === 0) {
       setShowErrors(true)
       toast('Por favor, rellena los campos obligatorios y selecciona al menos un miembro', '❌')
       return
     }
     const finalCat = eventCategory === 'Otros' && eventCustomCategory.trim() ? (eventCustomCategory.trim() as EventCategory) : (eventCategory as EventCategory)
-    addEvent(eventTitle.trim(), eventDate, eventTime, finalCat, eventMembers, eventLocation || undefined)
+    addEvent(eventTitle.trim(), eventDate, eventTime || undefined, finalCat, eventMembers, eventLocation || undefined)
     toast('Evento creado correctamente', '📅')
     resetForms()
     closeQuickAdd()
@@ -262,8 +262,8 @@ export function QuickAdd() {
               />
             </div>
             <div className="flex flex-1 flex-col gap-1">
-              <label className={labelClass}>Hora <span className="text-red-500">*</span></label>
-              <input type="time" value={eventTime} onChange={(e) => { setEventTime(e.target.value); setShowErrors(false) }} className={cn(inputClass, showErrors && !eventTime && 'border-red-500 bg-red-500/10')} />
+              <label className={labelClass}>Hora (opcional)</label>
+              <input type="time" value={eventTime} onChange={(e) => setEventTime(e.target.value)} className={inputClass} />
             </div>
           </div>
           <div className="flex flex-col gap-1">

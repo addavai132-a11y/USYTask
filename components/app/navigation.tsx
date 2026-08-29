@@ -55,7 +55,7 @@ export function FloatingAddButton() {
     <button
       onClick={() => openQuickAdd()}
       aria-label="Añadir"
-      className="safe-bottom fixed bottom-20 right-4 z-40 flex size-14 items-center justify-center rounded-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-900/20 dark:bg-gradient-to-r dark:from-purple-600 dark:to-indigo-600 dark:shadow-purple-950/80 border border-emerald-500/30 dark:border-purple-400/30 transition-transform active:scale-90 lg:bottom-8 lg:right-8"
+      className="safe-bottom fixed bottom-24 sm:bottom-28 right-4 z-40 flex size-14 items-center justify-center rounded-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-900/20 dark:bg-gradient-to-r dark:from-purple-600 dark:to-indigo-600 dark:shadow-purple-950/80 border border-emerald-500/30 dark:border-purple-400/30 transition-transform active:scale-90 lg:bottom-8 lg:right-8"
     >
       <Plus className="size-7 stroke-[2.5]" />
     </button>

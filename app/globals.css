@@ -498,29 +498,12 @@ select option:checked {
   color: #0f172a;
 }
 
-/* Convert text-white on neutral elements in light mode to deep dark text */
-.light .text-white:not(button):not([class*='bg-purple']):not([class*='bg-emerald']):not([class*='bg-rose']):not([class*='bg-amber']):not([class*='bg-primary']):not([class*='bg-teal']) {
-  color: #0f172a !important;
-}
-
-/* Keep buttons with solid dark backgrounds legible with white text */
-.light button[class*='bg-purple-600'],
-.light button[class*='bg-purple-700'],
-.light button[class*='bg-primary'],
-.light button[class*='bg-emerald-600'],
-.light button[class*='bg-emerald-700'],
-.light button[class*='bg-teal-600'],
-.light button[class*='bg-rose-600'],
-.light .bg-purple-600,
-.light .bg-emerald-600,
-.light .bg-primary {
-  color: #ffffff !important;
-}
-
-.light button[class*='bg-purple-600'] *,
-.light button[class*='bg-emerald-600'] *,
-.light button[class*='bg-primary'] * {
-  color: #ffffff !important;
+/* Keep solid colored CTA buttons legible */
+.light .btn-primary,
+.light button.bg-primary:not([class*='/']),
+.light button.bg-emerald-600:not([class*='/']),
+.light button.bg-purple-600:not([class*='/']) {
+  color: #ffffff;
 }
 
 /* Secondary muted text in light mode */

@@ -59,7 +59,7 @@ export function EventsSection({
     return true
   })
   const sortedEvents = [...filtered].sort(
-    (a, b) => new Date(`${a.date}T${a.time}`).getTime() - new Date(`${b.date}T${b.time}`).getTime()
+    (a, b) => new Date(`${a.date}T${a.time || '00:00'}`).getTime() - new Date(`${b.date}T${b.time || '00:00'}`).getTime()
   )
 
   function handleOpenCreatePoll() {

@@ -184,7 +184,7 @@ interface AppState {
   addTask: (title: string, points: number, assignedToMemberId: string, section?: TaskSection, priority?: TaskPriority) => void
   toggleTask: (taskId: string) => { pointsAwarded: number; memberId: string | null }
   deleteTask: (taskId: string) => void
-  addEvent: (title: string, date: string, time: string, category: EventCategory, assignedMemberIds: string[], location?: string) => void
+  addEvent: (title: string, date: string, time: string | undefined, category: EventCategory, assignedMemberIds: string[], location?: string) => void
   deleteEvent: (eventId: string) => void
   addReminder: (title: string, dueDate: string, assignedMemberIds?: string[]) => void
   deleteReminder: (reminderId: string) => void
@@ -602,13 +602,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     bump()
   }
 
-  const handleAddEvent = (title: string, date: string, time: string, category: EventCategory, assignedMemberIds: string[], location?: string) => {
+  const handleAddEvent = (title: string, date: string, time: string | undefined, category: EventCategory, assignedMemberIds: string[], location?: string) => {
     if (!activeGroup) return
     const uniqueId = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `event_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
     const event: CalendarEvent = {
       id: uniqueId,
       title,
-      time,
+      time: time || undefined,
       date: date || getTodayISO(),
       category,
       assignedMemberIds,
@@ -624,7 +624,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       groupId: activeGroup.id,
       type: 'event_created',
       title: event.title,
-      details: `${date || getTodayISO()} · ${time}`,
+      details: time ? `${date || getTodayISO()} · ${time}` : `${date || getTodayISO()}`,
       memberId: actingMember.id,
       timestamp: new Date().toISOString(),
     })
@@ -639,10 +639,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       colorVar: 'var(--purple-500)',
     })
 
-    notifyEventReminder({
-      eventTitle: event.title,
-      timeStr: event.time,
-    }).catch(() => {})
+    if (event.time) {
+      notifyEventReminder({
+        eventTitle: event.title,
+        timeStr: event.time,
+      }).catch(() => {})
+    }
 
     refreshData()
     bump()

@@ -141,7 +141,7 @@ function ShellInner() {
           <main
             key={`${tab}_${activeGroup?.id || 'none'}`}
             className={cn(
-              'w-full flex-1 px-4 pb-28 pt-5 animate-fade-in lg:pb-10 min-w-0',
+              'w-full flex-1 px-4 pb-28 pt-8 sm:pt-6 pt-[max(2rem,env(safe-area-inset-top,2rem))] animate-fade-in lg:pb-10 min-w-0',
               tab === 'organizar' || tab === 'inicio'
                 ? 'max-w-none mx-0'
                 : 'mx-auto max-w-2xl'

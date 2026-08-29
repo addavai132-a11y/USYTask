@@ -48,7 +48,7 @@ export function CustomSelect<T extends string | number>({
   }, [])
 
   return (
-    <div className={cn('relative inline-block text-left', isOpen && 'z-50', className)} ref={containerRef}>
+    <div className={cn('relative inline-block text-left', isOpen && 'z-[70]', className)} ref={containerRef}>
       {/* ── BOTÓN DISPARADOR (TRIGGER) ── */}
       <button
         type="button"
@@ -88,7 +88,7 @@ export function CustomSelect<T extends string | number>({
       {isOpen && (
         <div
           className={cn(
-            'absolute right-0 top-full mt-1.5 z-50 w-full min-w-[200px] max-h-48 md:max-h-56 overflow-y-auto pr-1 dropdown-scroll rounded-2xl bg-white border border-slate-200 shadow-xl p-2 space-y-1 animate-in fade-in zoom-in-95 duration-150 dark:bg-[#100e23]/95 dark:backdrop-blur-xl dark:border-purple-500/30 dark:shadow-2xl',
+            'absolute right-0 top-full mt-1.5 z-[70] w-full min-w-[200px] max-h-48 md:max-h-56 overflow-y-auto pr-1 dropdown-scroll rounded-2xl bg-white border border-slate-200 shadow-2xl p-2 space-y-1 animate-in fade-in zoom-in-95 duration-150 dark:bg-[#100e23]/95 dark:backdrop-blur-xl dark:border-purple-500/30 dark:shadow-2xl',
             panelClassName
           )}
         >

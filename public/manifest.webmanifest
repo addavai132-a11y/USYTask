@@ -2,7 +2,7 @@
   "name": "USYTask — Universal System for Tasks",
   "short_name": "USYTask",
   "description": "USYTask centraliza el calendario, tareas, compra, gastos y recuerdos de tu familia, pareja o uso personal.",
-  "start_url": "/app",
+  "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",

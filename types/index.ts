@@ -55,7 +55,7 @@ export const categoryLabels: Record<EventCategory, string> = {
 export interface CalendarEvent {
   id: string
   title: string
-  time: string
+  time?: string
   endTime?: string
   date: string // ISO date string YYYY-MM-DD
   location?: string

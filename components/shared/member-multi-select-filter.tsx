@@ -109,7 +109,7 @@ export function MemberMultiSelectFilter({
   }
 
   return (
-    <div className={cn('relative inline-block text-left', className)} ref={dropdownRef}>
+    <div className={cn('relative inline-block text-left', isOpen && 'z-[70]', className)} ref={dropdownRef}>
       {/* ── BOTÓN ACTIVADOR (TRIGGER) ── */}
       <button
         type="button"
@@ -131,7 +131,7 @@ export function MemberMultiSelectFilter({
 
       {/* ── MENÚ DESPLEGABLE CON CHECKBOXES ── */}
       {isOpen && (
-        <div className="absolute right-0 top-full mt-2 z-50 w-64 max-h-80 flex flex-col rounded-2xl border border-slate-200 bg-white shadow-2xl p-2 animate-in fade-in zoom-in-95 duration-150 dark:border-purple-500/30 dark:bg-[#0e0c1f]/95 dark:backdrop-blur-2xl text-slate-200">
+        <div className="absolute right-0 top-full mt-2 z-[70] w-64 max-h-80 flex flex-col rounded-2xl border border-slate-200 bg-white shadow-2xl p-2 animate-in fade-in zoom-in-95 duration-150 dark:border-purple-500/30 dark:bg-[#0e0c1f]/95 dark:backdrop-blur-2xl text-slate-200">
           {/* Opción Superior: Seleccionar / Desmarcar Todos */}
           <button
             type="button"

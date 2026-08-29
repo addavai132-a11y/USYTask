@@ -1060,10 +1060,10 @@ export function NutritionTab({
                             type="button"
                             onClick={() => setCalcGender('hombre')}
                             className={cn(
-                              'py-1.5 rounded-lg text-center font-bold text-[11px] transition-all',
+                              'py-1.5 rounded-lg text-center text-[11px] transition-all',
                               calcGender === 'hombre'
-                                ? 'bg-emerald-600 text-white shadow-xs'
-                                : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                                ? 'bg-emerald-50/70 border border-emerald-500 text-slate-900 font-bold shadow-xs dark:bg-emerald-600 dark:text-white'
+                                : 'text-slate-600 hover:text-slate-900 font-medium dark:text-slate-400 dark:hover:text-white'
                             )}
                           >
                             Hombre
@@ -1072,10 +1072,10 @@ export function NutritionTab({
                             type="button"
                             onClick={() => setCalcGender('mujer')}
                             className={cn(
-                              'py-1.5 rounded-lg text-center font-bold text-[11px] transition-all',
+                              'py-1.5 rounded-lg text-center text-[11px] transition-all',
                               calcGender === 'mujer'
-                                ? 'bg-emerald-600 text-white shadow-xs'
-                                : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                                ? 'bg-emerald-50/70 border border-emerald-500 text-slate-900 font-bold shadow-xs dark:bg-emerald-600 dark:text-white'
+                                : 'text-slate-600 hover:text-slate-900 font-medium dark:text-slate-400 dark:hover:text-white'
                             )}
                           >
                             Mujer
@@ -1146,21 +1146,21 @@ export function NutritionTab({
                             type="button"
                             onClick={() => setCalcActivity(act.id as any)}
                             className={cn(
-                              'p-2.5 rounded-2xl border text-left transition-all flex items-start gap-2.5',
+                              'p-2.5 rounded-2xl text-left transition-all flex items-start gap-2.5',
                               isSelected
-                                ? 'bg-emerald-50 border-emerald-300 shadow-sm ring-1 ring-emerald-400 dark:bg-emerald-600/25 dark:border-emerald-400 dark:ring-emerald-500/50'
-                                : 'bg-slate-50 border-slate-200 hover:bg-slate-100 dark:bg-white/[0.02] dark:border-white/10 dark:hover:bg-white/[0.05]'
+                                ? 'bg-emerald-50/60 border-2 border-emerald-500 shadow-sm dark:bg-emerald-600/25 dark:border-emerald-400'
+                                : 'bg-white border border-slate-200 hover:bg-slate-50 dark:bg-white/[0.02] dark:border-white/10 dark:hover:bg-white/[0.05]'
                             )}
                           >
-                            <span className="text-xl shrink-0 p-1 rounded-xl bg-white dark:bg-white/5 shadow-2xs">{act.icon}</span>
+                            <span className="text-xl shrink-0 p-1 rounded-xl bg-slate-100 dark:bg-white/5 shadow-2xs">{act.icon}</span>
                             <div className="min-w-0 flex-1">
                               <div className="flex items-center justify-between">
-                                <span className={cn('font-bold text-xs', isSelected ? 'text-slate-900 dark:text-white' : 'text-slate-700 dark:text-slate-200')}>
+                                <span className="font-semibold text-xs text-slate-900 dark:text-white">
                                   {act.label}
                                 </span>
-                                <span className="text-[10px] font-mono text-emerald-700 dark:text-emerald-300 font-bold">{act.factor}</span>
+                                <span className="text-[10px] font-mono text-emerald-700 dark:text-emerald-300 font-bold">x {act.factor}</span>
                               </div>
-                              <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate mt-0.5">{act.description}</p>
+                              <p className="text-[10px] text-slate-600 dark:text-slate-400 truncate mt-0.5">{act.description}</p>
                             </div>
                           </button>
                         )
@@ -1183,10 +1183,10 @@ export function NutritionTab({
                           setCalcPace('moderado')
                         }}
                         className={cn(
-                          'py-2.5 px-2 rounded-2xl border text-xs font-bold transition-all text-center flex flex-col items-center gap-1',
+                          'py-2.5 px-2 rounded-2xl text-xs transition-all text-center flex flex-col items-center gap-1',
                           calcGoalPhase === 'definicion'
-                            ? 'bg-rose-50 border-rose-300 text-rose-900 shadow-sm ring-1 ring-rose-400 dark:bg-rose-500/30 dark:border-rose-400 dark:text-rose-200'
-                            : 'bg-white border-slate-200 text-slate-600 hover:text-slate-900 dark:bg-white/[0.02] dark:border-white/10 dark:text-slate-400 dark:hover:text-white'
+                            ? 'bg-emerald-50/60 border-2 border-emerald-500 text-slate-900 font-semibold shadow-sm dark:bg-rose-500/30 dark:border-rose-400 dark:text-rose-200'
+                            : 'bg-white border border-slate-200 text-slate-700 hover:text-slate-900 hover:bg-slate-50 font-medium dark:bg-white/[0.02] dark:border-white/10 dark:text-slate-400 dark:hover:text-white'
                         )}
                       >
                         <span className="text-lg">🔥</span>
@@ -1200,10 +1200,10 @@ export function NutritionTab({
                           setCalcPace('limpio')
                         }}
                         className={cn(
-                          'py-2.5 px-2 rounded-2xl border text-xs font-bold transition-all text-center flex flex-col items-center gap-1',
+                          'py-2.5 px-2 rounded-2xl text-xs transition-all text-center flex flex-col items-center gap-1',
                           calcGoalPhase === 'volumen'
-                            ? 'bg-emerald-50 border-emerald-300 text-emerald-900 shadow-sm ring-1 ring-emerald-400 dark:bg-emerald-500/30 dark:border-emerald-400 dark:text-emerald-200'
-                            : 'bg-white border-slate-200 text-slate-600 hover:text-slate-900 dark:bg-white/[0.02] dark:border-white/10 dark:text-slate-400 dark:hover:text-white'
+                            ? 'bg-emerald-50/60 border-2 border-emerald-500 text-slate-900 font-semibold shadow-sm dark:bg-emerald-500/30 dark:border-emerald-400 dark:text-emerald-200'
+                            : 'bg-white border border-slate-200 text-slate-700 hover:text-slate-900 hover:bg-slate-50 font-medium dark:bg-white/[0.02] dark:border-white/10 dark:text-slate-400 dark:hover:text-white'
                         )}
                       >
                         <span className="text-lg">💪</span>
@@ -1217,10 +1217,10 @@ export function NutritionTab({
                           setCalcPace('estandar')
                         }}
                         className={cn(
-                          'py-2.5 px-2 rounded-2xl border text-xs font-bold transition-all text-center flex flex-col items-center gap-1',
+                          'py-2.5 px-2 rounded-2xl text-xs transition-all text-center flex flex-col items-center gap-1',
                           calcGoalPhase === 'mantenimiento'
-                            ? 'bg-emerald-50 border-emerald-300 text-emerald-900 shadow-sm ring-1 ring-emerald-400 dark:bg-emerald-600/30 dark:border-emerald-400 dark:text-emerald-200'
-                            : 'bg-white border-slate-200 text-slate-600 hover:text-slate-900 dark:bg-white/[0.02] dark:border-white/10 dark:text-slate-400 dark:hover:text-white'
+                            ? 'bg-emerald-50/60 border-2 border-emerald-500 text-slate-900 font-semibold shadow-sm dark:bg-emerald-600/30 dark:border-emerald-400 dark:text-emerald-200'
+                            : 'bg-white border border-slate-200 text-slate-700 hover:text-slate-900 hover:bg-slate-50 font-medium dark:bg-white/[0.02] dark:border-white/10 dark:text-slate-400 dark:hover:text-white'
                         )}
                       >
                         <span className="text-lg">⚖️</span>
@@ -1233,7 +1233,7 @@ export function NutritionTab({
                       <div className="pt-2 space-y-2 border-t border-slate-200 dark:border-white/10">
                         <div className="flex items-center justify-between text-[11px] font-bold text-slate-700 dark:text-slate-300">
                           <span>Ritmo de Pérdida de Grasa:</span>
-                          <span className="text-rose-600 font-mono">
+                          <span className="text-emerald-700 dark:text-rose-400 font-mono font-bold">
                             {calcPace === 'conservador' ? '-300 kcal' : calcPace === 'agresivo' ? '-700 kcal' : '-500 kcal'}
                           </span>
                         </div>
@@ -1248,14 +1248,14 @@ export function NutritionTab({
                               type="button"
                               onClick={() => setCalcPace(p.id as any)}
                               className={cn(
-                                'py-2 px-1 rounded-xl text-[11px] font-bold border transition-all text-center',
+                                'py-2 px-1 rounded-xl text-[11px] transition-all text-center',
                                 calcPace === p.id
-                                  ? 'bg-rose-50 border-rose-300 text-rose-900 shadow-xs'
-                                  : 'bg-white border-slate-200 text-slate-600 hover:text-slate-900 dark:bg-white/[0.03] dark:border-white/10 dark:text-slate-400 dark:hover:text-white'
+                                  ? 'bg-emerald-50/60 border-2 border-emerald-500 text-slate-900 font-semibold shadow-xs dark:bg-rose-500/30 dark:border-rose-400 dark:text-white'
+                                  : 'bg-white border border-slate-200 text-slate-700 hover:text-slate-900 hover:bg-slate-50 font-medium dark:bg-white/[0.03] dark:border-white/10 dark:text-slate-400 dark:hover:text-white'
                               )}
                             >
-                              <div>{p.label}</div>
-                              <span className="text-[10px] font-mono text-rose-600 dark:text-rose-300">{p.kcal} kcal</span>
+                              <div className="text-slate-900 dark:text-white font-semibold">{p.label}</div>
+                              <span className="text-[10px] font-mono text-emerald-700 dark:text-rose-300 font-bold">{p.kcal} kcal</span>
                             </button>
                           ))}
                         </div>
@@ -1278,7 +1278,7 @@ export function NutritionTab({
                       <div className="pt-2 space-y-2 border-t border-slate-200 dark:border-white/10">
                         <div className="flex items-center justify-between text-[11px] font-bold text-slate-700 dark:text-slate-300">
                           <span>Ritmo de Ganancia Muscular:</span>
-                          <span className="text-emerald-600 font-mono">
+                          <span className="text-emerald-700 dark:text-emerald-400 font-mono font-bold">
                             {calcPace === 'limpio' ? '+250 kcal (Lean Bulk)' : '+400 kcal (Estándar)'}
                           </span>
                         </div>
@@ -1292,14 +1292,14 @@ export function NutritionTab({
                               type="button"
                               onClick={() => setCalcPace(p.id as any)}
                               className={cn(
-                                'py-2 px-2 rounded-xl text-[11px] font-bold border transition-all text-left',
+                                'py-2 px-2 rounded-xl text-[11px] transition-all text-left',
                                 calcPace === p.id
-                                  ? 'bg-emerald-50 border-emerald-300 text-emerald-900 shadow-xs'
-                                  : 'bg-white border-slate-200 text-slate-600 hover:text-slate-900 dark:bg-white/[0.03] dark:border-white/10 dark:text-slate-400 dark:hover:text-white'
+                                  ? 'bg-emerald-50/60 border-2 border-emerald-500 text-slate-900 font-semibold shadow-xs dark:bg-emerald-500/30 dark:border-emerald-400 dark:text-white'
+                                  : 'bg-white border border-slate-200 text-slate-700 hover:text-slate-900 hover:bg-slate-50 font-medium dark:bg-white/[0.03] dark:border-white/10 dark:text-slate-400 dark:hover:text-white'
                               )}
                             >
-                              <div className="font-bold">{p.label}</div>
-                              <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-300 block">{p.desc}</span>
+                              <div className="font-semibold text-slate-900 dark:text-white">{p.label}</div>
+                              <span className="text-[10px] font-mono text-emerald-700 dark:text-emerald-300 font-bold block">{p.desc}</span>
                             </button>
                           ))}
                         </div>

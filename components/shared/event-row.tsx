@@ -18,8 +18,8 @@ export function EventRow({
 
   return (
     <div className="flex items-center gap-3 py-1.5 px-1">
-      <div className="w-12 shrink-0 text-right">
-        <p className="text-sm font-bold tabular-nums">{event.time}</p>
+      <div className="w-14 shrink-0 text-right">
+        <p className="text-xs sm:text-sm font-bold tabular-nums text-foreground">{event.time || 'Todo el día'}</p>
       </div>
 
       <div className="min-w-0 flex-1">
