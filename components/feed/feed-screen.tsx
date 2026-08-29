@@ -11,6 +11,9 @@ import {
   Calendar,
   AlertTriangle,
   ChevronRight,
+  Bell,
+  Loader2,
+  Sparkles,
 } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { MemberAvatar } from '@/components/ui/member-avatar'
@@ -19,6 +22,8 @@ import { TasksBoard } from './tasks-board'
 import { EventsBoard } from './events-board'
 import { ActivityFeed } from './activity-feed'
 import { useApp } from '@/components/app/app-context'
+import { usePushNotifications } from '@/hooks/use-push-notifications'
+import { useToast } from '@/components/ui/toast'
 import { getTodayISO } from '@/lib/date-utils'
 import { getEventMemberIds, getReminderMemberIds, type EventCategory } from '@/types'
 import { cn } from '@/lib/utils'
@@ -46,6 +51,18 @@ export function FeedScreen() {
     getMemberById,
     openQuickAdd,
   } = useApp()
+
+  const { activateAndTest, loading: pushLoading, isSupported } = usePushNotifications()
+  const { toast } = useToast()
+
+  const handleActivateNotifications = async () => {
+    const res = await activateAndTest()
+    if (res.success) {
+      toast('¡Notificación de prueba enviada con éxito!', '🚀')
+    } else {
+      toast(res.error || 'Aviso en notificación', '🔔')
+    }
+  }
 
   const today = getTodayISO()
 
@@ -112,7 +129,7 @@ export function FeedScreen() {
   }
 
   return (
-    <div className="w-full space-y-6 animate-fade-in pb-8">
+    <div className="w-full space-y-5 animate-fade-in pb-8">
       {/* 1. Saludo Superior con Acceso a Notificaciones */}
       <FeedHeader />
 
@@ -219,6 +236,38 @@ export function FeedScreen() {
           </div>
         )}
       </Card>
+
+      {/* 2.5 Banner / Botón directo de Activar Notificaciones */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3.5 p-4 rounded-3xl bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-primary/10 border border-emerald-500/25 dark:from-purple-500/15 dark:to-indigo-500/15 dark:border-purple-500/30 shadow-xs">
+        <div className="flex items-center gap-3 min-w-0 w-full sm:w-auto">
+          <div className="flex size-10 items-center justify-center rounded-2xl bg-emerald-500/20 text-emerald-600 dark:bg-purple-500/20 dark:text-purple-300 shrink-0">
+            <Bell className="size-5" />
+          </div>
+          <div className="min-w-0">
+            <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white leading-tight">
+              Notificaciones en tiempo real
+            </h4>
+            <p className="text-[11px] text-muted-foreground truncate">
+              Prueba la recepción de alertas en este dispositivo al instante
+            </p>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={handleActivateNotifications}
+          disabled={pushLoading || !isSupported}
+          className="w-full sm:w-auto px-4 py-2 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white dark:bg-purple-600 dark:hover:bg-purple-500 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all shadow-md active:scale-95 disabled:opacity-50 shrink-0"
+          title="Activar notificaciones y enviar prueba"
+        >
+          {pushLoading ? (
+            <Loader2 className="size-4 animate-spin" />
+          ) : (
+            <Sparkles className="size-4" />
+          )}
+          <span>Activar notificaciones</span>
+        </button>
+      </div>
 
       {/* ========================================================================= */}
       {/* 3. ESTRUCTURA DE 2 COLUMNAS (GRID RESPONSIVE)                              */}
