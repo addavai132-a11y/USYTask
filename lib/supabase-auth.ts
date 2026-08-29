@@ -126,19 +126,32 @@ export async function updateUserProfile(
   }
 }
 
-import { clearAllLocalData } from './cloud-sync'
-
 /**
  * Logs out from Supabase Auth and clears local session and all cached space data.
  */
 export async function handleLogout(): Promise<void> {
   try {
     const supabase = createClient()
-    await supabase.auth.signOut()
+    await supabase.auth.signOut({ scope: 'local' })
   } catch (err) {
     console.warn('Supabase signOut warning:', err)
   } finally {
-    clearStoredSession()
-    clearAllLocalData()
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.clear()
+        sessionStorage.clear()
+      } catch {}
+      try {
+        if (typeof document !== 'undefined') {
+          document.cookie.split(';').forEach((c) => {
+            const eqPos = c.indexOf('=')
+            const name = eqPos > -1 ? c.substr(0, eqPos).trim() : c.trim()
+            if (name.startsWith('sb-') || name.includes('supabase') || name.includes('auth')) {
+              document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;`
+            }
+          })
+        }
+      } catch {}
+    }
   }
 }

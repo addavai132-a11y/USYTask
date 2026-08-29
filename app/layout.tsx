@@ -13,43 +13,30 @@ const fontSans = Plus_Jakarta_Sans({
 })
 
 export const metadata: Metadata = {
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_APP_URL ||
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://usytask.com')
-  ),
-  title: {
-    default: 'USYTask — Universal System for Tasks',
-    template: '%s | USYTask',
-  },
+  metadataBase: new URL('https://usy-task-vhza.vercel.app'),
+  title: 'USYTask — Universal System for Tasks',
   description:
     'USYTask centraliza el calendario, tareas, compra, gastos y recuerdos de tu familia, pareja, compañeros de piso o uso personal.',
   applicationName: 'USYTask',
   generator: 'next',
   manifest: '/manifest.webmanifest',
   openGraph: {
-    type: 'website',
-    locale: 'es_ES',
-    url: '/',
     title: 'USYTask — Universal System for Tasks',
     description:
       'USYTask centraliza el calendario, tareas, compra, gastos y recuerdos de tu familia, pareja, compañeros de piso o uso personal.',
+    url: 'https://usy-task-vhza.vercel.app',
     siteName: 'USYTask',
     images: [
       {
         url: '/og-image.png',
-        width: 512,
-        height: 512,
-        alt: 'USYTask — Universal System for Tasks',
-        type: 'image/png',
-      },
-      {
-        url: '/logo.png',
-        width: 512,
-        height: 512,
+        width: 1200,
+        height: 630,
         alt: 'USYTask Logo',
         type: 'image/png',
       },
     ],
+    locale: 'es_ES',
+    type: 'website',
   },
   twitter: {
     card: 'summary_large_image',

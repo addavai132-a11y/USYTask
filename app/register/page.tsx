@@ -131,6 +131,11 @@ function RegisterContent() {
 
     setLoading(true)
 
+    const supabase = createClient()
+    try {
+      supabase.auth.signOut({ scope: 'local' })
+    } catch {}
+
     const newUser: UserProfile = {
       id: generateUserId(),
       fullName: fullName.trim(),
