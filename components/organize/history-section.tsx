@@ -83,17 +83,32 @@ export function HistorySection({
 
   // 1. Tasks
   archivedTasks.forEach((t) => {
-    const d = t.completedAt ? new Date(t.completedAt) : new Date()
-    const dateISO = t.completedAt ? t.completedAt.slice(0, 10) : getTodayISO()
-    const timeStr = !isNaN(d.getTime()) ? d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '12:00'
+    let d: Date
+    let dateISO: string
+    let timeStr: string
+
+    if (t.completedAt) {
+      d = new Date(t.completedAt)
+      dateISO = t.completedAt.slice(0, 10)
+      timeStr = !isNaN(d.getTime()) ? d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '12:00'
+    } else if (t.dueDate) {
+      d = new Date(`${t.dueDate}T${t.dueTime || '12:00'}`)
+      dateISO = t.dueDate
+      timeStr = t.dueTime || '12:00'
+    } else {
+      d = new Date()
+      dateISO = getTodayISO()
+      timeStr = '12:00'
+    }
+
     allItems.push({
       id: `task_${t.id}`,
       type: 'task',
       title: t.title,
-      details: t.section ? `Categoría: ${t.section}` : undefined,
+      details: t.completed ? 'Tarea completada' : t.section ? `Categoría: ${t.section}` : 'Tarea pasada',
       dateISO,
       timeStr,
-      timestamp: d.getTime() || Date.now(),
+      timestamp: !isNaN(d.getTime()) ? d.getTime() : Date.now(),
       memberIds: t.assignedToMemberId ? [t.assignedToMemberId] : [],
       points: t.points,
       originalData: t,
@@ -109,7 +124,7 @@ export function HistorySection({
       title: e.title,
       details: e.location ? `📍 ${e.location}` : `Categoría: ${e.category}`,
       dateISO: e.date,
-      timeStr: e.time,
+      timeStr: e.time || '12:00',
       timestamp: !isNaN(d.getTime()) ? d.getTime() : Date.now(),
       memberIds: e.assignedMemberIds && e.assignedMemberIds.length > 0 ? e.assignedMemberIds : e.assignedToMemberId ? [e.assignedToMemberId] : [],
       originalData: e,
@@ -118,14 +133,27 @@ export function HistorySection({
 
   // 3. Reminders
   archivedReminders.forEach((r) => {
-    const d = new Date(`${r.dueDate}T12:00:00`)
+    let d: Date
+    let dateISO: string
+    let timeStr: string
+
+    if ((r as any).completedAt) {
+      d = new Date((r as any).completedAt)
+      dateISO = (r as any).completedAt.slice(0, 10)
+      timeStr = !isNaN(d.getTime()) ? d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '12:00'
+    } else {
+      d = new Date(`${r.dueDate}T${r.time || '12:00'}`)
+      dateISO = r.dueDate
+      timeStr = r.time || '12:00'
+    }
+
     allItems.push({
       id: `reminder_${r.id}`,
       type: 'reminder',
       title: r.title,
-      details: 'Recordatorio finalizado',
-      dateISO: r.dueDate,
-      timeStr: '23:59',
+      details: (r as any).completed ? 'Recordatorio completado' : 'Recordatorio finalizado',
+      dateISO,
+      timeStr,
       timestamp: !isNaN(d.getTime()) ? d.getTime() : Date.now(),
       memberIds: r.assignedMemberIds || [],
       originalData: r,

@@ -414,11 +414,27 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const THIRTY_MINS = 30 * 60 * 1000
       const now = Date.now()
 
+      // 1. Tareas: Archivar si pasaron 30 min desde completada O 30 min desde hora límite vencida
       const allTasks = getTasksByGroup(active.id)
       const aTasks: Task[] = []
-      const cTasks: Task[] = [] // active
+      const cTasks: Task[] = [] // activas
       for (const t of allTasks) {
-        if (t.completed && t.completedAt && (now - new Date(t.completedAt).getTime() > THIRTY_MINS)) {
+        let isPastDueBy30Mins = false
+        if (t.dueDate) {
+          const timeStr = t.dueTime || '23:59:59'
+          const taskDeadline = new Date(`${t.dueDate}T${timeStr}`).getTime()
+          if (!isNaN(taskDeadline) && now - taskDeadline > THIRTY_MINS) {
+            isPastDueBy30Mins = true
+          }
+        }
+
+        const isCompletedBy30Mins = !!(
+          t.completed &&
+          t.completedAt &&
+          now - new Date(t.completedAt).getTime() > THIRTY_MINS
+        )
+
+        if (isCompletedBy30Mins || isPastDueBy30Mins) {
           aTasks.push(t)
         } else {
           cTasks.push(t)
@@ -427,13 +443,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setTasks(cTasks)
       setArchivedTasks(aTasks)
 
+      // 2. Eventos: Archivar si pasaron 30 min de su hora programada O 30 min tras completarse
       const allEvents = getEventsByGroup(active.id)
       const aEvents: CalendarEvent[] = []
       const cEvents: CalendarEvent[] = []
       for (const e of allEvents) {
-        const timeStr = e.time || '00:00'
+        const timeStr = e.time || '23:59:59'
         const eventTime = new Date(`${e.date}T${timeStr}`).getTime()
-        if (!isNaN(eventTime) && now - eventTime > THIRTY_MINS) {
+        const isPastDueBy30Mins = !isNaN(eventTime) && now - eventTime > THIRTY_MINS
+        const isCompletedBy30Mins = !!(
+          (e as any).completed &&
+          (e as any).completedAt &&
+          now - new Date((e as any).completedAt).getTime() > THIRTY_MINS
+        )
+
+        if (isCompletedBy30Mins || isPastDueBy30Mins) {
           aEvents.push(e)
         } else {
           cEvents.push(e)
@@ -442,12 +466,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setEvents(cEvents)
       setArchivedEvents(aEvents)
 
+      // 3. Recordatorios: Archivar si pasaron 30 min de su fecha/hora límite O 30 min tras completarse
       const allReminders = getRemindersByGroup(active.id)
       const aReminders: Reminder[] = []
       const cReminders: Reminder[] = []
       for (const r of allReminders) {
-        const reminderTime = new Date(`${r.dueDate}T23:59:59`).getTime()
-        if (now - reminderTime > THIRTY_MINS) {
+        const timeStr = r.time || '23:59:59'
+        const reminderTime = new Date(`${r.dueDate}T${timeStr}`).getTime()
+        const isPastDueBy30Mins = !isNaN(reminderTime) && now - reminderTime > THIRTY_MINS
+        const isCompletedBy30Mins = !!(
+          (r as any).completed &&
+          (r as any).completedAt &&
+          now - new Date((r as any).completedAt).getTime() > THIRTY_MINS
+        )
+
+        if (isCompletedBy30Mins || isPastDueBy30Mins) {
           aReminders.push(r)
         } else {
           cReminders.push(r)
@@ -510,11 +543,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     initCloudAndData()
   }, [userName, refreshData])
 
-  // Listen for group change events
+  // Listen for group change events and periodic auto-archive ticker
   useEffect(() => {
     const handler = () => refreshData()
     window.addEventListener('usytask_group_change', handler)
-    return () => window.removeEventListener('usytask_group_change', handler)
+
+    // Re-evaluate 30-min auto-archive expiration every 60s
+    const ticker = setInterval(() => {
+      refreshData()
+    }, 60000)
+
+    return () => {
+      window.removeEventListener('usytask_group_change', handler)
+      clearInterval(ticker)
+    }
   }, [refreshData])
 
   // Tab navigation history & root boundary anchor
