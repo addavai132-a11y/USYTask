@@ -120,3 +120,9 @@ CREATE POLICY "Users can update own notification preferences"
     TO authenticated
     USING (auth.uid() = user_id)
     WITH CHECK (auth.uid() = user_id);
+
+-- 7. Concesión de Permisos
+GRANT ALL ON public.push_subscriptions TO authenticated;
+GRANT ALL ON public.push_subscriptions TO service_role;
+GRANT ALL ON public.notification_preferences TO authenticated;
+GRANT ALL ON public.notification_preferences TO service_role;
