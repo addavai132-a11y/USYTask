@@ -54,19 +54,26 @@ export function ChallengesTab() {
   }
 
   const handleCreateChallenge = () => {
-    if (!title.trim()) return
+    const cleanTitle = title.trim()
+    if (!cleanTitle) {
+      toast('Por favor, escribe un título para el reto', '❌')
+      return
+    }
+
+    const assigned = assignedMemberIds.length > 0 ? assignedMemberIds : members.map((m) => m.id)
+
     addFamilyChallenge({
-      title: title.trim(),
+      title: cleanTitle,
       description: description.trim(),
       category,
-      targetDays,
+      targetDays: Math.max(1, Number(targetDays) || 7),
       currentDays: 0,
-      rewardPoints,
-      assignedMemberIds,
+      rewardPoints: Math.max(10, Number(rewardPoints) || 100),
+      assignedMemberIds: assigned,
       status: 'en_progreso',
     })
     setIsCreating(false)
-    toast('Reto familiar creado', '🎯')
+    toast('Reto familiar creado correctamente', '🎯')
   }
 
   const handleCheckIn = (challenge: FamilyChallenge) => {

@@ -1194,21 +1194,39 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const handleAddFamilyChallenge = (data: Omit<FamilyChallenge, 'id' | 'groupId'>) => {
     if (!activeGroup) return
     const uniqueId = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `chal_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
+    
+    const groupMembers = getMembersByGroup(activeGroup.id)
+    const actingMember =
+      groupMembers.find((m) => m.name === userName) ||
+      groupMembers[0] ||
+      { id: currentMember?.id || 'usr_default', name: userName || 'Usuario' }
+
     addChallengeStore({
       ...data,
       id: uniqueId,
       groupId: activeGroup.id,
+      assignedMemberIds: data.assignedMemberIds && data.assignedMemberIds.length > 0 ? data.assignedMemberIds : [actingMember.id],
+      targetDays: Number(data.targetDays) || 7,
+      rewardPoints: Number(data.rewardPoints) || 100,
+      currentDays: data.currentDays || 0,
+      status: data.status || 'en_progreso',
       createdAt: new Date().toISOString(),
     })
-    addActivity({
-      id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `act_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-      groupId: activeGroup.id,
-      type: 'task_created',
-      title: `Nuevo Reto: ${data.title}`,
-      details: `+${data.rewardPoints} pts`,
-      memberId: currentMember?.id || 'all',
-      timestamp: new Date().toISOString(),
-    })
+
+    try {
+      addActivity({
+        id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `act_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+        groupId: activeGroup.id,
+        type: 'task_created',
+        title: `Nuevo Reto: ${data.title}`,
+        details: `+${data.rewardPoints} pts`,
+        memberId: currentMember?.id || actingMember.id,
+        timestamp: new Date().toISOString(),
+      })
+    } catch (e) {
+      console.warn('Activity error on challenge creation:', e)
+    }
+
     refreshData()
     bump()
   }

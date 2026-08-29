@@ -81,7 +81,8 @@ export function incrementChallengeProgress(
     ...chal,
     currentDays: newDays,
     status: isNowCompleted ? 'completado' : 'en_progreso',
-    lastProgressDate: today,
+    lastCheckedDate: today,
+    completedAt: isNowCompleted ? new Date().toISOString() : chal.completedAt,
   }
 
   all[idx] = updated
