@@ -112,9 +112,9 @@ export function TasksBoard() {
         title: r.title || 'Recordatorio',
         type: 'reminder',
         dueDate: r.dueDate || today,
-        dueTime: r.daysLeft === 0 ? 'Hoy' : undefined,
+        dueTime: r.time,
         completed: false,
-        assignedToMemberId: r.memberIds?.[0],
+        assignedToMemberId: r.assignedMemberIds?.[0] || r.memberIds?.[0],
         isUrgent: r.dueDate === today || r.daysLeft === 0,
       })
     })

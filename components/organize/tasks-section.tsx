@@ -286,6 +286,7 @@ export function TasksSection({
         title: r.title,
         type: 'reminder',
         date: r.dueDate,
+        time: r.time,
         daysLeft: r.daysLeft,
         memberIds: getReminderMemberIds(r),
       })
@@ -310,7 +311,7 @@ export function TasksSection({
   return (
     <div className="w-full max-w-2xl mx-auto space-y-4">
       {/* ── BARRA SUPERIOR DE ACTIVIDADES (SELECTOR TIPO PÍLDORA UNIFICADO) ── */}
-      <div className="w-full flex items-center justify-between p-2 px-3 bg-white/[0.03] border border-white/10 rounded-2xl backdrop-blur-xl">
+      <div className="w-full flex items-center justify-between p-2 px-3 bg-white/[0.03] border border-white/10 rounded-2xl backdrop-blur-xl relative z-30">
         {/* Selector de tipo de actividad */}
         <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-0.5">
           <button
@@ -375,8 +376,8 @@ export function TasksSection({
           {/* Menú emergente de creación en caso de 'Todas' */}
           {isAddMenuOpen && (
             <>
-              <div className="fixed inset-0 z-40" onClick={() => setIsAddMenuOpen(false)} />
-              <div className="absolute right-0 top-full mt-2 z-50 w-48 rounded-2xl bg-white dark:bg-[#131127]/95 border border-slate-200 dark:border-white/15 shadow-2xl p-1.5 flex flex-col gap-1 backdrop-blur-2xl animate-in fade-in zoom-in-95">
+              <div className="fixed inset-0 z-40 bg-black/20 backdrop-blur-[1px]" onClick={() => setIsAddMenuOpen(false)} />
+              <div className="absolute right-0 top-full mt-2 z-50 w-52 rounded-2xl bg-white dark:bg-[#1a1738] border border-slate-200 dark:border-white/20 shadow-2xl p-1.5 flex flex-col gap-1 backdrop-blur-2xl animate-in fade-in zoom-in-95">
                 <button
                   onClick={() => handleDirectAdd('tarea')}
                   className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-all text-left"
@@ -491,14 +492,14 @@ export function TasksSection({
                                 <Clock className="size-2.5" /> {act.date ? act.date : 'Hoy'}{act.time ? ` · ${act.time}` : ''}
                               </span>
                             )}
-                            {act.type === 'event' && act.time && (
+                            {act.type === 'event' && (
                               <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
-                                <Clock className="size-2.5" /> {act.date} · {act.time}
+                                <Clock className="size-2.5" /> {act.date}{act.time ? ` · ${act.time}` : ''}
                               </span>
                             )}
-                            {act.type === 'reminder' && act.date && (
+                            {act.type === 'reminder' && (
                               <span className="text-[10px] text-orange-400 font-semibold flex items-center gap-0.5">
-                                <Clock className="size-2.5" /> {act.date}
+                                <Clock className="size-2.5" /> {act.date}{act.time ? ` · ${act.time}` : ''}
                               </span>
                             )}
                             {act.location && (
@@ -737,7 +738,7 @@ export function TasksSection({
                           <p className="text-xs sm:text-sm font-bold text-foreground truncate">{e.title}</p>
                           <div className="flex flex-wrap items-center gap-2 mt-0.5">
                             <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
-                              <Clock className="size-2.5" /> {e.date} · {e.time}
+                              <Clock className="size-2.5" /> {e.date}{e.time ? ` · ${e.time}` : ''}
                             </span>
                             {e.location && (
                               <span className="text-[10px] text-muted-foreground flex items-center gap-0.5 truncate">
@@ -782,7 +783,7 @@ export function TasksSection({
               <div className="flex size-10 items-center justify-center rounded-xl bg-orange-500/10 text-orange-400 text-lg">
                 🔔
               </div>
-              <p className="text-xs text-slate-400 max-w-xs">No hay recordatorios activos.</p>
+              <p className="text-xs text-slate-400 max-w-xs">No hay recordatorios pendientes.</p>
               <button
                 onClick={() => openQuickAdd('recordatorio', { hideTabs: true })}
                 className="mt-1 rounded-xl bg-orange-600 hover:bg-orange-500 text-white px-4 py-2 text-xs font-bold transition-all active:scale-95 shadow-sm"
@@ -809,7 +810,7 @@ export function TasksSection({
                           <p className="text-xs sm:text-sm font-bold text-foreground truncate">{r.title}</p>
                           <div className="flex items-center gap-2 mt-0.5">
                             <span className="text-[10px] text-orange-400 font-semibold flex items-center gap-0.5">
-                              <Clock className="size-2.5" /> {r.dueDate}
+                              <Clock className="size-2.5" /> {r.dueDate}{r.time ? ` · ${r.time}` : ''}
                             </span>
                             {r.daysLeft <= 2 && (
                               <span className="rounded bg-rose-500/20 px-1.5 py-0.2 text-[9px] font-black text-rose-300 uppercase">

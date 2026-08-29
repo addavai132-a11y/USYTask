@@ -230,7 +230,7 @@ export function CalendarSection({
         rawId: r.id,
         title: r.title || 'Recordatorio',
         date: r.dueDate,
-        time: '08:00',
+        time: r.time || '08:00',
         kind: 'reminder',
         memberIds: getReminderMemberIds(r),
         original: r,

@@ -112,7 +112,7 @@ export function HistoryModal() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-bold truncate">{r.title}</p>
-                      <p className="text-xs text-muted-foreground mt-1">Expiró el {r.dueDate}</p>
+                      <p className="text-xs text-muted-foreground mt-1">Expiró el {r.dueDate}{r.time ? ` a las ${r.time}` : ''}</p>
                     </div>
                   </div>
                 )
