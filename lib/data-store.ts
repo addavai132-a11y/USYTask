@@ -45,8 +45,13 @@ export function getMembersByGroup(groupId: string): Member[] {
   return getAllMembers().filter((m) => m.groupId === groupId)
 }
 
-export function getMemberById(memberId: string, groupId: string): Member | null {
-  return getMembersByGroup(groupId).find((m) => m.id === memberId) || null
+export function getMemberById(memberId: string, groupId?: string): Member | null {
+  if (!memberId) return null
+  if (groupId) {
+    const foundInGroup = getMembersByGroup(groupId).find((m) => m.id === memberId)
+    if (foundInGroup) return foundInGroup
+  }
+  return getAllMembers().find((m) => m.id === memberId) || null
 }
 
 export function addMember(member: Member): void {

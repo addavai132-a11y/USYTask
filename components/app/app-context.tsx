@@ -36,8 +36,8 @@ import {
   deleteReminder as deleteReminderStore,
   addActivity as addActivityStore,
   addNotification as addNotificationStore,
-  dismissNotification as dismissNotificationStore,
-  clearNotifications as clearNotificationsStore,
+  deleteNotification as deleteNotificationStore,
+  clearNotificationsByGroup as clearNotificationsByGroupStore,
   getTasksByGroup,
   getEventsByGroup,
   getRemindersByGroup,
@@ -589,8 +589,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (result.pointsAwarded > 0 && result.memberId) {
       const task = getTasksByGroup(activeGroup.id).find(t => t.id === taskId)
       if (task) {
-        const completedByMember = getMemberById(result.memberId, activeGroup.id)
-        addActivity({
+        const completedByMember = getMemberByIdStore(result.memberId, activeGroup.id)
+        addActivityStore({
           id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `act_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
           groupId: activeGroup.id,
           type: 'task_completed',
@@ -600,7 +600,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           points: result.pointsAwarded,
         })
         
-        addNotification({
+        addNotificationStore({
           id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `notif_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
           groupId: activeGroup.id,
           type: 'task',
@@ -757,17 +757,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const handleGetMemberById = (memberId: string): Member | null => {
     if (!activeGroup) return null
-    return getMemberById(memberId, activeGroup.id)
+    return getMemberByIdStore(memberId, activeGroup.id)
   }
 
   const dismissNotification = (id: string) => {
-    deleteNotification(id)
+    deleteNotificationStore(id)
     refreshData()
   }
 
   const clearNotifications = () => {
     if (!activeGroup) return
-    clearNotificationsByGroup(activeGroup.id)
+    clearNotificationsByGroupStore(activeGroup.id)
     refreshData()
   }
 
