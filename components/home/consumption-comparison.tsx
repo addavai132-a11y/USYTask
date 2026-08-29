@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { TrendingUp, TrendingDown, Calendar, Scale, Plus, Zap, Droplets, Flame, Fuel } from 'lucide-react'
+import { TrendingUp, TrendingDown, Calendar, Scale, Plus, Zap, Droplets, Flame, Fuel, Wifi } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { CustomSelect } from '@/components/ui/custom-select'
 import { useApp } from '@/components/app/app-context'
@@ -21,6 +21,7 @@ const UTILITIES_META: Record<
   electricidad: { label: 'Electricidad', unit: 'kWh', icon: Zap },
   agua: { label: 'Agua', unit: 'm³', icon: Droplets },
   gas: { label: 'Gas', unit: 'kWh', icon: Flame },
+  internet_telefonia: { label: 'Internet/Tel.', unit: 'ud', icon: Wifi },
   combustible: { label: 'Combustible', unit: 'L', icon: Fuel },
   otro: { label: 'Otros suministros', unit: 'ud', icon: Scale },
 }
@@ -121,7 +122,7 @@ export function ConsumptionComparison({ onOpenAddBill }: { onOpenAddBill?: () =>
   const unitPriceDiff = dataA.unitPrice - dataB.unitPrice
   const unitPriceDiffPercent = dataB.unitPrice > 0 ? ((dataA.unitPrice - dataB.unitPrice) / dataB.unitPrice) * 100 : 0
 
-  const utilityKeys: UtilityType[] = ['electricidad', 'agua', 'gas', 'combustible']
+  const utilityKeys: UtilityType[] = ['electricidad', 'agua', 'gas', 'internet_telefonia', 'combustible']
 
   return (
     <div className="w-full max-w-2xl mx-auto space-y-4 animate-fade-in">

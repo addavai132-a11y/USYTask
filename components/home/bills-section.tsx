@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Plus, Receipt, CheckCircle2, Clock, AlertTriangle, Trash2, Edit2, X, RefreshCw, Zap, Droplets, Flame, Fuel, Sparkles } from 'lucide-react'
+import { Plus, Receipt, CheckCircle2, Clock, AlertTriangle, Trash2, Edit2, X, RefreshCw, Zap, Droplets, Flame, Fuel, Sparkles, Wifi } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { CustomSelect } from '@/components/ui/custom-select'
 import { PillTabs } from '@/components/ui/pill-tabs'
@@ -42,6 +42,11 @@ const UTILITY_CONFIG: Record<UtilityType, UtilityMeta> = {
     unit: 'kWh',
     unitPriceLabel: 'Precio medio (€/kWh)',
     unitPriceSuffix: '€/kWh',
+  },
+  internet_telefonia: {
+    unit: 'ud',
+    unitPriceLabel: 'Coste/mes (€/ud)',
+    unitPriceSuffix: '€/ud',
   },
   combustible: {
     unit: 'L',
@@ -112,11 +117,11 @@ export function BillsSection() {
   const currentUtilityMeta = getUtilityMeta(utilityType, customUtilityUnit)
   const unitLabel = currentUtilityMeta.unit
 
-  // ── MANEJADORES DE CÁLCULO BIDIRECCIONAL ──
+  // ── MANEJADORES DE CÁLCULO INDEPENDIENTES ──
   const handleAmountChange = (val: string) => {
     setAmount(val)
-    const numAmt = parseFloat(val)
-    const numCons = parseFloat(consumptionValue)
+    const numAmt = parseFloat(val.replace(',', '.'))
+    const numCons = parseFloat(consumptionValue.replace(',', '.'))
     if (!isNaN(numAmt) && !isNaN(numCons) && numCons > 0) {
       const calc = numAmt / numCons
       setUnitPrice(calc.toFixed(4).replace(/\.?0+$/, ''))
@@ -125,26 +130,17 @@ export function BillsSection() {
 
   const handleConsumptionChange = (val: string) => {
     setConsumptionValue(val)
-    const numCons = parseFloat(val)
-    const numPrice = parseFloat(unitPrice)
-    const numAmt = parseFloat(amount)
+    const numCons = parseFloat(val.replace(',', '.'))
+    const numAmt = parseFloat(amount.replace(',', '.'))
 
-    if (!isNaN(numCons) && numCons > 0) {
-      if (!isNaN(numPrice) && numPrice > 0) {
-        setAmount((numCons * numPrice).toFixed(2))
-      } else if (!isNaN(numAmt) && numAmt > 0) {
-        setUnitPrice((numAmt / numCons).toFixed(4).replace(/\.?0+$/, ''))
-      }
+    if (!isNaN(numCons) && numCons > 0 && !isNaN(numAmt) && numAmt > 0) {
+      setUnitPrice((numAmt / numCons).toFixed(4).replace(/\.?0+$/, ''))
     }
   }
 
   const handleUnitPriceChange = (val: string) => {
     setUnitPrice(val)
-    const numPrice = parseFloat(val)
-    const numCons = parseFloat(consumptionValue)
-    if (!isNaN(numPrice) && !isNaN(numCons) && numCons > 0) {
-      setAmount((numCons * numPrice).toFixed(2))
-    }
+    // El importe se mantiene independiente para no sobrescribir el total de la factura
   }
 
   function handleOpenCreate() {
@@ -273,6 +269,8 @@ export function BillsSection() {
         return <Droplets className="size-3.5 text-blue-400" />
       case 'gas':
         return <Flame className="size-3.5 text-orange-400" />
+      case 'internet_telefonia':
+        return <Wifi className="size-3.5 text-sky-400" />
       case 'combustible':
         return <Fuel className="size-3.5 text-emerald-400" />
       case 'otro':
@@ -519,10 +517,11 @@ export function BillsSection() {
                           onChange={(val) => setUtilityType(val)}
                           options={[
                             { value: 'electricidad', label: 'Electricidad (kWh)' },
-                            { value: 'agua', label: 'Agua (m³)' },
-                            { value: 'gas', label: 'Gas (kWh)' },
-                            { value: 'combustible', label: 'Combustible (L)' },
-                            { value: 'otro', label: 'Otro (Personalizado)' },
+                            { value: 'agua', label: 'Agua (m³ o litros)' },
+                            { value: 'gas', label: 'Gas (kWh o m³)' },
+                            { value: 'internet_telefonia', label: 'Internet / Fibra / Telefonía' },
+                            { value: 'combustible', label: 'Combustible / Coche (L)' },
+                            { value: 'otro', label: 'Otros suministros / Servicios' },
                           ]}
                         />
                       </div>

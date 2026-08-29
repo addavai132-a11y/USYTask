@@ -39,7 +39,7 @@ export const expenseCategoryMeta: Record<ExpenseCategory, { icon: string; label:
   otros: { icon: '✨', label: 'Otros' },
 }
 
-export type UtilityType = 'electricidad' | 'agua' | 'gas' | 'combustible' | 'otro'
+export type UtilityType = 'electricidad' | 'agua' | 'gas' | 'internet_telefonia' | 'combustible' | 'otro'
 
 export interface ConsumptionData {
   utilityType?: UtilityType
