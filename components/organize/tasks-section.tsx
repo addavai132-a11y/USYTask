@@ -364,24 +364,24 @@ export function TasksSection({
           {isAddMenuOpen && (
             <>
               <div className="fixed inset-0 z-40" onClick={() => setIsAddMenuOpen(false)} />
-              <div className="absolute right-0 top-full mt-2 z-50 w-44 rounded-2xl bg-[#131127]/95 border border-white/15 shadow-2xl p-1.5 flex flex-col gap-1 backdrop-blur-2xl animate-in fade-in zoom-in-95">
+              <div className="absolute right-0 top-full mt-2 z-50 w-48 rounded-2xl bg-white dark:bg-[#131127]/95 border border-slate-200 dark:border-white/15 shadow-2xl p-1.5 flex flex-col gap-1 backdrop-blur-2xl animate-in fade-in zoom-in-95">
                 <button
                   onClick={() => handleDirectAdd('tarea')}
-                  className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold text-blue-300 hover:bg-blue-500/15 transition-all text-left"
+                  className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-all text-left"
                 >
                   <span className="size-2 rounded-full bg-blue-500" />
                   <span>🔵 Nueva Tarea</span>
                 </button>
                 <button
                   onClick={() => handleDirectAdd('evento')}
-                  className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold text-emerald-300 hover:bg-emerald-500/15 transition-all text-left"
+                  className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-all text-left"
                 >
                   <span className="size-2 rounded-full bg-emerald-500" />
                   <span>🟢 Nuevo Evento</span>
                 </button>
                 <button
                   onClick={() => handleDirectAdd('recordatorio')}
-                  className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold text-orange-300 hover:bg-orange-500/15 transition-all text-left"
+                  className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-all text-left"
                 >
                   <span className="size-2 rounded-full bg-orange-500" />
                   <span>🟠 Nuevo Recordatorio</span>

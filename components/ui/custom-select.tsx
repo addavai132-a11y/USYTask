@@ -105,13 +105,13 @@ export function CustomSelect<T extends string | number>({
                 className={cn(
                   'flex items-center justify-between gap-2.5 rounded-xl px-3 py-2 text-xs md:text-sm transition-all text-left w-full cursor-pointer',
                   isSelected
-                    ? 'bg-emerald-50 border border-emerald-200 text-emerald-900 font-semibold dark:bg-purple-950/60 dark:border-purple-500/40 dark:text-purple-100'
-                    : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-200 dark:hover:text-white dark:hover:bg-purple-600/20'
+                    ? 'bg-emerald-50 border border-emerald-200 text-slate-900 font-bold dark:bg-purple-950/60 dark:border-purple-500/40 dark:text-white'
+                    : 'text-slate-900 hover:text-black hover:bg-slate-100 dark:text-slate-200 dark:hover:text-white dark:hover:bg-purple-600/20 font-medium'
                 )}
               >
                 <div className="flex items-center gap-2.5 min-w-0">
                   {opt.icon && <span className="shrink-0 leading-none">{opt.icon}</span>}
-                  <span className="truncate">{opt.label}</span>
+                  <span className="truncate text-slate-900 dark:text-white">{opt.label}</span>
                 </div>
                 {isSelected && (
                   <Check className="size-4 text-emerald-600 dark:text-purple-400 shrink-0 stroke-[2.5]" />
