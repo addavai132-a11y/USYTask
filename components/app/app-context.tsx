@@ -113,6 +113,11 @@ import {
 import { getStoredSession } from '@/lib/user-session'
 import { getTodayISO } from '@/lib/date-utils'
 import { deleteMemoryImage } from '@/lib/storage'
+import {
+  notifyEventReminder,
+  notifyReminderDue,
+  notifyTaskDue,
+} from '@/lib/notification-triggers'
 
 export type Tab = 'inicio' | 'organizar' | 'hogar' | 'fitness' | 'familia' | 'perfil'
 export type AddTab = 'tarea' | 'evento' | 'recordatorio' | 'miembro'
@@ -547,6 +552,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       timestamp: new Date().toISOString(),
     })
 
+    notifyTaskDue({
+      taskTitle: task.title,
+    }).catch(() => {})
+
     refreshData()
     bump()
   }
@@ -630,6 +639,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       colorVar: 'var(--purple-500)',
     })
 
+    notifyEventReminder({
+      eventTitle: event.title,
+      timeStr: event.time,
+    }).catch(() => {})
+
     refreshData()
     bump()
   }
@@ -674,6 +688,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       timestamp: new Date().toISOString(),
       colorVar: 'var(--rose-500)',
     })
+
+    notifyReminderDue({
+      reminderTitle: reminder.title,
+      dueStr: reminder.dueDate,
+    }).catch(() => {})
 
     refreshData()
     bump()

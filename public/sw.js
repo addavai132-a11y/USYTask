@@ -1,17 +1,25 @@
+self.addEventListener('install', (event) => {
+  self.skipWaiting()
+})
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(self.clients.claim())
+})
+
 self.addEventListener('push', (event) => {
   let data = {}
   try {
     data = event.data ? event.data.json() : {}
   } catch {
-    data = { title: 'UsyaTask', body: event.data ? event.data.text() : '' }
+    data = { title: 'USYTask', body: event.data ? event.data.text() : '' }
   }
 
-  const title = data.title || 'UsyaTask / Life OS'
+  const title = data.title || 'USYTask / Life OS'
   const options = {
     body: data.body || 'Tienes una nueva actualización en tu espacio.',
-    icon: data.icon || '/icon-192.png',
-    badge: data.badge || '/icon-192.png',
-    tag: data.tag || 'usyatask-notification',
+    icon: data.icon || '/icon-192x192.png',
+    badge: data.badge || '/icon-192x192.png',
+    tag: data.tag || `usyatask-${Date.now()}`,
     renotify: true,
     vibrate: [100, 50, 100],
     data: {
@@ -32,7 +40,9 @@ self.addEventListener('notificationclick', (event) => {
       for (const client of clientList) {
         if ('focus' in client) {
           if (client.url && client.url.includes(self.location.origin)) {
-            client.navigate(targetUrl)
+            if ('navigate' in client) {
+              client.navigate(targetUrl)
+            }
             return client.focus()
           }
         }

@@ -4,7 +4,7 @@ import type { PushNotificationPayload, NotificationType } from '@/types/notifica
  * Función genérica de despacho hacia el endpoint /api/push/send
  */
 async function dispatchPush(
-  userIds: string[],
+  userIds: string[] = [],
   payload: PushNotificationPayload,
   notificationType: NotificationType
 ) {
@@ -30,15 +30,70 @@ async function dispatchPush(
 // =========================================================================
 
 /**
+ * Aviso de tarea asignada, próxima a vencer o vencida
+ */
+export async function notifyTaskDue(params: {
+  taskTitle: string
+  dueDate?: string
+  assignedToName?: string
+  userIds?: string[]
+}) {
+  const { taskTitle, dueDate, assignedToName, userIds = [] } = params
+  return dispatchPush(
+    userIds,
+    {
+      title: '⏰ Tarea Pendiente',
+      body: dueDate
+        ? `La tarea '${taskTitle}' tiene fecha límite para ${dueDate}.`
+        : `Tienes pendiente la tarea: '${taskTitle}'.`,
+      tag: `task-${Date.now()}`,
+      data: {
+        url: '/app?tab=organizar',
+        type: 'organizacion_events',
+        category: 'organizacion',
+      },
+    },
+    'organizacion_events'
+  )
+}
+
+/**
+ * Aviso de recordatorio urgente o programado
+ */
+export async function notifyReminderDue(params: {
+  reminderTitle: string
+  dueStr?: string
+  userIds?: string[]
+}) {
+  const { reminderTitle, dueStr, userIds = [] } = params
+  return dispatchPush(
+    userIds,
+    {
+      title: '📌 Recordatorio Activo',
+      body: dueStr
+        ? `Aviso: '${reminderTitle}' programado para ${dueStr}.`
+        : `Tienes un recordatorio activo: '${reminderTitle}'.`,
+      tag: `reminder-${Date.now()}`,
+      data: {
+        url: '/app?tab=organizar',
+        type: 'organizacion_events',
+        category: 'organizacion',
+      },
+    },
+    'organizacion_events'
+  )
+}
+
+/**
  * Aviso con antelación programada para un evento o reunión
  */
 export async function notifyEventReminder(params: {
   eventTitle: string
   timeStr?: string
   minutesBefore?: number
-  userIds: string[]
+  userIds?: string[]
 }) {
-  const { eventTitle, timeStr, minutesBefore = 15, userIds } = params
+  const { eventTitle, timeStr, minutesBefore = 15, userIds = [] } = params
   return dispatchPush(
     userIds,
     {
