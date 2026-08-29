@@ -132,41 +132,58 @@ export function claimReward(
   memberId: string,
   groupId: string
 ): { success: boolean; error?: string; reward?: FamilyReward } {
+  if (!rewardId || !memberId) {
+    return { success: false, error: 'Identificador de recompensa o integrante no válido' }
+  }
+
   const allRewards = getAllRewards()
-  const rIdx = allRewards.findIndex((r) => r.id === rewardId && r.groupId === groupId)
+  const rIdx = allRewards.findIndex((r) => r.id === rewardId && (r.groupId === groupId || !groupId))
   if (rIdx < 0) return { success: false, error: 'Recompensa no encontrada' }
 
   const reward = allRewards[rIdx]
 
-  // Check member points
+  if (reward.stock !== undefined && reward.stock <= 0) {
+    return { success: false, error: 'Esta recompensa ya no tiene unidades disponibles (agotada)' }
+  }
+
+  // Check member points with fallback
   const allMembers = loadArray<Member>(MEMBERS_KEY)
-  const mIdx = allMembers.findIndex((m) => m.id === memberId && m.groupId === groupId)
-  if (mIdx < 0) return { success: false, error: 'Miembro no encontrado' }
+  let mIdx = allMembers.findIndex((m) => m.id === memberId && (m.groupId === groupId || !groupId))
+  if (mIdx < 0) {
+    mIdx = allMembers.findIndex((m) => m.id === memberId)
+  }
+  if (mIdx < 0) return { success: false, error: 'Integrante no encontrado en el sistema' }
 
   const member = allMembers[mIdx]
-  if ((member.points || 0) < reward.pointCost) {
-    return { success: false, error: `Puntos insuficientes. Necesitas ${reward.pointCost} pts.` }
+  const currentPoints = Number(member.points) || 0
+  const cost = Number(reward.pointCost) || 0
+
+  if (currentPoints < cost) {
+    return {
+      success: false,
+      error: `Puntos insuficientes (${currentPoints} pts disponibles). Se requieren ${cost} pts.`,
+    }
   }
 
   // Deduct points from member
   allMembers[mIdx] = {
     ...member,
-    points: Math.max(0, (member.points || 0) - reward.pointCost),
+    points: Math.max(0, currentPoints - cost),
   }
   saveArray(MEMBERS_KEY, allMembers)
 
   // Append to claimedBy list
-  const updatedClaimedBy = reward.claimedBy || []
+  const updatedClaimedBy = Array.isArray(reward.claimedBy) ? [...reward.claimedBy] : []
   updatedClaimedBy.unshift({
     memberId,
     date: new Date().toISOString(),
     rewardTitle: reward.title,
-    pointCost: reward.pointCost,
+    pointCost: cost,
   })
 
   const updatedReward: FamilyReward = {
     ...reward,
-    stock: reward.stock !== undefined ? Math.max(0, reward.stock - 1) : undefined,
+    stock: reward.stock !== undefined ? Math.max(0, Number(reward.stock) - 1) : undefined,
     claimedBy: updatedClaimedBy,
   }
 

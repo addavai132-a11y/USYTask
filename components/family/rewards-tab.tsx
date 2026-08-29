@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Plus, Gift, Sparkles, Star, CheckCircle2, Trash2, History, AlertCircle, ShoppingBag } from 'lucide-react'
+import { Plus, Gift, Sparkles, Star, CheckCircle2, Trash2, History, AlertCircle, ShoppingBag, Loader2 } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { MemberAvatar } from '@/components/ui/member-avatar'
 import { EmptyState } from '@/components/ui/empty-state'
@@ -28,6 +28,7 @@ export function RewardsTab() {
   const [claimingReward, setClaimingReward] = useState<FamilyReward | null>(null)
   const [selectedMemberId, setSelectedMemberId] = useState<string>('')
   const [showHistory, setShowHistory] = useState(false)
+  const [isClaiming, setIsClaiming] = useState(false)
 
   // Creation form state
   const [title, setTitle] = useState('')
@@ -37,18 +38,44 @@ export function RewardsTab() {
 
   const handleOpenClaim = (r: FamilyReward) => {
     setClaimingReward(r)
-    setSelectedMemberId(currentMember?.id || members[0]?.id || '')
+    // Select first member who can afford or current member
+    const affordableMember = members.find((m) => (m.points || 0) >= r.pointCost)
+    setSelectedMemberId(currentMember?.id || affordableMember?.id || members[0]?.id || '')
   }
 
-  const handleConfirmClaim = () => {
-    if (!claimingReward || !selectedMemberId) return
-    const res = claimFamilyReward(claimingReward.id, selectedMemberId)
-    if (res.success) {
-      const member = getMemberById(selectedMemberId)
-      toast(`Recompensa "${claimingReward.title}" canjeada para ${member?.name}`, '✅')
-      setClaimingReward(null)
-    } else {
-      toast(res.error || 'Puntos insuficientes', '❌')
+  const handleConfirmClaim = async () => {
+    if (isClaiming || !claimingReward) return
+    
+    if (!selectedMemberId) {
+      toast('Debes seleccionar un integrante para canjear el premio', '⚠️')
+      return
+    }
+
+    const member = getMemberById(selectedMemberId)
+    if (!member) {
+      toast('Integrante no encontrado', '❌')
+      return
+    }
+
+    if ((member.points || 0) < claimingReward.pointCost) {
+      toast(`Puntos insuficientes (${member.points || 0} pts). Necesitas ${claimingReward.pointCost} pts.`, '❌')
+      return
+    }
+
+    setIsClaiming(true)
+    try {
+      const res = claimFamilyReward(claimingReward.id, selectedMemberId)
+      if (res.success) {
+        toast(`¡Recompensa "${claimingReward.title}" canjeada para ${member.name}! 🎉`, '✅')
+        setClaimingReward(null)
+      } else {
+        toast(res.error || 'No se pudo canjear la recompensa', '❌')
+      }
+    } catch (err) {
+      console.error('Error al canjear recompensa:', err)
+      toast('Error inesperado al canjear la recompensa', '❌')
+    } finally {
+      setIsClaiming(false)
     }
   }
 
@@ -261,17 +288,30 @@ export function RewardsTab() {
             <div className="mt-2 flex gap-2 justify-end">
               <button
                 type="button"
+                disabled={isClaiming}
                 onClick={() => setClaimingReward(null)}
-                className="rounded-xl px-4 py-2 text-xs font-bold text-slate-400 hover:bg-white/10"
+                className="rounded-xl px-4 py-2 text-xs font-bold text-slate-400 hover:bg-white/10 disabled:opacity-50"
               >
                 Cancelar
               </button>
               <button
                 type="button"
+                disabled={
+                  isClaiming ||
+                  !selectedMemberId ||
+                  !members.some((m) => m.id === selectedMemberId && (m.points || 0) >= claimingReward.pointCost)
+                }
                 onClick={handleConfirmClaim}
-                className="rounded-xl bg-emerald-600 hover:bg-emerald-700 px-5 py-2 text-xs font-bold text-white shadow-sm transition-all active:scale-95"
+                className="flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 disabled:pointer-events-none px-5 py-2 text-xs font-bold text-white shadow-sm transition-all active:scale-95"
               >
-                Confirmar canje
+                {isClaiming ? (
+                  <>
+                    <Loader2 className="size-3.5 animate-spin" />
+                    <span>Canjeando...</span>
+                  </>
+                ) : (
+                  <span>Confirmar canje</span>
+                )}
               </button>
             </div>
           </div>
@@ -344,8 +384,9 @@ export function RewardsTab() {
             </button>
             <button
               type="button"
+              disabled={!title.trim()}
               onClick={handleCreateReward}
-              className="rounded-xl bg-emerald-600 hover:bg-emerald-700 px-5 py-2 text-xs font-bold text-white shadow-sm transition-all active:scale-95"
+              className="rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 disabled:pointer-events-none px-5 py-2 text-xs font-bold text-white shadow-sm transition-all active:scale-95"
             >
               Guardar recompensa
             </button>
