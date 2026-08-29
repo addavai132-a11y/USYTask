@@ -1,16 +1,17 @@
 'use client'
 
-import { X, CheckCircle2, CalendarPlus, Bell } from 'lucide-react'
+import { X, CheckCircle2, CalendarPlus, Bell, Trophy } from 'lucide-react'
 import { useApp } from './app-context'
 import { EmptyState } from '@/components/ui/empty-state'
 import { MemberAvatar } from '@/components/ui/member-avatar'
-import type { Task, CalendarEvent, Reminder } from '@/types'
+import type { Task, CalendarEvent, Reminder, FamilyChallenge } from '@/types'
 
 // Helper to sort mixed items
 type HistoryItem = 
   | { type: 'task'; data: Task; dateObj: Date }
   | { type: 'event'; data: CalendarEvent; dateObj: Date }
   | { type: 'reminder'; data: Reminder; dateObj: Date }
+  | { type: 'challenge'; data: FamilyChallenge; dateObj: Date }
 
 export function HistoryModal() {
   const {
@@ -19,6 +20,7 @@ export function HistoryModal() {
     archivedTasks,
     archivedEvents,
     archivedReminders,
+    archivedFamilyChallenges,
     getMemberById,
   } = useApp()
 
@@ -27,8 +29,9 @@ export function HistoryModal() {
   // Combine and sort
   const items: HistoryItem[] = [
     ...archivedTasks.map((t): HistoryItem => ({ type: 'task', data: t, dateObj: new Date(t.completedAt || 0) })),
-    ...archivedEvents.map((e): HistoryItem => ({ type: 'event', data: e, dateObj: new Date(`${e.date}T${e.time}`) })),
-    ...archivedReminders.map((r): HistoryItem => ({ type: 'reminder', data: r, dateObj: new Date(`${r.dueDate}T23:59:59`) }))
+    ...archivedEvents.map((e): HistoryItem => ({ type: 'event', data: e, dateObj: new Date(`${e.date}T${e.time || '12:00'}`) })),
+    ...archivedReminders.map((r): HistoryItem => ({ type: 'reminder', data: r, dateObj: new Date(`${r.dueDate}T${r.time || '23:59:59'}`) })),
+    ...archivedFamilyChallenges.map((c): HistoryItem => ({ type: 'challenge', data: c, dateObj: new Date(c.completedAt || 0) }))
   ].sort((a, b) => b.dateObj.getTime() - a.dateObj.getTime())
 
   return (
@@ -111,6 +114,26 @@ export function HistoryModal() {
                       <p className="text-sm font-bold truncate">{r.title}</p>
                       <p className="text-xs text-muted-foreground mt-1">Expiró el {r.dueDate}</p>
                     </div>
+                  </div>
+                )
+              }
+              if (item.type === 'challenge') {
+                const c = item.data as FamilyChallenge
+                return (
+                  <div key={`chal-${c.id}-${idx}`} className="flex items-start gap-3 rounded-2xl bg-secondary/40 p-3 border border-border/50">
+                    <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-amber-500/20 text-amber-500">
+                      <Trophy className="size-4" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold truncate">{c.title}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-xs text-muted-foreground">Reto completado ({c.targetDays} días)</span>
+                        <span className="text-[10px] font-bold text-amber-600">+{c.rewardPoints} pts</span>
+                      </div>
+                    </div>
+                    <span className="text-[10px] font-semibold text-muted-foreground whitespace-nowrap">
+                      {item.dateObj.toLocaleDateString()}
+                    </span>
                   </div>
                 )
               }

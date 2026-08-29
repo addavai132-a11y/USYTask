@@ -61,9 +61,10 @@ export function deleteChallenge(id: string, groupId: string): void {
   saveArray(CHALLENGES_KEY, all.filter((c) => !(c.id === id && c.groupId === groupId)))
 }
 
-export function incrementChallengeProgress(
+export function adjustChallengeDays(
   id: string,
-  groupId: string
+  groupId: string,
+  delta: number
 ): { challenge: FamilyChallenge | null; completedNow: boolean; pointsAwarded: number } {
   const all = getAllChallenges()
   const idx = all.findIndex((c) => c.id === id && c.groupId === groupId)
@@ -74,7 +75,7 @@ export function incrementChallengeProgress(
 
   const currentStreak = chal.currentDays || 0
   const targetDays = chal.targetDays || 7
-  const newDays = currentStreak + 1
+  const newDays = Math.max(0, Math.min(targetDays, currentStreak + delta))
   const isNowCompleted = newDays >= targetDays
 
   const updated: FamilyChallenge = {
@@ -82,7 +83,7 @@ export function incrementChallengeProgress(
     currentDays: newDays,
     status: isNowCompleted ? 'completado' : 'en_progreso',
     lastCheckedDate: today,
-    completedAt: isNowCompleted ? new Date().toISOString() : chal.completedAt,
+    completedAt: isNowCompleted ? (chal.completedAt || new Date().toISOString()) : undefined,
   }
 
   all[idx] = updated
@@ -90,8 +91,8 @@ export function incrementChallengeProgress(
 
   return {
     challenge: updated,
-    completedNow: isNowCompleted,
-    pointsAwarded: isNowCompleted ? chal.rewardPoints : 0,
+    completedNow: isNowCompleted && chal.status !== 'completado',
+    pointsAwarded: isNowCompleted && chal.status !== 'completado' ? chal.rewardPoints : 0,
   }
 }
 

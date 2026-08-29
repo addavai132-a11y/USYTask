@@ -98,7 +98,7 @@ import {
   addChallenge as addChallengeStore,
   updateChallenge as updateChallengeStore,
   deleteChallenge as deleteChallengeStore,
-  incrementChallengeProgress as incrementChallengeProgressStore,
+  adjustChallengeDays as adjustChallengeDaysStore,
   getRewardsByGroup,
   addReward as addRewardStore,
   updateReward as updateRewardStore,
@@ -250,6 +250,7 @@ interface AppState {
 
   // Family Suite
   familyChallenges: FamilyChallenge[]
+  archivedFamilyChallenges: FamilyChallenge[]
   familyRewards: FamilyReward[]
   familyMemories: FamilyMemory[]
   familyAchievements: FamilyAchievement[]
@@ -257,6 +258,7 @@ interface AppState {
   updateFamilyChallenge: (challenge: FamilyChallenge) => void
   deleteFamilyChallenge: (id: string) => void
   checkInFamilyChallenge: (id: string) => { completedNow: boolean; pointsAwarded: number }
+  adjustFamilyChallengeDays: (id: string, delta: number) => { completedNow: boolean; pointsAwarded: number }
   addFamilyReward: (reward: Omit<FamilyReward, 'id' | 'groupId'>) => void
   updateFamilyReward: (reward: FamilyReward) => void
   deleteFamilyReward: (id: string) => void
@@ -371,6 +373,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   // Family Suite state
   const [familyChallenges, setFamilyChallenges] = useState<FamilyChallenge[]>([])
+  const [archivedFamilyChallenges, setArchivedFamilyChallenges] = useState<FamilyChallenge[]>([])
   const [familyRewards, setFamilyRewards] = useState<FamilyReward[]>([])
   const [familyMemories, setFamilyMemories] = useState<FamilyMemory[]>([])
   const [familyAchievements, setFamilyAchievements] = useState<FamilyAchievement[]>([])
@@ -401,18 +404,35 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setBudgets(getBudgetsByGroup(active.id))
       setInitialPiggyBankBalance(getPiggyBankBalance(active.id))
 
-      const chals = getChallengesByGroup(active.id)
-      setFamilyChallenges(chals)
+      const THIRTY_MINS = 30 * 60 * 1000
+      const now = Date.now()
+
+      // Retos Familiares: Archivar si pasaron 30 min tras completarse
+      const allChals = getChallengesByGroup(active.id)
+      const aChals: FamilyChallenge[] = []
+      const cChals: FamilyChallenge[] = []
+      for (const c of allChals) {
+        const isCompletedBy30Mins = !!(
+          c.status === 'completado' &&
+          c.completedAt &&
+          now - new Date(c.completedAt).getTime() > THIRTY_MINS
+        )
+        if (isCompletedBy30Mins) {
+          aChals.push(c)
+        } else {
+          cChals.push(c)
+        }
+      }
+      setFamilyChallenges(cChals)
+      setArchivedFamilyChallenges(aChals)
+
       const rews = getRewardsByGroup(active.id)
       setFamilyRewards(rews)
       const mems = getMemoriesByGroup(active.id)
       setFamilyMemories(mems)
       const allTasksForGroup = getTasksByGroup(active.id)
-      const achs = computeAchievementsForGroup(activeMembers, allTasksForGroup, chals, rews, mems)
+      const achs = computeAchievementsForGroup(activeMembers, allTasksForGroup, allChals, rews, mems)
       setFamilyAchievements(achs)
-
-      const THIRTY_MINS = 30 * 60 * 1000
-      const now = Date.now()
 
       // 1. Tareas: Archivar si pasaron 30 min desde completada O 30 min desde hora límite vencida
       const allTasks = getTasksByGroup(active.id)
@@ -1299,9 +1319,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     bump()
   }
 
-  const handleCheckInFamilyChallenge = (id: string) => {
+  const handleAdjustFamilyChallengeDays = (id: string, delta: number) => {
     if (!activeGroup) return { completedNow: false, pointsAwarded: 0 }
-    const res = incrementChallengeProgressStore(id, activeGroup.id)
+    const res = adjustChallengeDaysStore(id, activeGroup.id, delta)
     if (res.completedNow && res.pointsAwarded > 0) {
       if (res.challenge?.assignedMemberIds && res.challenge.assignedMemberIds.length > 0) {
         res.challenge.assignedMemberIds.forEach((mId) => {
@@ -1310,19 +1330,27 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       } else if (currentMember) {
         adjustMemberPointsStore(currentMember.id, activeGroup.id, res.pointsAwarded)
       }
-      addNotification({
-        id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `notif_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-        groupId: activeGroup.id,
-        type: 'task',
-        title: '¡Reto completado!',
-        body: `Se ha completado el reto "${res.challenge?.title}" (+${res.pointsAwarded} pts)`,
-        timestamp: new Date().toISOString(),
-        colorVar: 'var(--amber-500)',
-      })
+      try {
+        addNotification({
+          id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `notif_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+          groupId: activeGroup.id,
+          type: 'task',
+          title: '¡Reto completado!',
+          body: `Se ha completado el reto "${res.challenge?.title}" (+${res.pointsAwarded} pts)`,
+          timestamp: new Date().toISOString(),
+          colorVar: 'var(--amber-500)',
+        })
+      } catch (e) {
+        console.warn(e)
+      }
     }
     refreshData()
     bump()
     return { completedNow: res.completedNow, pointsAwarded: res.pointsAwarded }
+  }
+
+  const handleCheckInFamilyChallenge = (id: string) => {
+    return handleAdjustFamilyChallengeDays(id, 1)
   }
 
   const handleAddFamilyReward = (data: Omit<FamilyReward, 'id' | 'groupId'>) => {
@@ -1501,6 +1529,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
         // Family Suite
         familyChallenges,
+        archivedFamilyChallenges,
         familyRewards,
         familyMemories,
         familyAchievements,
@@ -1508,6 +1537,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         updateFamilyChallenge: handleUpdateFamilyChallenge,
         deleteFamilyChallenge: handleDeleteFamilyChallenge,
         checkInFamilyChallenge: handleCheckInFamilyChallenge,
+        adjustFamilyChallengeDays: handleAdjustFamilyChallengeDays,
         addFamilyReward: handleAddFamilyReward,
         updateFamilyReward: handleUpdateFamilyReward,
         deleteFamilyReward: handleDeleteFamilyReward,

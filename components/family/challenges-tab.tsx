@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Plus, Trophy, CheckCircle2, Sparkles, Flame, Calendar, Trash2, Tag, Clock, Users } from 'lucide-react'
+import { Plus, Trophy, CheckCircle2, Trash2 } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { MemberAvatar } from '@/components/ui/member-avatar'
 import { EmptyState } from '@/components/ui/empty-state'
@@ -23,6 +23,7 @@ export function ChallengesTab() {
     addFamilyChallenge,
     deleteFamilyChallenge,
     checkInFamilyChallenge,
+    adjustFamilyChallengeDays,
     confirmDelete,
   } = useApp()
 
@@ -81,7 +82,18 @@ export function ChallengesTab() {
     if (result.completedNow) {
       toast(`¡Reto "${challenge.title}" completado! +${result.pointsAwarded} pts`, '🎉')
     } else {
-      toast('Día completado para el reto', '✨')
+      toast(`Día añadido al reto (${(challenge.currentDays || 0) + 1}/${challenge.targetDays})`, '✨')
+    }
+  }
+
+  const handleAdjustDays = (challenge: FamilyChallenge, delta: number) => {
+    const result = adjustFamilyChallengeDays(challenge.id, delta)
+    if (result.completedNow) {
+      toast(`¡Reto "${challenge.title}" completado! +${result.pointsAwarded} pts`, '🎉')
+    } else if (delta > 0) {
+      toast(`+1 día añadido (${(challenge.currentDays || 0) + 1}/${challenge.targetDays})`, '✨')
+    } else {
+      toast(`Progreso ajustado (${Math.max(0, (challenge.currentDays || 0) - 1)}/${challenge.targetDays})`, '↩️')
     }
   }
 
@@ -152,7 +164,6 @@ export function ChallengesTab() {
         <div className="flex flex-col gap-3">
           {displayedChallenges.map((c) => {
             const isCompleted = c.status === 'completado'
-            const isCheckedToday = c.lastCheckedDate === today
             const assignedMembers = c.assignedMemberIds.map((id) => getMemberById(id)).filter(Boolean)
 
             return (
@@ -205,14 +216,14 @@ export function ChallengesTab() {
                   <div className="flex items-center justify-between text-xs font-bold">
                     <span className="text-slate-400">Progreso:</span>
                     <span className="text-emerald-300 tabular-nums">
-                      {c.currentDays} / {c.targetDays} días ({Math.round((c.currentDays / c.targetDays) * 100)}%)
+                      {c.currentDays || 0} / {c.targetDays} días ({Math.round(((c.currentDays || 0) / c.targetDays) * 100)}%)
                     </span>
                   </div>
 
-                  <ProgressBar value={c.currentDays} max={c.targetDays} className="h-2" />
+                  <ProgressBar value={c.currentDays || 0} max={c.targetDays} className="h-2" />
 
                   {/* Footer Row */}
-                  <div className="flex items-center justify-between gap-2 pt-1 text-xs">
+                  <div className="flex items-center justify-between gap-2 pt-1 text-xs flex-wrap sm:flex-nowrap">
                     <div className="flex items-center -space-x-1.5">
                       {assignedMembers.map((m) => (
                         <div key={m!.id} title={m!.name}>
@@ -221,20 +232,32 @@ export function ChallengesTab() {
                       ))}
                     </div>
 
-                    {!isCompleted && (
-                      <button
-                        onClick={() => handleCheckIn(c)}
-                        disabled={isCheckedToday}
-                        className={cn(
-                          'flex items-center gap-1 rounded-xl px-3 py-1.5 text-xs font-bold transition-all',
-                          isCheckedToday
-                            ? 'bg-white/[0.04] text-slate-400 border border-white/5 cursor-not-allowed'
-                            : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm active:scale-95'
-                        )}
-                      >
+                    {!isCompleted ? (
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => handleAdjustDays(c, -1)}
+                          disabled={(c.currentDays || 0) <= 0}
+                          className="size-7 flex items-center justify-center rounded-xl bg-white/[0.05] hover:bg-white/10 text-slate-300 disabled:opacity-40 disabled:pointer-events-none transition-all active:scale-90 border border-white/10 text-xs font-bold"
+                          title="Restar 1 día"
+                        >
+                          -1
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleAdjustDays(c, 1)}
+                          className="flex items-center gap-1 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 text-xs font-bold transition-all shadow-sm active:scale-95"
+                          title="Añadir 1 día"
+                        >
+                          <CheckCircle2 className="size-3.5" />
+                          <span>+1 Día</span>
+                        </button>
+                      </div>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 rounded-xl bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 text-xs font-bold text-emerald-300">
                         <CheckCircle2 className="size-3.5" />
-                        <span>{isCheckedToday ? 'Cumplido hoy' : 'Completar día'}</span>
-                      </button>
+                        <span>Completado 🎉</span>
+                      </span>
                     )}
                   </div>
                 </div>
@@ -302,14 +325,14 @@ export function ChallengesTab() {
 
           <div className="flex flex-col gap-1">
             <label className="font-bold text-slate-400">Categoría</label>
-            <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
               {CHALLENGE_CATEGORIES.map((cat) => (
                 <button
                   key={cat.id}
                   type="button"
-                  onClick={() => setCategory(cat.id)}
+                  onClick={() => setCategory(cat.id as ChallengeCategory)}
                   className={cn(
-                    'rounded-xl py-2 text-xs font-bold border transition-all truncate text-center',
+                    'rounded-xl border py-2 px-2 text-center text-xs font-bold transition-all',
                     category === cat.id
                       ? 'border-emerald-500/50 bg-emerald-500/20 text-emerald-200'
                       : 'border-white/10 bg-white/[0.02] text-slate-400 hover:bg-white/[0.06] hover:text-white'

@@ -1,20 +1,20 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
-import { CheckCircle2, CalendarPlus, Bell, Clock, Trash2, Calendar as CalendarIcon, Filter } from 'lucide-react'
+import { CheckCircle2, CalendarPlus, Bell, Clock, Trash2, Calendar as CalendarIcon, Filter, Trophy } from 'lucide-react'
 import { useApp } from '@/components/app/app-context'
 import { Card } from '@/components/ui/card'
 import { EmptyState } from '@/components/ui/empty-state'
 import { MemberAvatar } from '@/components/ui/member-avatar'
 import { PillTabs } from '@/components/ui/pill-tabs'
 import { MemberMultiSelectFilter } from '@/components/shared/member-multi-select-filter'
-import type { Task, CalendarEvent, Reminder, Member } from '@/types'
+import type { Task, CalendarEvent, Reminder, Member, FamilyChallenge } from '@/types'
 import { getTodayISO } from '@/lib/date-utils'
 import { cn } from '@/lib/utils'
 
 type HistoryItem = {
   id: string
-  type: 'task' | 'event' | 'reminder'
+  type: 'task' | 'event' | 'reminder' | 'challenge'
   title: string
   details?: string
   dateISO: string
@@ -22,10 +22,10 @@ type HistoryItem = {
   timestamp: number
   memberIds: string[]
   points?: number
-  originalData: Task | CalendarEvent | Reminder
+  originalData: Task | CalendarEvent | Reminder | FamilyChallenge
 }
 
-type FilterCategory = 'todo' | 'tareas' | 'eventos' | 'recordatorios'
+type FilterCategory = 'todo' | 'tareas' | 'eventos' | 'recordatorios' | 'retos'
 type TimeRangeMode = 'todos' | 'hoy' | 'semana' | 'especifico'
 
 function formatGroupHeader(dateISO: string): string {
@@ -57,11 +57,13 @@ export function HistorySection({
     archivedTasks,
     archivedEvents,
     archivedReminders,
+    archivedFamilyChallenges,
     getMemberById,
     members,
     deleteTask,
     deleteEvent,
     deleteReminder,
+    deleteFamilyChallenge,
   } = useApp()
 
   const [filterCategory, setFilterCategory] = useState<FilterCategory>('todo')
@@ -160,12 +162,33 @@ export function HistorySection({
     })
   })
 
+  // 4. Challenges
+  archivedFamilyChallenges.forEach((c) => {
+    const d = c.completedAt ? new Date(c.completedAt) : new Date()
+    const dateISO = c.completedAt ? c.completedAt.slice(0, 10) : getTodayISO()
+    const timeStr = !isNaN(d.getTime()) ? d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '12:00'
+
+    allItems.push({
+      id: `challenge_${c.id}`,
+      type: 'challenge',
+      title: c.title,
+      details: `Reto conseguido (${c.currentDays || c.targetDays}/${c.targetDays} días)`,
+      dateISO,
+      timeStr,
+      timestamp: !isNaN(d.getTime()) ? d.getTime() : Date.now(),
+      memberIds: c.assignedMemberIds || [],
+      points: c.rewardPoints,
+      originalData: c,
+    })
+  })
+
   // Filter items
   let filtered = allItems.filter((item) => {
     // Category filter
     if (filterCategory === 'tareas' && item.type !== 'task') return false
     if (filterCategory === 'eventos' && item.type !== 'event') return false
     if (filterCategory === 'recordatorios' && item.type !== 'reminder') return false
+    if (filterCategory === 'retos' && item.type !== 'challenge') return false
 
     // Multi-member filter
     if (selectedMemberIds.length > 0 && selectedMemberIds.length < members.length) {
@@ -221,6 +244,7 @@ export function HistorySection({
     if (item.type === 'task') deleteTask((item.originalData as Task).id)
     if (item.type === 'event') deleteEvent((item.originalData as CalendarEvent).id)
     if (item.type === 'reminder') deleteReminder((item.originalData as Reminder).id)
+    if (item.type === 'challenge') deleteFamilyChallenge((item.originalData as FamilyChallenge).id)
   }
 
   return (
@@ -249,8 +273,8 @@ export function HistorySection({
           />
 
           {timeRangeMode === 'especifico' && (
-            <div className="flex items-center gap-2 bg-white/[0.03] border border-white/10 rounded-xl px-3 py-1.5 shadow-sm animate-fade-in">
-              <CalendarIcon className="size-3.5 text-purple-400" />
+            <div className="flex items-center gap-1.5 bg-card border border-border px-3 py-1.5 rounded-2xl shrink-0">
+              <CalendarIcon className="size-3.5 text-primary" />
               <input
                 type="date"
                 value={specificDate}
@@ -273,6 +297,7 @@ export function HistorySection({
                 { id: 'tareas', label: 'Tareas' },
                 { id: 'eventos', label: 'Eventos' },
                 { id: 'recordatorios', label: 'Recordatorios' },
+                { id: 'retos', label: 'Retos' },
               ]}
             />
           </div>
@@ -337,6 +362,11 @@ export function HistorySection({
                         {item.type === 'reminder' && (
                           <div className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-rose-500/10 text-rose-600 font-bold">
                             <Bell className="size-5" />
+                          </div>
+                        )}
+                        {item.type === 'challenge' && (
+                          <div className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-500 font-bold">
+                            <Trophy className="size-5" />
                           </div>
                         )}
 
