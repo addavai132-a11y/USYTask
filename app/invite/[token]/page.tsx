@@ -84,7 +84,7 @@ function InviteContent({ token }: { token: string }) {
       toast(`¡Te has unido con éxito a ${invitation.household_name}!`, '🎉')
 
       setTimeout(() => {
-        router.push('/app')
+        router.replace('/app')
       }, 1000)
     } catch (err) {
       console.error('Error joining space:', err)

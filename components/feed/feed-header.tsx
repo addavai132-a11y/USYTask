@@ -4,6 +4,7 @@ import { Bell, Loader2, Sparkles } from 'lucide-react'
 import { useApp } from '@/components/app/app-context'
 import { usePushNotifications } from '@/hooks/use-push-notifications'
 import { useToast } from '@/components/ui/toast'
+import { ThemeModeToggle } from '@/components/ui/theme-mode-toggle'
 import { getGreeting, getTodayLabel } from '@/lib/date-utils'
 
 export function FeedHeader() {
@@ -43,8 +44,10 @@ export function FeedHeader() {
             ) : (
               <Sparkles className="size-3.5" />
             )}
-            <span>Activar notificaciones</span>
+            <span className="hidden sm:inline">Activar notificaciones</span>
           </button>
+
+          <ThemeModeToggle />
 
           <button
             onClick={() => setNotificationsOpen(true)}

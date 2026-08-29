@@ -54,6 +54,8 @@ export function QuickAdd() {
   // Task form
   const [taskTitle, setTaskTitle] = useState('')
   const [taskPoints, setTaskPoints] = useState('10')
+  const [taskDueDate, setTaskDueDate] = useState('')
+  const [taskDueTime, setTaskDueTime] = useState('')
   const [taskMembers, setTaskMembers] = useState<string[]>([])
 
   // Event form
@@ -78,6 +80,8 @@ export function QuickAdd() {
   const resetForms = () => {
     setTaskTitle('')
     setTaskPoints('10')
+    setTaskDueDate('')
+    setTaskDueTime('')
     setTaskMembers([])
     setEventTitle('')
     setEventDate('')
@@ -101,7 +105,16 @@ export function QuickAdd() {
       toast('Por favor, rellena los campos obligatorios y asigna al menos un miembro', '❌')
       return
     }
-    addTask(taskTitle.trim(), parseInt(taskPoints) || 0, taskMembers[0], quickAddDefaultSection || 'familia')
+    addTask(
+      taskTitle.trim(),
+      parseInt(taskPoints) || 0,
+      taskMembers[0],
+      quickAddDefaultSection || 'familia',
+      'medium',
+      taskDueDate || undefined,
+      taskDueTime || undefined,
+      taskMembers
+    )
     toast('Tarea creada correctamente', '✅')
     resetForms()
     closeQuickAdd()
@@ -213,6 +226,37 @@ export function QuickAdd() {
               placeholder="Ej: Sacar la basura"
               className={cn(inputClass, showErrors && !taskTitle.trim() && 'border-red-500 bg-red-500/10')}
             />
+          </div>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex flex-1 flex-col gap-1">
+              <label className={labelClass}>Fecha (opcional)</label>
+              <input
+                type="date"
+                value={taskDueDate}
+                onChange={(e) => setTaskDueDate(e.target.value)}
+                className={inputClass}
+              />
+            </div>
+            <div className="flex flex-1 flex-col gap-1">
+              <div className="flex items-center justify-between">
+                <label className={labelClass}>Hora (opcional)</label>
+                {taskDueTime && (
+                  <button
+                    type="button"
+                    onClick={() => setTaskDueTime('')}
+                    className="text-[10.5px] font-bold text-rose-500 hover:underline"
+                  >
+                    Borrar hora
+                  </button>
+                )}
+              </div>
+              <input
+                type="time"
+                value={taskDueTime}
+                onChange={(e) => setTaskDueTime(e.target.value)}
+                className={inputClass}
+              />
+            </div>
           </div>
           <div className="flex gap-3">
             <div className="w-32 flex flex-col gap-1">

@@ -100,7 +100,7 @@ function LoginContent() {
 
       setStoredSession(user)
 
-      let hasFamily = true
+      let hasFamily = false
       try {
         await syncFromSupabaseCloud()
         const res = await getUserFamilyStatus()

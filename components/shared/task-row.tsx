@@ -1,6 +1,6 @@
 'use client'
 
-import { Check, Trash2 } from 'lucide-react'
+import { Check, Trash2, Clock } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Task, Member } from '@/types'
 import { MemberAvatar } from '@/components/ui/member-avatar'
@@ -44,11 +44,20 @@ export function TaskRow({
       >
         <Check className={cn('size-4 transition-transform', checked ? 'scale-100' : 'scale-0')} strokeWidth={3} />
       </button>
-      <span className={cn('flex-1 text-sm font-medium transition-colors', checked && 'text-muted-foreground line-through')}>
-        {task.title}
-      </span>
+      <div className="flex-1 min-w-0">
+        <span className={cn('block text-sm font-medium transition-colors truncate', checked && 'text-muted-foreground line-through')}>
+          {task.title}
+        </span>
+        {(task.dueDate || task.dueTime) && (
+          <div className="flex items-center gap-1.5 mt-0.5 text-[10px] font-semibold text-muted-foreground">
+            <Clock className="size-3 text-purple-400 shrink-0" />
+            <span>{task.dueDate ? task.dueDate : 'Hoy'}</span>
+            {task.dueTime && <span className="text-foreground/90 font-bold">· {task.dueTime}</span>}
+          </div>
+        )}
+      </div>
       {task.points ? (
-        <span className="text-xs font-bold text-accent">+{task.points} ⭐</span>
+        <span className="text-xs font-bold text-accent shrink-0">+{task.points} ⭐</span>
       ) : null}
       {member && <MemberAvatar member={member} size="sm" />}
       {onDelete && (

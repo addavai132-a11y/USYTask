@@ -183,7 +183,7 @@ interface AppState {
   // Data mutations
   addTaskCategory: (name: string, memberIds: string[]) => void
   deleteTaskCategory: (categoryId: string) => void
-  addTask: (title: string, points: number, assignedToMemberId: string, section?: TaskSection, priority?: TaskPriority) => void
+  addTask: (title: string, points: number, assignedToMemberId: string, section?: TaskSection, priority?: TaskPriority, dueDate?: string, dueTime?: string, assignedMemberIds?: string[]) => void
   toggleTask: (taskId: string) => { pointsAwarded: number; memberId: string | null }
   deleteTask: (taskId: string) => void
   addEvent: (title: string, date: string, time: string | undefined, category: EventCategory, assignedMemberIds: string[], location?: string) => void
@@ -546,7 +546,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }
 
   // --- Data mutations ---
-  const handleAddTask = (title: string, points: number, assignedToMemberId: string, section: TaskSection = 'familia', priority: TaskPriority = 'medium') => {
+  const handleAddTask = (
+    title: string,
+    points: number,
+    assignedToMemberId: string,
+    section: TaskSection = 'familia',
+    priority: TaskPriority = 'medium',
+    dueDate?: string,
+    dueTime?: string,
+    assignedMemberIds?: string[]
+  ) => {
     if (!activeGroup) return
     const uniqueId = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `task_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
     const task: Task = {
@@ -554,10 +563,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       title,
       points,
       assignedToMemberId,
+      assignedMemberIds: assignedMemberIds && assignedMemberIds.length > 0 ? assignedMemberIds : [assignedToMemberId],
       completed: false,
       groupId: activeGroup.id,
       section,
       priority,
+      dueDate: dueDate || undefined,
+      dueTime: dueTime || undefined,
       createdBy: currentMember?.id,
     }
     addTaskStore(task)

@@ -256,6 +256,8 @@ export function TasksSection({
         type: 'task',
         completed: t.completed,
         priority: t.priority,
+        date: t.dueDate,
+        time: t.dueTime,
         memberIds: getTaskMemberIds(t),
       })
     })
@@ -480,6 +482,11 @@ export function TasksSection({
                             {act.title}
                           </p>
                           <div className="flex flex-wrap items-center gap-2 mt-0.5">
+                            {act.type === 'task' && (act.date || act.time) && (
+                              <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
+                                <Clock className="size-2.5" /> {act.date ? act.date : 'Hoy'}{act.time ? ` · ${act.time}` : ''}
+                              </span>
+                            )}
                             {act.type === 'event' && act.time && (
                               <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
                                 <Clock className="size-2.5" /> {act.date} · {act.time}

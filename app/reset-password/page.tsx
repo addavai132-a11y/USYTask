@@ -62,7 +62,7 @@ function ResetPasswordContent() {
 
       setSuccess(true)
       setTimeout(() => {
-        router.push('/app')
+        router.replace('/app')
       }, 2000)
     } catch (err: any) {
       console.error('Error restableciendo contraseña:', err)

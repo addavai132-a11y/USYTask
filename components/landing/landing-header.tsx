@@ -25,7 +25,7 @@ export function LandingHeader() {
     if (isDevModeActive()) {
       e.preventDefault()
       enableDevMode()
-      router.push('/app')
+      router.replace('/app')
     } else {
       router.push(targetUrl)
     }

@@ -185,6 +185,34 @@ export function hydrateLocalFromCloud(payload: CloudBackupPayload): boolean {
 }
 
 /**
+ * Completely purges all local storage and session data for USYTask.
+ * Called on logout to prevent state/family leakage between different users.
+ */
+export function clearAllLocalData(): void {
+  if (typeof window === 'undefined') return
+  try {
+    // Clear known keys
+    Object.values(STORAGE_KEYS).forEach((key) => {
+      localStorage.removeItem(key)
+    })
+    // Clear any extra usytask_* or auth keys from localStorage
+    const keysToRemove: string[] = []
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i)
+      if (k && (k.startsWith('usytask_') || k.startsWith('sb-'))) {
+        keysToRemove.push(k)
+      }
+    }
+    keysToRemove.forEach((k) => localStorage.removeItem(k))
+
+    // Clear sessionStorage as well
+    sessionStorage.clear()
+  } catch (err) {
+    console.error('Error clearing local data:', err)
+  }
+}
+
+/**
  * Syncs and pulls the complete data set from Supabase for the active user.
  * If local storage is empty, restores all spaces, tasks, reminders, and events.
  */
@@ -201,22 +229,11 @@ export async function syncFromSupabaseCloud(): Promise<{ success: boolean; resto
     }
 
     const cloudBackup = user.user_metadata?.usytask_cloud_backup as CloudBackupPayload | undefined
-    const localGroups = getAllGroups()
 
     if (cloudBackup && cloudBackup.groups && cloudBackup.groups.length > 0) {
-      // If local storage is empty or cloud is newer, hydrate local storage
-      if (localGroups.length === 0) {
-        hydrateLocalFromCloud(cloudBackup)
-        return { success: true, restored: true }
-      } else {
-        // Merge or keep cloud up to date
-        hydrateLocalFromCloud(cloudBackup)
-        return { success: true, restored: true }
-      }
-    } else if (localGroups.length > 0) {
-      // Local has data but cloud is empty: push initial backup to cloud
-      await syncToSupabaseCloud()
-      return { success: true, restored: false }
+      // Hydrate local storage with the cloud backup strictly belonging to THIS user
+      hydrateLocalFromCloud(cloudBackup)
+      return { success: true, restored: true }
     }
 
     return { success: true, restored: false }
@@ -257,9 +274,12 @@ export async function getUserFamilyStatus(): Promise<{ hasFamily: boolean; group
       } catch {
         // Ignored if table not created yet
       }
+
+      // Authenticated user in Supabase with NO cloud backup and NO group_members has NO family yet
+      return { hasFamily: false, groupsCount: 0 }
     }
 
-    // Check local storage
+    // Check local storage only if offline/dev mode
     const localGroups = getAllGroups()
     if (localGroups.length > 0) {
       return { hasFamily: true, groupsCount: localGroups.length }
@@ -268,8 +288,7 @@ export async function getUserFamilyStatus(): Promise<{ hasFamily: boolean; group
     return { hasFamily: false, groupsCount: 0 }
   } catch (err) {
     console.error('Error checking user family status:', err)
-    const local = getAllGroups()
-    return { hasFamily: local.length > 0, groupsCount: local.length }
+    return { hasFamily: false, groupsCount: 0 }
   }
 }
 

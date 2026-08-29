@@ -126,8 +126,10 @@ export async function updateUserProfile(
   }
 }
 
+import { clearAllLocalData } from './cloud-sync'
+
 /**
- * Logs out from Supabase Auth and clears local session.
+ * Logs out from Supabase Auth and clears local session and all cached space data.
  */
 export async function handleLogout(): Promise<void> {
   try {
@@ -137,5 +139,6 @@ export async function handleLogout(): Promise<void> {
     console.warn('Supabase signOut warning:', err)
   } finally {
     clearStoredSession()
+    clearAllLocalData()
   }
 }

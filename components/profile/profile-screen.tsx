@@ -45,8 +45,8 @@ export function ProfileScreen() {
 
   const onSignOut = async () => {
     await handleLogout()
-    toast('Sesión cerrada correctamente', '👋')
-    router.push('/')
+    // Forzar recarga completa para purgar memoria de React Context, estado global y caché de Next.js
+    window.location.href = '/login'
   }
 
   const handleToggleNotifications = async (e?: React.MouseEvent) => {
