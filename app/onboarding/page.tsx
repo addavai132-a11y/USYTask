@@ -400,8 +400,6 @@ function OnboardingContent() {
     </div>
   )
 }
-  )
-}
 
 export default function OnboardingPage() {
   return (
