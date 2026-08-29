@@ -44,35 +44,27 @@ export async function POST(req: Request) {
       )
     }
 
-    // 3. Obtener y verificar variables VAPID
-    const subject = (process.env.VAPID_SUBJECT || 'mailto:soporte@usyatask.com').trim()
-    const publicKey = (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || '').trim()
-    const privateKey = (process.env.VAPID_PRIVATE_KEY || '').trim()
+    // 3. Obtener y verificar variables VAPID (evitando undefined o vacías)
+    const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+    const privateKey = process.env.VAPID_PRIVATE_KEY
+    const subject = process.env.VAPID_SUBJECT || 'mailto:soporte@usyatask.com'
 
-    if (!publicKey || !privateKey) {
-      console.error('[/api/test-push] Error: Claves VAPID no configuradas en variables de entorno.')
+    if (!publicKey || !privateKey || publicKey === 'undefined' || privateKey === 'undefined' || publicKey.trim() === '' || privateKey.trim() === '') {
+      console.error('[/api/test-push] Error: Claves VAPID no configuradas o undefined en el servidor.', {
+        publicKey: !!publicKey,
+        privateKey: !!privateKey,
+      })
       return NextResponse.json(
         {
           success: false,
-          error: 'Claves VAPID no configuradas en las variables de entorno (NEXT_PUBLIC_VAPID_PUBLIC_KEY o VAPID_PRIVATE_KEY faltan).',
+          error: 'Claves VAPID no configuradas o undefined en las variables de entorno (NEXT_PUBLIC_VAPID_PUBLIC_KEY o VAPID_PRIVATE_KEY faltan).',
         },
         { status: 500 }
       )
     }
 
     // 4. Configurar web-push
-    try {
-      webpush.setVapidDetails(subject, publicKey, privateKey)
-    } catch (vapidError: any) {
-      console.error('[/api/test-push] Error en webpush.setVapidDetails():', vapidError)
-      return NextResponse.json(
-        {
-          success: false,
-          error: `Error configurando VAPID: ${vapidError?.message || 'Par de claves no válido.'}`,
-        },
-        { status: 500 }
-      )
-    }
+    webpush.setVapidDetails(subject.trim(), publicKey.trim(), privateKey.trim())
 
     // 5. Preparar payload y enviar notificación
     const payload = JSON.stringify({
@@ -106,8 +98,8 @@ export async function POST(req: Request) {
     return NextResponse.json(
       {
         success: false,
-        error: error?.body || error?.message || 'Fallo al enviar notificación push.',
-        details: error?.message,
+        error: error?.message || String(error),
+        stack: error?.stack,
       },
       { status: 500 }
     )
