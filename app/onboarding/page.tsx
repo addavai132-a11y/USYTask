@@ -37,32 +37,47 @@ function OnboardingContent() {
   // Auto-redirect if user already has a family/group
   useEffect(() => {
     async function checkExistingFamily() {
-      await syncFromSupabaseCloud()
-      const { hasFamily } = await getUserFamilyStatus()
-      if (hasFamily) {
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('lifeos-onboarded', '1')
+      try {
+        await syncFromSupabaseCloud()
+        const { hasFamily } = await getUserFamilyStatus()
+        if (hasFamily) {
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('lifeos-onboarded', '1')
+          }
+          router.replace('/app')
         }
-        router.replace('/app')
+      } catch (err) {
+        console.error('Error checking family on onboarding:', err)
       }
     }
     checkExistingFamily()
   }, [router])
 
   const finishOnboarding = async () => {
-    const session = getStoredSession()
-    const userName = session?.username || session?.fullName || 'Usuario'
-    const finalName = name.trim() || selectedType?.sample || 'Mi Familia'
-    const finalType = (type as GroupType) || 'family'
+    try {
+      const session = getStoredSession()
+      const userName = session?.username || session?.fullName || 'Usuario'
+      const finalName = name.trim() || selectedType?.sample || 'Mi Familia'
+      const finalType = (type as GroupType) || 'family'
 
-    const newGrp = createGroup(finalName, finalType)
-    ensureOwnerMember(newGrp.id, userName)
-    await syncToSupabaseCloud()
+      const newGrp = createGroup(finalName, finalType)
+      if (newGrp?.id) {
+        ensureOwnerMember(newGrp.id, userName)
+      }
+      try {
+        await syncToSupabaseCloud()
+      } catch (cloudErr) {
+        console.warn('Could not sync to cloud on finish onboarding:', cloudErr)
+      }
 
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('lifeos-onboarded', '1')
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('lifeos-onboarded', '1')
+      }
+      router.replace('/app')
+    } catch (err) {
+      console.error('Error finishing onboarding:', err)
+      router.replace('/app')
     }
-    router.replace('/app')
   }
 
   const handleNext = () => {

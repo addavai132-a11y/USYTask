@@ -26,22 +26,30 @@ function LoginContent() {
   // Auto redirect if already logged in
   useEffect(() => {
     async function checkSessionAndFamily() {
-      if (isDevModeActive()) {
-        router.replace(nextTarget || '/app')
-        return
-      }
-      const session = getStoredSession()
-      const supabase = createClient()
-      const { data: { session: supaSession } } = await supabase.auth.getSession()
-
-      if (session || supaSession?.user) {
-        await syncFromSupabaseCloud()
-        const { hasFamily } = await getUserFamilyStatus()
-        if (hasFamily) {
+      try {
+        if (isDevModeActive()) {
           router.replace(nextTarget || '/app')
-        } else {
-          router.replace('/onboarding')
+          return
         }
+        const session = getStoredSession()
+        const supabase = createClient()
+        const { data: sessionData } = await supabase.auth.getSession()
+
+        if (session || sessionData?.session?.user) {
+          try {
+            await syncFromSupabaseCloud()
+            const { hasFamily } = await getUserFamilyStatus()
+            if (hasFamily) {
+              router.replace(nextTarget || '/app')
+            } else {
+              router.replace('/onboarding')
+            }
+          } catch {
+            router.replace(nextTarget || '/app')
+          }
+        }
+      } catch (err) {
+        console.error('Error in login session verification:', err)
       }
     }
     checkSessionAndFamily()
@@ -74,33 +82,46 @@ function LoginContent() {
 
     setLoading(true)
 
-    // Find user or create active session
-    let user = findUserByEmail(email)
-    if (!user) {
-      user = {
-        id: generateUserId(),
-        fullName: email.split('@')[0],
-        username: email.split('@')[0],
-        dateOfBirth: '1996-01-01',
-        email: email.trim(),
-        authProvider: 'email',
-        profileCompleted: true,
-        createdAt: new Date().toISOString(),
+    try {
+      // Find user or create active session
+      let user = findUserByEmail(email)
+      if (!user) {
+        user = {
+          id: generateUserId(),
+          fullName: email.split('@')[0],
+          username: email.split('@')[0],
+          dateOfBirth: '1996-01-01',
+          email: email.trim(),
+          authProvider: 'email',
+          profileCompleted: true,
+          createdAt: new Date().toISOString(),
+        }
       }
-    }
 
-    setStoredSession(user)
-    await syncFromSupabaseCloud()
-    const { hasFamily } = await getUserFamilyStatus()
+      setStoredSession(user)
 
-    setTimeout(() => {
+      let hasFamily = true
+      try {
+        await syncFromSupabaseCloud()
+        const res = await getUserFamilyStatus()
+        hasFamily = res.hasFamily
+      } catch (syncErr) {
+        console.warn('Sync on login warning:', syncErr)
+      }
+
+      setTimeout(() => {
+        setLoading(false)
+        if (hasFamily) {
+          router.replace(nextTarget || '/app')
+        } else {
+          router.replace('/onboarding')
+        }
+      }, 200)
+    } catch (err: any) {
+      console.error('Login submit error:', err)
       setLoading(false)
-      if (hasFamily) {
-        router.replace(nextTarget || '/app')
-      } else {
-        router.replace('/onboarding')
-      }
-    }, 300)
+      setError(err?.message || 'Error al iniciar sesión. Por favor intenta de nuevo.')
+    }
   }
 
   return (

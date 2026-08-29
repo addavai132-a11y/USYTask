@@ -22,6 +22,7 @@ import { CreateSpaceModal } from './create-space-modal'
 import { HistoryModal } from './history-modal'
 import { FloatingRestTimer } from '@/components/fitness/floating-rest-timer'
 import { UsyTaskLogo } from '@/components/ui/usytask-logo'
+import { ErrorBoundary } from '@/components/ui/error-boundary'
 import { cn } from '@/lib/utils'
 import { getStoredSession } from '@/lib/user-session'
 import { isDevModeActive } from '@/lib/dev-mode'
@@ -170,12 +171,14 @@ function ShellInner() {
 
 export function AppShell() {
   return (
-    <ToastProvider>
-      <AuthGate>
-        <AppProvider>
-          <ShellInner />
-        </AppProvider>
-      </AuthGate>
-    </ToastProvider>
+    <ErrorBoundary fallbackTitle="Error al cargar el Centro de Control">
+      <ToastProvider>
+        <AuthGate>
+          <AppProvider>
+            <ShellInner />
+          </AppProvider>
+        </AuthGate>
+      </ToastProvider>
+    </ErrorBoundary>
   )
 }
