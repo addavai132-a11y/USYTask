@@ -422,25 +422,25 @@ export function LiveWorkoutTab({
   return (
     <div className="w-full max-w-2xl mx-auto space-y-4 animate-fade-in pb-24">
       {/* ── CABECERA CON CRONÓMETRO DE SESIÓN ACTIVA ── */}
-      <Card className="p-4 bg-[#121026]/90 border border-purple-500/30 rounded-2xl shadow-2xl backdrop-blur-xl space-y-3 sticky top-4 z-20">
+      <Card className="p-4 bg-white border border-slate-200 rounded-2xl shadow-md space-y-3 sticky top-4 z-20 dark:bg-[#121026]/90 dark:border-purple-500/30 dark:shadow-2xl dark:backdrop-blur-xl">
         <div className="flex items-center justify-between gap-3 flex-wrap sm:flex-nowrap">
           <div className="flex items-center gap-3">
-            <div className="flex size-11 items-center justify-center rounded-2xl bg-purple-600/25 border border-purple-500/40 text-purple-300 shadow-sm animate-pulse">
+            <div className="flex size-11 items-center justify-center rounded-2xl bg-slate-100 border border-slate-200 text-slate-800 shadow-sm dark:bg-purple-600/25 dark:border-purple-500/40 dark:text-purple-300">
               <Dumbbell className="size-5" />
             </div>
             <div>
-              <span className="text-[11px] font-bold uppercase tracking-wider text-purple-300 flex items-center gap-1.5">
-                <span className="size-2 rounded-full bg-emerald-400 animate-ping" />
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
+                <span className="size-2 rounded-full bg-emerald-500 animate-ping" />
                 Sesión en Vivo (Guardado automático)
               </span>
               <div className="flex items-baseline gap-2">
-                <span className="text-2xl sm:text-3xl font-black text-white tabular-nums tracking-tight font-mono">
+                <span className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tabular-nums tracking-tight font-mono">
                   {formatStopwatch(sessionSeconds)}
                 </span>
                 <button
                   type="button"
                   onClick={() => setIsTimerRunning((r) => !r)}
-                  className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+                  className="p-1 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-white/10 transition-colors"
                   title={isTimerRunning ? 'Pausar cronómetro' : 'Reanudar cronómetro'}
                 >
                   {isTimerRunning ? <Pause className="size-3.5" /> : <Play className="size-3.5 fill-current" />}
@@ -462,13 +462,13 @@ export function LiveWorkoutTab({
         </div>
 
         {/* Resumen en vivo de volumen y series + Botón Reset & Finalizar */}
-        <div className="pt-2 border-t border-purple-500/15 flex items-center justify-between text-xs font-bold text-slate-300 flex-wrap gap-2">
+        <div className="pt-2 border-t border-slate-200/80 dark:border-purple-500/15 flex items-center justify-between text-xs font-bold text-slate-700 dark:text-slate-300 flex-wrap gap-2">
           <div className="flex items-center gap-4">
             <span>
-              Volumen: <strong className="text-purple-300 font-mono">{totalVolume.toLocaleString('es-ES')} kg</strong>
+              Volumen: <strong className="text-slate-900 dark:text-white font-mono">{totalVolume.toLocaleString('es-ES')} kg</strong>
             </span>
             <span>
-              Series: <strong className="text-emerald-400 font-mono">{totalCompletedSets} completadas</strong>
+              Series: <strong className="text-emerald-600 dark:text-emerald-400 font-mono">{totalCompletedSets} completadas</strong>
             </span>
           </div>
 
@@ -476,7 +476,7 @@ export function LiveWorkoutTab({
             <button
               type="button"
               onClick={() => setIsResetModalOpen(true)}
-              className="rounded-xl border border-white/10 bg-white/[0.04] hover:bg-white/10 text-slate-300 px-2.5 py-1.5 text-xs font-bold transition-all active:scale-95 flex items-center gap-1"
+              className="rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 dark:border-white/10 dark:bg-white/[0.04] dark:hover:bg-white/10 dark:text-slate-300 px-2.5 py-1.5 text-xs font-bold transition-all active:scale-95 flex items-center gap-1"
               title="Reiniciar series y descartar progreso actual"
             >
               <RotateCcw className="size-3.5" />
@@ -486,7 +486,7 @@ export function LiveWorkoutTab({
             <button
               type="button"
               onClick={() => setIsFinishModalOpen(true)}
-              className="rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white px-3.5 py-1.5 text-xs font-black shadow-md transition-all active:scale-95 flex items-center gap-1"
+              className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 text-xs font-black shadow-md transition-all active:scale-95 flex items-center gap-1"
             >
               <CheckCircle2 className="size-3.5" />
               <span>Finalizar Sesión</span>
@@ -503,17 +503,17 @@ export function LiveWorkoutTab({
           return (
             <Card
               key={`${exerciseSession.exerciseId}_${exIdx}`}
-              className="p-4 bg-[#121026]/85 border border-purple-500/20 rounded-2xl shadow-xl backdrop-blur-xl space-y-3"
+              className="p-4 bg-white border border-slate-200 rounded-2xl shadow-sm space-y-3 dark:bg-[#121026]/85 dark:border-purple-500/20 dark:shadow-xl dark:backdrop-blur-xl"
             >
               {/* Header del Ejercicio */}
-              <div className="flex items-center justify-between gap-2 pb-2 border-b border-purple-500/15">
+              <div className="flex items-center justify-between gap-2 pb-2 border-b border-slate-200/80 dark:border-purple-500/15">
                 <div className="flex items-center gap-2.5 min-w-0">
                   <span className="text-xl shrink-0">{meta.icon}</span>
                   <div className="min-w-0">
-                    <h4 className="text-sm font-extrabold text-white truncate">
+                    <h4 className="text-sm font-extrabold text-slate-900 dark:text-white truncate">
                       {exerciseSession.exerciseName}
                     </h4>
-                    <span className="text-[10px] text-slate-400 font-semibold">
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold">
                       {meta.label} · Descanso objetivo: {exerciseSession.targetRestSeconds || 90}s
                     </span>
                   </div>
@@ -527,9 +527,9 @@ export function LiveWorkoutTab({
                       exerciseSession.exerciseName
                     )
                   }
-                  className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 text-[11px] font-bold border border-purple-500/25 transition-all active:scale-95"
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-900 text-[11px] font-bold border border-slate-300 transition-all active:scale-95 dark:bg-purple-500/10 dark:hover:bg-purple-500/20 dark:text-purple-300 dark:border-purple-500/25"
                 >
-                  <Timer className="size-3" />
+                  <Timer className="size-3 text-emerald-600 dark:text-purple-400" />
                   <span>Descanso {exerciseSession.targetRestSeconds || 90}s</span>
                 </button>
               </div>
@@ -537,7 +537,7 @@ export function LiveWorkoutTab({
               {/* Tabla de Series */}
               <div className="space-y-1.5 overflow-x-auto no-scrollbar">
                 {/* Cabecera de Columnas */}
-                <div className="grid grid-cols-12 gap-1.5 text-[10px] font-black uppercase tracking-wider text-slate-400 px-1 text-center">
+                <div className="grid grid-cols-12 gap-1.5 text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 px-1 text-center">
                   <div className="col-span-1">Set</div>
                   <div className="col-span-3">Tipo</div>
                   <div className="col-span-2">Anterior</div>
@@ -554,14 +554,14 @@ export function LiveWorkoutTab({
                       className={cn(
                         'grid grid-cols-12 gap-1.5 items-center p-2 rounded-xl transition-all duration-200 text-xs font-semibold text-center',
                         set.completed
-                          ? 'bg-emerald-950/30 border border-emerald-500/40 text-emerald-100 shadow-[inset_0_1px_0_0_rgba(16,185,129,0.15)]'
-                          : 'bg-white/[0.02] border border-white/5 text-slate-200 hover:bg-white/[0.04]'
+                          ? 'bg-emerald-50 border border-emerald-300 text-emerald-950 dark:bg-emerald-950/30 dark:border-emerald-500/40 dark:text-emerald-100 shadow-[inset_0_1px_0_0_rgba(16,185,129,0.15)]'
+                          : 'bg-slate-50/80 border border-slate-200/90 text-slate-900 hover:bg-slate-100/90 dark:bg-white/[0.02] dark:border-white/5 dark:text-slate-200 dark:hover:bg-white/[0.04]'
                       )}
                     >
                       {/* Set Number */}
                       <div className={cn(
                         'col-span-1 font-mono font-black transition-colors',
-                        set.completed ? 'text-emerald-400' : 'text-slate-400'
+                        set.completed ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-600 dark:text-slate-400'
                       )}>
                         {set.setNumber}
                       </div>
@@ -578,14 +578,14 @@ export function LiveWorkoutTab({
                             { value: 'fallo', label: 'F · Al Fallo' },
                           ]}
                           triggerClassName={cn(
-                            'py-1 px-2 text-[11px] rounded-lg transition-colors',
-                            set.completed && 'border-emerald-500/30 text-emerald-200'
+                            'py-1 px-2 text-[11px] rounded-lg transition-colors font-semibold',
+                            set.completed && 'border-emerald-400 text-emerald-900 dark:text-emerald-200'
                           )}
                         />
                       </div>
 
                       {/* Anterior (Ghost indicator) */}
-                      <div className="col-span-2 font-mono text-[10px] text-slate-500 truncate">
+                      <div className="col-span-2 font-mono text-[10px] text-slate-400 dark:text-slate-500 truncate">
                         {set.prevWeightKg ? `${set.prevWeightKg}k×${set.prevReps}` : '—'}
                       </div>
 
@@ -606,8 +606,8 @@ export function LiveWorkoutTab({
                           className={cn(
                             'w-full rounded-lg border py-1 text-center font-mono font-bold text-xs outline-none transition-colors',
                             set.completed
-                              ? 'border-emerald-500/40 bg-emerald-950/40 text-emerald-100 focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400/30'
-                              : 'border-purple-500/20 bg-white/[0.04] text-white focus:border-purple-500'
+                              ? 'border-emerald-400 bg-emerald-100/50 text-emerald-950 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-400/30 dark:border-emerald-500/40 dark:bg-emerald-950/40 dark:text-emerald-100'
+                              : 'border-slate-300 bg-white text-slate-900 focus:border-emerald-500 dark:border-purple-500/20 dark:bg-white/[0.04] dark:text-white dark:focus:border-purple-500'
                           )}
                         />
                       </div>
@@ -628,8 +628,8 @@ export function LiveWorkoutTab({
                           className={cn(
                             'w-full rounded-lg border py-1 text-center font-mono font-bold text-xs outline-none transition-colors',
                             set.completed
-                              ? 'border-emerald-500/40 bg-emerald-950/40 text-emerald-100 focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400/30'
-                              : 'border-purple-500/20 bg-white/[0.04] text-white focus:border-purple-500'
+                              ? 'border-emerald-400 bg-emerald-100/50 text-emerald-950 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-400/30 dark:border-emerald-500/40 dark:bg-emerald-950/40 dark:text-emerald-100'
+                              : 'border-slate-300 bg-white text-slate-900 focus:border-emerald-500 dark:border-purple-500/20 dark:bg-white/[0.04] dark:text-white dark:focus:border-purple-500'
                           )}
                         />
                       </div>
@@ -642,8 +642,8 @@ export function LiveWorkoutTab({
                           className={cn(
                             'size-8 rounded-full flex items-center justify-center transition-all duration-200 active:scale-90 select-none shrink-0 cursor-pointer',
                             set.completed
-                              ? 'bg-emerald-600 hover:bg-emerald-500 border border-emerald-500 text-white shadow-[0_0_14px_rgba(16,185,129,0.55)] ring-2 ring-emerald-500/40'
-                              : 'bg-white/[0.05] border border-white/20 text-slate-400 hover:border-purple-400 hover:text-white hover:bg-purple-500/10'
+                              ? 'bg-emerald-600 hover:bg-emerald-700 border border-emerald-500 text-white shadow-sm ring-2 ring-emerald-500/30'
+                              : 'bg-white border border-slate-300 text-slate-400 hover:border-emerald-500 hover:text-emerald-600 hover:bg-emerald-50 dark:bg-white/[0.05] dark:border-white/20 dark:text-slate-400 dark:hover:border-purple-400 dark:hover:text-white dark:hover:bg-purple-500/10'
                           )}
                           title={set.completed ? 'Serie completada (clic para desmarcar)' : 'Marcar serie como completada'}
                         >
@@ -653,7 +653,7 @@ export function LiveWorkoutTab({
                         <button
                           type="button"
                           onClick={() => handleRemoveSet(exIdx, setIdx)}
-                          className="p-1 text-slate-500 hover:text-rose-400 transition-colors rounded-lg hover:bg-white/5"
+                          className="p-1 text-slate-400 hover:text-rose-600 transition-colors rounded-lg hover:bg-slate-100 dark:hover:bg-white/5"
                           title="Eliminar serie"
                         >
                           <Trash2 className="size-3" />
@@ -668,9 +668,9 @@ export function LiveWorkoutTab({
               <button
                 type="button"
                 onClick={() => handleAddSet(exIdx)}
-                className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl border border-dashed border-purple-500/30 text-purple-300 hover:bg-purple-500/10 text-xs font-bold transition-all active:scale-95"
+                className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl border border-dashed border-slate-300 text-slate-900 bg-white hover:bg-slate-50 text-xs font-bold transition-all active:scale-95 dark:border-purple-500/30 dark:bg-transparent dark:text-purple-300 dark:hover:bg-purple-500/10"
               >
-                <Plus className="size-3.5" />
+                <Plus className="size-3.5 stroke-[2.5]" />
                 <span>Añadir Serie</span>
               </button>
             </Card>
@@ -681,31 +681,31 @@ export function LiveWorkoutTab({
       {/* ── MODAL DE CONFIRMACIÓN PARA REINICIAR SESIÓN ── */}
       {isResetModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="w-full max-w-sm rounded-3xl border border-rose-500/30 bg-[#100e23] p-6 shadow-2xl space-y-4">
-            <div className="flex items-center gap-3 text-rose-400">
-              <div className="size-10 rounded-2xl bg-rose-500/15 border border-rose-500/30 flex items-center justify-center">
+          <div className="w-full max-w-sm rounded-3xl border border-slate-200 bg-white dark:border-rose-500/30 dark:bg-[#100e23] p-6 shadow-2xl space-y-4">
+            <div className="flex items-center gap-3 text-rose-600 dark:text-rose-400">
+              <div className="size-10 rounded-2xl bg-rose-50 border border-rose-200 dark:bg-rose-500/15 dark:border-rose-500/30 flex items-center justify-center">
                 <RotateCcw className="size-5" />
               </div>
               <div>
-                <h4 className="text-base font-black text-white">¿Reiniciar sesión actual?</h4>
-                <p className="text-xs text-slate-400">Se descartarán las series marcadas.</p>
+                <h4 className="text-base font-black text-slate-900 dark:text-white">¿Reiniciar sesión actual?</h4>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Se descartarán las series marcadas.</p>
               </div>
             </div>
-            <p className="text-xs text-slate-300">
+            <p className="text-xs text-slate-600 dark:text-slate-300">
               Esta acción limpiará los checks de series de la sesión actual y restablecerá el cronómetro a 0.
             </p>
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-white/10">
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200 dark:border-white/10">
               <button
                 type="button"
                 onClick={() => setIsResetModalOpen(false)}
-                className="px-4 py-2 text-xs font-bold text-slate-400 hover:text-white"
+                className="px-4 py-2 text-xs font-bold text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors dark:text-slate-400 dark:hover:text-white"
               >
                 Cancelar
               </button>
               <button
                 type="button"
                 onClick={handleResetSession}
-                className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-xs font-black text-white shadow-soft transition-all active:scale-95"
+                className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-xs font-black text-white shadow-soft transition-all active:scale-95"
               >
                 Sí, reiniciar
               </button>
@@ -717,15 +717,15 @@ export function LiveWorkoutTab({
       {/* ── MODAL DE FINALIZACIÓN Y GUARDADO DE ENTRENAMIENTO ── */}
       {isFinishModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="w-full max-w-md rounded-3xl border border-purple-500/30 bg-[#100e23] p-6 shadow-2xl animate-in zoom-in-95 duration-150 space-y-4">
-            <div className="flex items-center justify-between pb-2 border-b border-purple-500/15">
-              <h3 className="text-lg font-black text-white flex items-center gap-2">
-                <Sparkles className="size-5 text-emerald-400" />
+          <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white dark:border-purple-500/30 dark:bg-[#100e23] p-6 shadow-2xl animate-in zoom-in-95 duration-150 space-y-4">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-purple-500/15">
+              <h3 className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
+                <Sparkles className="size-5 text-emerald-600 dark:text-emerald-400" />
                 Resumen del Entrenamiento
               </h3>
               <button
                 onClick={() => setIsFinishModalOpen(false)}
-                className="rounded-full p-1 text-slate-400 hover:text-white hover:bg-white/10"
+                className="rounded-full p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:text-white dark:hover:bg-white/10"
               >
                 <X className="size-5" />
               </button>
@@ -733,43 +733,43 @@ export function LiveWorkoutTab({
 
             {/* 3 Metric Summary Boxes */}
             <div className="grid grid-cols-3 gap-2.5 text-center">
-              <div className="p-3 rounded-2xl bg-white/[0.03] border border-white/10">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Duración</span>
-                <p className="text-lg font-black text-white font-mono mt-0.5">{formatStopwatch(sessionSeconds)}</p>
+              <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 dark:bg-white/[0.03] dark:border-white/10">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Duración</span>
+                <p className="text-lg font-black text-slate-900 dark:text-white font-mono mt-0.5">{formatStopwatch(sessionSeconds)}</p>
               </div>
-              <div className="p-3 rounded-2xl bg-white/[0.03] border border-white/10">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Volumen Total</span>
-                <p className="text-lg font-black text-purple-300 font-mono mt-0.5">{totalVolume.toLocaleString('es-ES')} kg</p>
+              <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 dark:bg-white/[0.03] dark:border-white/10">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Volumen Total</span>
+                <p className="text-lg font-black text-slate-900 dark:text-white font-mono mt-0.5">{totalVolume.toLocaleString('es-ES')} kg</p>
               </div>
-              <div className="p-3 rounded-2xl bg-white/[0.03] border border-white/10">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Series Ef.</span>
-                <p className="text-lg font-black text-emerald-400 font-mono mt-0.5">{totalEffectiveSets}</p>
+              <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 dark:bg-white/[0.03] dark:border-white/10">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Series Ef.</span>
+                <p className="text-lg font-black text-emerald-600 dark:text-emerald-400 font-mono mt-0.5">{totalEffectiveSets}</p>
               </div>
             </div>
 
             {/* Notas opcionales de la sesión */}
             <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-300">Notas de la sesión / Sensaciones</label>
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Notas de la sesión / Sensaciones</label>
               <textarea
                 value={sessionNotes}
                 onChange={(e) => setSessionNotes(e.target.value)}
                 placeholder="Ej: Buena congestión, subí 2.5kg en press de banca..."
-                className="w-full rounded-2xl border border-purple-500/20 bg-white/[0.04] p-3 text-xs text-white outline-none focus:border-purple-500 h-20 resize-none"
+                className="w-full rounded-2xl border border-slate-200 bg-slate-50 dark:border-purple-500/20 dark:bg-white/[0.04] p-3 text-xs text-slate-900 dark:text-white outline-none focus:border-emerald-500 dark:focus:border-purple-500 h-20 resize-none"
               />
             </div>
 
-            <div className="pt-2 border-t border-purple-500/15 flex gap-2 justify-end">
+            <div className="pt-2 border-t border-slate-200 dark:border-purple-500/15 flex gap-2 justify-end">
               <button
                 type="button"
                 onClick={() => setIsFinishModalOpen(false)}
-                className="rounded-2xl px-4 py-2.5 text-xs font-bold text-slate-400 hover:bg-white/10 hover:text-white"
+                className="rounded-2xl px-4 py-2.5 text-xs font-bold text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-colors dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-white"
               >
                 Seguir entrenando
               </button>
               <button
                 type="button"
                 onClick={handleConfirmFinishSession}
-                className="rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 px-5 py-2.5 text-xs font-black text-white shadow-soft transition-transform active:scale-95"
+                className="rounded-2xl bg-emerald-600 hover:bg-emerald-700 px-5 py-2.5 text-xs font-black text-white shadow-soft transition-transform active:scale-95"
               >
                 Guardar y Sincronizar
               </button>

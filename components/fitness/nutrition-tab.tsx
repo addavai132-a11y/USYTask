@@ -857,15 +857,15 @@ export function NutritionTab({
       {/* ── MODAL AÑADIR ALIMENTO CON PRESETS ── */}
       {isAddFoodModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="w-full max-w-md rounded-3xl border border-purple-500/30 bg-[#100e23] p-6 shadow-2xl animate-in zoom-in-95 duration-150 space-y-4 max-h-[90vh] overflow-y-auto no-scrollbar">
-            <div className="flex items-center justify-between pb-2 border-b border-purple-500/15">
-              <h3 className="text-base font-black text-white flex items-center gap-2">
-                <UtensilsCrossed className="size-4 text-purple-400" />
+          <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-150 space-y-4 max-h-[90vh] overflow-y-auto no-scrollbar dark:border-purple-500/30 dark:bg-[#100e23]">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-purple-500/15">
+              <h3 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
+                <UtensilsCrossed className="size-4 text-emerald-600 dark:text-emerald-400" />
                 Añadir Alimento a {targetMealLabel}
               </h3>
               <button
                 onClick={() => setIsAddFoodModalOpen(false)}
-                className="rounded-full p-1 text-slate-400 hover:text-white"
+                className="rounded-full p-1 text-slate-400 hover:text-slate-700 dark:hover:text-white"
               >
                 <X className="size-5" />
               </button>
@@ -873,14 +873,14 @@ export function NutritionTab({
 
             {/* Presets Rápidos */}
             <div className="space-y-1.5">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Atajos rápidos:</span>
+              <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Atajos rápidos:</span>
               <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto no-scrollbar">
                 {COMMON_FOOD_PRESETS.map((p) => (
                   <button
                     key={p.name}
                     type="button"
                     onClick={() => handleSelectPreset(p)}
-                    className="px-2.5 py-1 rounded-lg bg-white/[0.04] hover:bg-purple-600/30 border border-white/10 text-[11px] font-bold text-slate-200 hover:text-white transition-colors"
+                    className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-emerald-50 border border-slate-200 text-[11px] font-bold text-slate-800 hover:text-emerald-900 transition-colors dark:bg-white/[0.04] dark:hover:bg-emerald-600/30 dark:border-white/10 dark:text-slate-200 dark:hover:text-white"
                   >
                     {p.name}
                   </button>
@@ -888,80 +888,81 @@ export function NutritionTab({
               </div>
             </div>
 
-            <div className="space-y-3 text-xs pt-2 border-t border-purple-500/15">
+            {/* Formulario de alimento manual */}
+            <div className="space-y-3 text-xs pt-2 border-t border-slate-200 dark:border-purple-500/15">
               <div className="space-y-1">
-                <label className="font-bold text-slate-300">Nombre del Alimento / Plato <span className="text-red-500">*</span></label>
+                <label className="font-bold text-slate-700 dark:text-slate-300">Nombre del Alimento</label>
                 <input
                   value={foodName}
                   onChange={(e) => setFoodName(e.target.value)}
-                  placeholder="Ej: Pechuga de pollo, Arroz basmati..."
-                  autoFocus
-                  className="w-full rounded-2xl border border-purple-500/20 bg-white/[0.04] py-2.5 px-3 font-semibold text-white outline-none focus:border-purple-500"
+                  placeholder="Ej: Pechuga de pollo, Avena, Yogur..."
+                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 dark:border-purple-500/20 dark:bg-white/[0.04] py-2.5 px-3 font-semibold text-slate-900 dark:text-white outline-none focus:border-emerald-500 dark:focus:border-purple-500"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              {/* Grid de Macros por porción */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 <div className="space-y-1">
-                  <label className="font-bold text-slate-300">Cantidad / Porción</label>
+                  <label className="font-bold text-slate-700 dark:text-slate-300">Calorías (kcal)</label>
                   <input
-                    value={foodQuantity}
-                    onChange={(e) => setFoodQuantity(e.target.value)}
-                    placeholder="Ej: 150g, 1 bol..."
-                    className="w-full rounded-2xl border border-purple-500/20 bg-white/[0.04] py-2 px-3 font-semibold text-white outline-none focus:border-purple-500"
+                    type="number"
+                    value={foodCalories || ''}
+                    onChange={(e) => setFoodCalories(Number(e.target.value))}
+                    placeholder="0"
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50 dark:border-purple-500/20 dark:bg-white/[0.04] py-2 px-2 text-center font-mono font-bold text-slate-900 dark:text-white outline-none focus:border-emerald-500"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="font-bold text-slate-300">Calorías (kcal) <span className="text-red-500">*</span></label>
+                  <label className="font-bold text-rose-600 dark:text-rose-400">Proteína (g)</label>
                   <input
                     type="number"
-                    value={foodCalories}
-                    onChange={(e) => setFoodCalories(e.target.value)}
-                    placeholder="Ej: 240"
-                    className="w-full rounded-2xl border border-purple-500/20 bg-white/[0.04] py-2 px-3 font-mono font-bold text-white outline-none focus:border-purple-500"
+                    value={foodProtein || ''}
+                    onChange={(e) => setFoodProtein(Number(e.target.value))}
+                    placeholder="0"
+                    className="w-full rounded-xl border border-rose-200 bg-rose-50/50 dark:border-rose-500/20 dark:bg-rose-950/20 py-2 px-2 text-center font-mono font-bold text-rose-700 dark:text-rose-300 outline-none focus:border-rose-500"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-bold text-cyan-600 dark:text-cyan-400">Carbos (g)</label>
+                  <input
+                    type="number"
+                    value={foodCarbs || ''}
+                    onChange={(e) => setFoodCarbs(Number(e.target.value))}
+                    placeholder="0"
+                    className="w-full rounded-xl border border-cyan-200 bg-cyan-50/50 dark:border-cyan-500/20 dark:bg-cyan-950/20 py-2 px-2 text-center font-mono font-bold text-cyan-700 dark:text-cyan-300 outline-none focus:border-cyan-500"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-bold text-amber-600 dark:text-amber-400">Grasas (g)</label>
+                  <input
+                    type="number"
+                    value={foodFats || ''}
+                    onChange={(e) => setFoodFats(Number(e.target.value))}
+                    placeholder="0"
+                    className="w-full rounded-xl border border-amber-200 bg-amber-50/50 dark:border-amber-500/20 dark:bg-amber-950/20 py-2 px-2 text-center font-mono font-bold text-amber-700 dark:text-amber-300 outline-none focus:border-amber-500"
                   />
                 </div>
               </div>
 
-              {/* Macros Desglose */}
-              <div className="grid grid-cols-3 gap-2">
-                <div className="space-y-1">
-                  <label className="font-bold text-rose-300 text-[11px]">Proteína (g)</label>
-                  <input
-                    type="number"
-                    value={foodProtein}
-                    onChange={(e) => setFoodProtein(e.target.value)}
-                    placeholder="0"
-                    className="w-full rounded-xl border border-purple-500/20 bg-white/[0.04] py-1.5 px-2 font-mono font-bold text-white text-center outline-none focus:border-purple-500"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="font-bold text-cyan-300 text-[11px]">Carbos (g)</label>
-                  <input
-                    type="number"
-                    value={foodCarbs}
-                    onChange={(e) => setFoodCarbs(e.target.value)}
-                    placeholder="0"
-                    className="w-full rounded-xl border border-purple-500/20 bg-white/[0.04] py-1.5 px-2 font-mono font-bold text-white text-center outline-none focus:border-purple-500"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="font-bold text-amber-300 text-[11px]">Grasas (g)</label>
-                  <input
-                    type="number"
-                    value={foodFats}
-                    onChange={(e) => setFoodFats(e.target.value)}
-                    placeholder="0"
-                    className="w-full rounded-xl border border-purple-500/20 bg-white/[0.04] py-1.5 px-2 font-mono font-bold text-white text-center outline-none focus:border-purple-500"
-                  />
-                </div>
+              {/* Gramos / Porción */}
+              <div className="space-y-1">
+                <label className="font-bold text-slate-700 dark:text-slate-300">Cantidad / Porción (opcional)</label>
+                <input
+                  value={foodServing}
+                  onChange={(e) => setFoodServing(e.target.value)}
+                  placeholder="Ej: 150g, 1 taza, 2 huevos..."
+                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 dark:border-purple-500/20 dark:bg-white/[0.04] py-2 px-3 text-slate-900 dark:text-white outline-none focus:border-emerald-500"
+                />
               </div>
 
-              <div className="pt-2 border-t border-purple-500/15 flex gap-2 justify-end">
+              <div className="pt-2 border-t border-slate-200 dark:border-purple-500/15 flex gap-2 justify-end">
                 <button
                   type="button"
                   onClick={() => setIsAddFoodModalOpen(false)}
-                  className="rounded-2xl px-4 py-2.5 text-xs font-bold text-slate-400 hover:bg-white/10"
+                  className="rounded-2xl px-4 py-2.5 text-xs font-bold text-slate-500 hover:bg-slate-100 transition-colors dark:text-slate-400 dark:hover:bg-white/10"
                 >
                   Cancelar
                 </button>
@@ -981,22 +982,22 @@ export function NutritionTab({
       {/* ── MODAL AJUSTAR METAS (CALCULADORA METABÓLICA INTELIGENTE & MANUAL) ── */}
       {isGoalModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-3 sm:p-4 animate-fade-in">
-          <div className="w-full max-w-2xl rounded-3xl border border-purple-500/30 bg-[#100e23] p-5 sm:p-6 shadow-2xl animate-in zoom-in-95 duration-150 flex flex-col max-h-[92vh] overflow-hidden">
+          <div className="w-full max-w-2xl rounded-3xl border border-slate-200 bg-white p-5 sm:p-6 shadow-2xl animate-in zoom-in-95 duration-150 flex flex-col max-h-[92vh] overflow-hidden dark:border-purple-500/30 dark:bg-[#100e23]">
             {/* Cabecera Fija */}
-            <div className="flex items-center justify-between pb-3 border-b border-purple-500/15 shrink-0">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-purple-500/15 shrink-0">
               <div className="flex items-center gap-2.5">
-                <div className="flex size-9 items-center justify-center rounded-xl bg-purple-500/15 border border-purple-500/30 text-purple-400 shrink-0">
+                <div className="flex size-9 items-center justify-center rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 dark:bg-emerald-500/15 dark:border-emerald-500/30 dark:text-emerald-400 shrink-0">
                   <Flame className="size-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-black text-white">Calculadora de Calorías & Macros</h3>
-                  <p className="text-[11px] text-slate-400">Ajuste metabólico conectado dinámicamente con tu peso</p>
+                  <h3 className="text-base font-black text-slate-900 dark:text-white">Calculadora de Calorías & Macros</h3>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">Ajuste metabólico conectado dinámicamente con tu peso</p>
                 </div>
               </div>
 
               <button
                 onClick={() => setIsGoalModalOpen(false)}
-                className="rounded-full p-1 text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+                className="rounded-full p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors dark:hover:text-white dark:hover:bg-white/10"
               >
                 <X className="size-5" />
               </button>
@@ -1004,7 +1005,7 @@ export function NutritionTab({
 
             {/* Selector de Modo (Calculadora Inteligente vs Ajuste Manual) */}
             <div className="pt-3 shrink-0">
-              <div className="grid grid-cols-2 p-1 rounded-2xl bg-white/[0.03] border border-white/10 text-xs font-bold">
+              <div className="grid grid-cols-2 p-1 rounded-2xl bg-slate-100 border border-slate-200 text-xs font-bold dark:bg-white/[0.03] dark:border-white/10">
                 <button
                   type="button"
                   onClick={() => setActiveGoalTab('calculator')}
@@ -1012,7 +1013,7 @@ export function NutritionTab({
                     'py-2 px-3 rounded-xl flex items-center justify-center gap-1.5 transition-all',
                     activeGoalTab === 'calculator'
                       ? 'bg-emerald-600 text-white shadow-md'
-                      : 'text-slate-400 hover:text-white'
+                      : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
                   )}
                 >
                   <Zap className="size-3.5" />
@@ -1026,7 +1027,7 @@ export function NutritionTab({
                     'py-2 px-3 rounded-xl flex items-center justify-center gap-1.5 transition-all',
                     activeGoalTab === 'manual'
                       ? 'bg-emerald-600 text-white shadow-md'
-                      : 'text-slate-400 hover:text-white'
+                      : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
                   )}
                 >
                   <Settings className="size-3.5" />
@@ -1040,68 +1041,30 @@ export function NutritionTab({
               {activeGoalTab === 'calculator' ? (
                 <>
                   {/* ── 1. DATOS BIOLÓGICOS Y SINCRONIZACIÓN DE PESO ── */}
-                  <div className="p-3.5 rounded-2xl bg-white/[0.02] border border-purple-500/20 space-y-3">
+                  <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3 dark:bg-white/[0.02] dark:border-purple-500/20">
                     <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-black uppercase tracking-wider text-purple-300 flex items-center gap-1.5">
+                      <span className="text-[11px] font-black uppercase tracking-wider text-slate-900 dark:text-slate-200 flex items-center gap-1.5">
                         <User className="size-3.5" /> 1. Datos Base & Peso Actual
                       </span>
                       {bodyMetrics[0]?.weightKg && (
-                        <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full flex items-center gap-1">
+                        <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full flex items-center gap-1 dark:text-emerald-400 dark:bg-emerald-500/10 dark:border-emerald-500/20">
                           <CheckCircle2 className="size-3" /> Sincronizado: {bodyMetrics[0].weightKg} kg
                         </span>
                       )}
                     </div>
 
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                      {/* Peso Actual */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                       <div className="space-y-1">
-                        <label className="text-[11px] font-bold text-slate-300">Peso Actual (kg)</label>
-                        <input
-                          type="number"
-                          step="0.1"
-                          value={calcWeight}
-                          onChange={(e) => setCalcWeight(e.target.value)}
-                          placeholder="80"
-                          className="w-full rounded-xl border border-purple-500/20 bg-white/[0.04] py-2 px-3 font-mono font-bold text-white outline-none focus:border-purple-500 text-center"
-                        />
-                      </div>
-
-                      {/* Altura */}
-                      <div className="space-y-1">
-                        <label className="text-[11px] font-bold text-slate-300">Altura (cm)</label>
-                        <input
-                          type="number"
-                          value={calcHeight}
-                          onChange={(e) => setCalcHeight(e.target.value)}
-                          placeholder="178"
-                          className="w-full rounded-xl border border-purple-500/20 bg-white/[0.04] py-2 px-3 font-mono font-bold text-white outline-none focus:border-purple-500 text-center"
-                        />
-                      </div>
-
-                      {/* Edad */}
-                      <div className="space-y-1">
-                        <label className="text-[11px] font-bold text-slate-300">Edad (años)</label>
-                        <input
-                          type="number"
-                          value={calcAge}
-                          onChange={(e) => setCalcAge(e.target.value)}
-                          placeholder="26"
-                          className="w-full rounded-xl border border-purple-500/20 bg-white/[0.04] py-2 px-3 font-mono font-bold text-white outline-none focus:border-purple-500 text-center"
-                        />
-                      </div>
-
-                      {/* Sexo Biológico */}
-                      <div className="space-y-1">
-                        <label className="text-[11px] font-bold text-slate-300">Sexo Biológico</label>
-                        <div className="grid grid-cols-2 gap-1">
+                        <label className="font-bold text-slate-700 dark:text-slate-400">Género</label>
+                        <div className="grid grid-cols-2 gap-1 bg-white dark:bg-white/5 p-0.5 rounded-xl border border-slate-200 dark:border-white/10">
                           <button
                             type="button"
                             onClick={() => setCalcGender('hombre')}
                             className={cn(
-                              'py-2 px-1 rounded-xl text-[11px] font-bold border transition-all text-center',
+                              'py-1.5 rounded-lg text-center font-bold text-[11px] transition-all',
                               calcGender === 'hombre'
-                                ? 'bg-purple-600/40 border-purple-400 text-white shadow-xs'
-                                : 'bg-white/[0.03] border-white/10 text-slate-400 hover:text-white'
+                                ? 'bg-emerald-600 text-white shadow-xs'
+                                : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
                             )}
                           >
                             Hombre
@@ -1110,14 +1073,47 @@ export function NutritionTab({
                             type="button"
                             onClick={() => setCalcGender('mujer')}
                             className={cn(
-                              'py-2 px-1 rounded-xl text-[11px] font-bold border transition-all text-center',
+                              'py-1.5 rounded-lg text-center font-bold text-[11px] transition-all',
                               calcGender === 'mujer'
-                                ? 'bg-pink-600/40 border-pink-400 text-white shadow-xs'
-                                : 'bg-white/[0.03] border-white/10 text-slate-400 hover:text-white'
+                                ? 'bg-emerald-600 text-white shadow-xs'
+                                : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
                             )}
                           >
                             Mujer
                           </button>
+                        </div>
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="font-bold text-slate-700 dark:text-slate-400">Edad</label>
+                        <input
+                          type="number"
+                          value={calcAge}
+                          onChange={(e) => setCalcAge(Number(e.target.value))}
+                          className="w-full rounded-xl border border-slate-200 bg-white py-1.5 px-3 text-slate-900 dark:border-white/10 dark:bg-white/5 dark:text-white font-mono font-bold text-center outline-none focus:border-emerald-500"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="font-bold text-slate-700 dark:text-slate-400">Altura (cm)</label>
+                        <input
+                          type="number"
+                          value={calcHeight}
+                          onChange={(e) => setCalcHeight(Number(e.target.value))}
+                          className="w-full rounded-xl border border-slate-200 bg-white py-1.5 px-3 text-slate-900 dark:border-white/10 dark:bg-white/5 dark:text-white font-mono font-bold text-center outline-none focus:border-emerald-500"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="font-bold text-slate-700 dark:text-slate-400">Peso Base (kg)</label>
+                        <div className="relative">
+                          <input
+                            type="number"
+                            step="0.1"
+                            value={calcWeight}
+                            onChange={(e) => setCalcWeight(Number(e.target.value))}
+                            className="w-full rounded-xl border border-slate-200 bg-white py-1.5 px-3 text-slate-900 dark:border-white/10 dark:bg-white/5 dark:text-white font-mono font-bold text-center outline-none focus:border-emerald-500"
+                          />
                         </div>
                       </div>
                     </div>
@@ -1128,9 +1124,9 @@ export function NutritionTab({
                         type="checkbox"
                         checked={calcSaveWeightToProfile}
                         onChange={(e) => setCalcSaveWeightToProfile(e.target.checked)}
-                        className="rounded border-purple-500/30 text-purple-600 focus:ring-purple-500 size-3.5 bg-white/5"
+                        className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 size-3.5 bg-white dark:border-purple-500/30 dark:bg-white/5"
                       />
-                      <span className="text-[11px] text-slate-400">
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400">
                         Guardar también este peso como pesaje de hoy en mi historial de progreso
                       </span>
                     </label>
@@ -1138,8 +1134,8 @@ export function NutritionTab({
 
                   {/* ── 2. NIVEL DE ACTIVIDAD DIARIA ── */}
                   <div className="space-y-2">
-                    <label className="text-[11px] font-black uppercase tracking-wider text-purple-300 flex items-center gap-1.5">
-                      <Activity className="size-3.5" /> 2. Nivel de Actividad Diaria & Deporte
+                    <label className="text-[11px] font-black uppercase tracking-wider text-slate-900 dark:text-slate-200 flex items-center gap-1.5">
+                      <Activity className="size-3.5 text-emerald-600" /> 2. Nivel de Actividad Diaria & Deporte
                     </label>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -1153,19 +1149,19 @@ export function NutritionTab({
                             className={cn(
                               'p-2.5 rounded-2xl border text-left transition-all flex items-start gap-2.5',
                               isSelected
-                                ? 'bg-purple-600/25 border-purple-400 shadow-md ring-1 ring-purple-500/50'
-                                : 'bg-white/[0.02] border-white/10 hover:bg-white/[0.05]'
+                                ? 'bg-emerald-50 border-emerald-300 shadow-sm ring-1 ring-emerald-400 dark:bg-emerald-600/25 dark:border-emerald-400 dark:ring-emerald-500/50'
+                                : 'bg-slate-50 border-slate-200 hover:bg-slate-100 dark:bg-white/[0.02] dark:border-white/10 dark:hover:bg-white/[0.05]'
                             )}
                           >
-                            <span className="text-xl shrink-0 p-1 rounded-xl bg-white/5">{act.icon}</span>
+                            <span className="text-xl shrink-0 p-1 rounded-xl bg-white dark:bg-white/5 shadow-2xs">{act.icon}</span>
                             <div className="min-w-0 flex-1">
                               <div className="flex items-center justify-between">
-                                <span className={cn('font-bold text-xs', isSelected ? 'text-white' : 'text-slate-200')}>
+                                <span className={cn('font-bold text-xs', isSelected ? 'text-slate-900 dark:text-white' : 'text-slate-700 dark:text-slate-200')}>
                                   {act.label}
                                 </span>
-                                <span className="text-[10px] font-mono text-purple-300 font-bold">{act.factor}</span>
+                                <span className="text-[10px] font-mono text-emerald-700 dark:text-emerald-300 font-bold">{act.factor}</span>
                               </div>
-                              <p className="text-[10px] text-slate-400 truncate mt-0.5">{act.description}</p>
+                              <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate mt-0.5">{act.description}</p>
                             </div>
                           </button>
                         )
@@ -1174,12 +1170,12 @@ export function NutritionTab({
                   </div>
 
                   {/* ── 3. OBJETIVO / FASE ACTUAL & RITMO ── */}
-                  <div className="p-3.5 rounded-2xl bg-white/[0.02] border border-purple-500/20 space-y-3">
-                    <label className="text-[11px] font-black uppercase tracking-wider text-purple-300 flex items-center gap-1.5">
-                      <Flame className="size-3.5" /> 3. Objetivo & Fase Actual
+                  <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3 dark:bg-white/[0.02] dark:border-purple-500/20">
+                    <label className="text-[11px] font-black uppercase tracking-wider text-slate-900 dark:text-slate-200 flex items-center gap-1.5">
+                      <Flame className="size-3.5 text-emerald-600" /> 3. Objetivo & Fase Actual
                     </label>
 
-                    {/* Selector de Fase */}
+                    {/* Selector de 3 Fases */}
                     <div className="grid grid-cols-3 gap-2">
                       <button
                         type="button"
@@ -1190,8 +1186,8 @@ export function NutritionTab({
                         className={cn(
                           'py-2.5 px-2 rounded-2xl border text-xs font-bold transition-all text-center flex flex-col items-center gap-1',
                           calcGoalPhase === 'definicion'
-                            ? 'bg-rose-500/25 border-rose-400 text-rose-200 shadow-md ring-1 ring-rose-500/50'
-                            : 'bg-white/[0.02] border-white/10 text-slate-400 hover:text-white'
+                            ? 'bg-rose-50 border-rose-300 text-rose-900 shadow-sm ring-1 ring-rose-400 dark:bg-rose-500/30 dark:border-rose-400 dark:text-rose-200'
+                            : 'bg-white border-slate-200 text-slate-600 hover:text-slate-900 dark:bg-white/[0.02] dark:border-white/10 dark:text-slate-400 dark:hover:text-white'
                         )}
                       >
                         <span className="text-lg">🔥</span>
@@ -1207,11 +1203,11 @@ export function NutritionTab({
                         className={cn(
                           'py-2.5 px-2 rounded-2xl border text-xs font-bold transition-all text-center flex flex-col items-center gap-1',
                           calcGoalPhase === 'volumen'
-                            ? 'bg-emerald-500/25 border-emerald-400 text-emerald-200 shadow-md ring-1 ring-emerald-500/50'
-                            : 'bg-white/[0.02] border-white/10 text-slate-400 hover:text-white'
+                            ? 'bg-emerald-50 border-emerald-300 text-emerald-900 shadow-sm ring-1 ring-emerald-400 dark:bg-emerald-500/30 dark:border-emerald-400 dark:text-emerald-200'
+                            : 'bg-white border-slate-200 text-slate-600 hover:text-slate-900 dark:bg-white/[0.02] dark:border-white/10 dark:text-slate-400 dark:hover:text-white'
                         )}
                       >
-                        <span className="text-lg">📈</span>
+                        <span className="text-lg">💪</span>
                         <span>Volumen</span>
                       </button>
 
@@ -1224,8 +1220,8 @@ export function NutritionTab({
                         className={cn(
                           'py-2.5 px-2 rounded-2xl border text-xs font-bold transition-all text-center flex flex-col items-center gap-1',
                           calcGoalPhase === 'mantenimiento'
-                            ? 'bg-purple-600/30 border-purple-400 text-purple-200 shadow-md ring-1 ring-purple-500/50'
-                            : 'bg-white/[0.02] border-white/10 text-slate-400 hover:text-white'
+                            ? 'bg-emerald-50 border-emerald-300 text-emerald-900 shadow-sm ring-1 ring-emerald-400 dark:bg-emerald-600/30 dark:border-emerald-400 dark:text-emerald-200'
+                            : 'bg-white border-slate-200 text-slate-600 hover:text-slate-900 dark:bg-white/[0.02] dark:border-white/10 dark:text-slate-400 dark:hover:text-white'
                         )}
                       >
                         <span className="text-lg">⚖️</span>
@@ -1235,10 +1231,10 @@ export function NutritionTab({
 
                     {/* Opciones dinámicas según la fase */}
                     {calcGoalPhase === 'definicion' && (
-                      <div className="pt-2 space-y-2 border-t border-white/10">
-                        <div className="flex items-center justify-between text-[11px] font-bold text-slate-300">
+                      <div className="pt-2 space-y-2 border-t border-slate-200 dark:border-white/10">
+                        <div className="flex items-center justify-between text-[11px] font-bold text-slate-700 dark:text-slate-300">
                           <span>Ritmo de Pérdida de Grasa:</span>
-                          <span className="text-rose-400 font-mono">
+                          <span className="text-rose-600 font-mono">
                             {calcPace === 'conservador' ? '-300 kcal' : calcPace === 'agresivo' ? '-700 kcal' : '-500 kcal'}
                           </span>
                         </div>
@@ -1255,35 +1251,35 @@ export function NutritionTab({
                               className={cn(
                                 'py-2 px-1 rounded-xl text-[11px] font-bold border transition-all text-center',
                                 calcPace === p.id
-                                  ? 'bg-rose-500/30 border-rose-400 text-white shadow-xs'
-                                  : 'bg-white/[0.03] border-white/10 text-slate-400 hover:text-white'
+                                  ? 'bg-rose-50 border-rose-300 text-rose-900 shadow-xs'
+                                  : 'bg-white border-slate-200 text-slate-600 hover:text-slate-900 dark:bg-white/[0.03] dark:border-white/10 dark:text-slate-400 dark:hover:text-white'
                               )}
                             >
                               <div>{p.label}</div>
-                              <span className="text-[10px] font-mono text-rose-300">{p.kcal} kcal</span>
+                              <span className="text-[10px] font-mono text-rose-600 dark:text-rose-300">{p.kcal} kcal</span>
                             </button>
                           ))}
                         </div>
 
                         <div className="pt-1.5 flex items-center justify-between gap-3">
-                          <label className="text-[11px] font-bold text-slate-300">Peso objetivo a bajar (kg):</label>
+                          <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300">Peso objetivo a bajar (kg):</label>
                           <input
                             type="number"
                             step="0.1"
                             value={calcTargetWeight}
                             onChange={(e) => setCalcTargetWeight(e.target.value)}
                             placeholder="75"
-                            className="w-28 rounded-xl border border-purple-500/20 bg-white/[0.04] py-1.5 px-3 font-mono font-bold text-white text-center outline-none focus:border-purple-500"
+                            className="w-28 rounded-xl border border-slate-200 bg-white py-1.5 px-3 font-mono font-bold text-slate-900 text-center outline-none focus:border-emerald-500 dark:border-purple-500/20 dark:bg-white/[0.04] dark:text-white"
                           />
                         </div>
                       </div>
                     )}
 
                     {calcGoalPhase === 'volumen' && (
-                      <div className="pt-2 space-y-2 border-t border-white/10">
-                        <div className="flex items-center justify-between text-[11px] font-bold text-slate-300">
+                      <div className="pt-2 space-y-2 border-t border-slate-200 dark:border-white/10">
+                        <div className="flex items-center justify-between text-[11px] font-bold text-slate-700 dark:text-slate-300">
                           <span>Ritmo de Ganancia Muscular:</span>
-                          <span className="text-emerald-400 font-mono">
+                          <span className="text-emerald-600 font-mono">
                             {calcPace === 'limpio' ? '+250 kcal (Lean Bulk)' : '+400 kcal (Estándar)'}
                           </span>
                         </div>
@@ -1299,64 +1295,64 @@ export function NutritionTab({
                               className={cn(
                                 'py-2 px-2 rounded-xl text-[11px] font-bold border transition-all text-left',
                                 calcPace === p.id
-                                  ? 'bg-emerald-500/30 border-emerald-400 text-white shadow-xs'
-                                  : 'bg-white/[0.03] border-white/10 text-slate-400 hover:text-white'
+                                  ? 'bg-emerald-50 border-emerald-300 text-emerald-900 shadow-xs'
+                                  : 'bg-white border-slate-200 text-slate-600 hover:text-slate-900 dark:bg-white/[0.03] dark:border-white/10 dark:text-slate-400 dark:hover:text-white'
                               )}
                             >
                               <div className="font-bold">{p.label}</div>
-                              <span className="text-[10px] font-mono text-emerald-300 block">{p.desc}</span>
+                              <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-300 block">{p.desc}</span>
                             </button>
                           ))}
                         </div>
 
                         <div className="pt-1.5 flex items-center justify-between gap-3">
-                          <label className="text-[11px] font-bold text-slate-300">Peso objetivo a subir (kg):</label>
+                          <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300">Peso objetivo a subir (kg):</label>
                           <input
                             type="number"
                             step="0.1"
                             value={calcTargetWeight}
                             onChange={(e) => setCalcTargetWeight(e.target.value)}
                             placeholder="84"
-                            className="w-28 rounded-xl border border-purple-500/20 bg-white/[0.04] py-1.5 px-3 font-mono font-bold text-white text-center outline-none focus:border-purple-500"
+                            className="w-28 rounded-xl border border-slate-200 bg-white py-1.5 px-3 font-mono font-bold text-slate-900 text-center outline-none focus:border-emerald-500 dark:border-purple-500/20 dark:bg-white/[0.04] dark:text-white"
                           />
                         </div>
                       </div>
                     )}
 
                     {calcGoalPhase === 'mantenimiento' && (
-                      <div className="p-2.5 rounded-xl bg-purple-600/10 border border-purple-500/20 text-[11px] text-purple-200">
+                      <div className="p-2.5 rounded-xl bg-slate-100 border border-slate-200 text-[11px] text-slate-700 dark:bg-emerald-500/10 dark:border-emerald-500/20 dark:text-slate-200">
                         ⚖️ Tu ingesta calórica se fijará exactamente en tu gasto metabólico diario (TDEE: {metabolicResults.tdee} kcal) para mantener tu peso corporal y rendimiento atlético estables.
                       </div>
                     )}
                   </div>
 
                   {/* ── 4. RESUMEN Y DESGLOSE EN TIEMPO REAL ── */}
-                  <div className="p-4 rounded-2xl bg-gradient-to-br from-purple-950/40 via-indigo-950/30 to-purple-900/20 border border-purple-500/40 shadow-xl space-y-3">
-                    <div className="flex items-baseline justify-between border-b border-purple-500/20 pb-2">
+                  <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-3 dark:bg-gradient-to-br dark:from-purple-950/40 dark:via-indigo-950/30 dark:to-purple-900/20 dark:border-purple-500/40 dark:shadow-xl">
+                    <div className="flex items-baseline justify-between border-b border-slate-200 dark:border-purple-500/20 pb-2">
                       <div>
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                           Meta Calórica Diaria Calculada
                         </span>
                         <div className="flex items-baseline gap-2 mt-0.5">
-                          <span className="text-3xl font-black text-white font-mono">{metabolicResults.calories}</span>
-                          <span className="text-sm font-bold text-purple-300">kcal / día</span>
+                          <span className="text-3xl font-black text-slate-900 dark:text-white font-mono">{metabolicResults.calories}</span>
+                          <span className="text-sm font-bold text-slate-600 dark:text-slate-300">kcal / día</span>
                         </div>
                       </div>
 
-                      <div className="text-right text-[10px] font-mono space-y-0.5 text-slate-400">
-                        <div>TMB: <span className="text-slate-200 font-bold">{metabolicResults.bmr} kcal</span></div>
-                        <div>TDEE: <span className="text-slate-200 font-bold">{metabolicResults.tdee} kcal</span></div>
+                      <div className="text-right text-[10px] font-mono space-y-0.5 text-slate-500 dark:text-slate-400">
+                        <div>TMB: <span className="text-slate-900 dark:text-slate-200 font-bold">{metabolicResults.bmr} kcal</span></div>
+                        <div>TDEE: <span className="text-slate-900 dark:text-slate-200 font-bold">{metabolicResults.tdee} kcal</span></div>
                       </div>
                     </div>
 
                     {/* Barra Segmentada de Distribución de Macros */}
                     <div className="space-y-1">
                       <div className="flex items-center justify-between text-[10px] font-bold">
-                        <span className="text-rose-400">Proteína ({metabolicResults.proteinPct}%)</span>
-                        <span className="text-cyan-400">Carbos ({metabolicResults.carbsPct}%)</span>
-                        <span className="text-amber-400">Grasas ({metabolicResults.fatsPct}%)</span>
+                        <span className="text-rose-600 dark:text-rose-400">Proteína ({metabolicResults.proteinPct}%)</span>
+                        <span className="text-cyan-600 dark:text-cyan-400">Carbos ({metabolicResults.carbsPct}%)</span>
+                        <span className="text-amber-600 dark:text-amber-400">Grasas ({metabolicResults.fatsPct}%)</span>
                       </div>
-                      <div className="h-2.5 w-full bg-white/[0.08] rounded-full overflow-hidden flex">
+                      <div className="h-2.5 w-full bg-slate-100 dark:bg-white/[0.08] rounded-full overflow-hidden flex">
                         <div className="bg-rose-500 h-full transition-all duration-300" style={{ width: `${metabolicResults.proteinPct}%` }} />
                         <div className="bg-cyan-500 h-full transition-all duration-300" style={{ width: `${metabolicResults.carbsPct}%` }} />
                         <div className="bg-amber-500 h-full transition-all duration-300" style={{ width: `${metabolicResults.fatsPct}%` }} />
@@ -1366,24 +1362,24 @@ export function NutritionTab({
                     {/* 3 Tarjetas de Macronutrientes */}
                     <div className="grid grid-cols-3 gap-2 pt-1">
                       {/* Proteína */}
-                      <div className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-center">
-                        <span className="text-[10px] font-bold text-rose-300 uppercase block">Proteína</span>
-                        <p className="text-lg font-black text-white font-mono mt-0.5">{metabolicResults.protein}g</p>
-                        <span className="text-[10px] text-rose-300/80 block">{metabolicResults.proteinFactor} g/kg</span>
+                      <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-center dark:bg-rose-500/10 dark:border-rose-500/20">
+                        <span className="text-[10px] font-bold text-rose-700 dark:text-rose-300 uppercase block">Proteína</span>
+                        <p className="text-lg font-black text-slate-900 dark:text-white font-mono mt-0.5">{metabolicResults.protein}g</p>
+                        <span className="text-[10px] text-rose-600 dark:text-rose-300/80 block">{metabolicResults.proteinFactor} g/kg</span>
                       </div>
 
                       {/* Carbohidratos */}
-                      <div className="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-center">
-                        <span className="text-[10px] font-bold text-cyan-300 uppercase block">Carbos</span>
-                        <p className="text-lg font-black text-white font-mono mt-0.5">{metabolicResults.carbs}g</p>
-                        <span className="text-[10px] text-cyan-300/80 block">Energía</span>
+                      <div className="p-2.5 rounded-xl bg-cyan-50 border border-cyan-200 text-center dark:bg-cyan-500/10 dark:border-cyan-500/20">
+                        <span className="text-[10px] font-bold text-cyan-700 dark:text-cyan-300 uppercase block">Carbos</span>
+                        <p className="text-lg font-black text-slate-900 dark:text-white font-mono mt-0.5">{metabolicResults.carbs}g</p>
+                        <span className="text-[10px] text-cyan-600 dark:text-cyan-300/80 block">Energía</span>
                       </div>
 
                       {/* Grasas */}
-                      <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-center">
-                        <span className="text-[10px] font-bold text-amber-300 uppercase block">Grasas</span>
-                        <p className="text-lg font-black text-white font-mono mt-0.5">{metabolicResults.fats}g</p>
-                        <span className="text-[10px] text-amber-300/80 block">{metabolicResults.fatsFactor} g/kg</span>
+                      <div className="p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-center dark:bg-amber-500/10 dark:border-amber-500/20">
+                        <span className="text-[10px] font-bold text-amber-700 dark:text-amber-300 uppercase block">Grasas</span>
+                        <p className="text-lg font-black text-slate-900 dark:text-white font-mono mt-0.5">{metabolicResults.fats}g</p>
+                        <span className="text-[10px] text-amber-600 dark:text-amber-300/80 block">{metabolicResults.fatsFactor} g/kg</span>
                       </div>
                     </div>
                   </div>
@@ -1391,50 +1387,50 @@ export function NutritionTab({
               ) : (
                 /* ── MODO AJUSTE MANUAL ── */
                 <div className="space-y-4 p-2">
-                  <div className="p-3 rounded-2xl bg-purple-600/10 border border-purple-500/20 text-xs text-purple-200">
+                  <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-700 dark:bg-slate-800/40 dark:border-white/10 dark:text-slate-300">
                     ✏️ Modo Manual: Introduce los valores exactos de calorías y macronutrientes que desees establecer para tu día.
                   </div>
 
                   <div className="space-y-1">
-                    <label className="font-bold text-slate-300">Calorías Diarias Objetivo (kcal)</label>
+                    <label className="font-bold text-slate-700 dark:text-slate-300">Calorías Diarias Objetivo (kcal)</label>
                     <input
                       type="number"
                       value={manualCalories}
                       onChange={(e) => setManualCalories(e.target.value)}
                       placeholder="2500"
-                      className="w-full rounded-2xl border border-purple-500/20 bg-white/[0.04] py-2.5 px-3 font-mono font-bold text-white outline-none focus:border-purple-500"
+                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-2.5 px-3 font-mono font-bold text-slate-900 outline-none focus:border-emerald-500 dark:border-purple-500/20 dark:bg-white/[0.04] dark:text-white"
                     />
                   </div>
 
                   <div className="grid grid-cols-3 gap-2.5">
                     <div className="space-y-1">
-                      <label className="font-bold text-rose-300 text-[11px]">Proteína (g)</label>
+                      <label className="font-bold text-rose-600 dark:text-rose-300 text-[11px]">Proteína (g)</label>
                       <input
                         type="number"
                         value={manualProtein}
                         onChange={(e) => setManualProtein(e.target.value)}
                         placeholder="160"
-                        className="w-full rounded-xl border border-purple-500/20 bg-white/[0.04] py-2 px-2 font-mono font-bold text-white text-center outline-none focus:border-purple-500"
+                        className="w-full rounded-xl border border-rose-200 bg-rose-50/50 py-2 px-2 font-mono font-bold text-rose-700 text-center outline-none focus:border-rose-500 dark:border-purple-500/20 dark:bg-white/[0.04] dark:text-white"
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="font-bold text-cyan-300 text-[11px]">Carbos (g)</label>
+                      <label className="font-bold text-cyan-600 dark:text-cyan-300 text-[11px]">Carbos (g)</label>
                       <input
                         type="number"
                         value={manualCarbs}
                         onChange={(e) => setManualCarbs(e.target.value)}
                         placeholder="300"
-                        className="w-full rounded-xl border border-purple-500/20 bg-white/[0.04] py-2 px-2 font-mono font-bold text-white text-center outline-none focus:border-purple-500"
+                        className="w-full rounded-xl border border-cyan-200 bg-cyan-50/50 py-2 px-2 font-mono font-bold text-cyan-700 text-center outline-none focus:border-cyan-500 dark:border-purple-500/20 dark:bg-white/[0.04] dark:text-white"
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="font-bold text-amber-300 text-[11px]">Grasas (g)</label>
+                      <label className="font-bold text-amber-600 dark:text-amber-300 text-[11px]">Grasas (g)</label>
                       <input
                         type="number"
                         value={manualFats}
                         onChange={(e) => setManualFats(e.target.value)}
                         placeholder="70"
-                        className="w-full rounded-xl border border-purple-500/20 bg-white/[0.04] py-2 px-2 font-mono font-bold text-white text-center outline-none focus:border-purple-500"
+                        className="w-full rounded-xl border border-amber-200 bg-amber-50/50 py-2 px-2 font-mono font-bold text-amber-700 text-center outline-none focus:border-amber-500 dark:border-purple-500/20 dark:bg-white/[0.04] dark:text-white"
                       />
                     </div>
                   </div>
@@ -1443,20 +1439,21 @@ export function NutritionTab({
             </div>
 
             {/* Pie Fijo con Botones de Acción */}
-            <div className="pt-3 border-t border-purple-500/15 flex gap-2 justify-end shrink-0">
+            <div className="pt-3 border-t border-slate-200 dark:border-purple-500/15 flex gap-2 justify-end shrink-0">
               <button
                 type="button"
                 onClick={() => setIsGoalModalOpen(false)}
-                className="rounded-2xl px-4 py-2.5 text-xs font-bold text-slate-400 hover:bg-white/10 transition-colors"
+                className="rounded-2xl px-4 py-2.5 text-xs font-bold text-slate-500 hover:bg-slate-100 transition-colors dark:text-slate-400 dark:hover:bg-white/10"
               >
                 Cancelar
               </button>
               <button
                 type="button"
-                onClick={handleSaveGoals}
-                className="rounded-2xl bg-emerald-600 hover:bg-emerald-700 px-5 py-2.5 text-xs font-bold text-white shadow-soft transition-transform active:scale-95"
+                onClick={handleSaveGoalSettings}
+                className="rounded-2xl bg-emerald-600 hover:bg-emerald-700 px-5 py-2.5 text-xs font-black text-white shadow-soft transition-transform active:scale-95 flex items-center gap-1.5"
               >
-                Guardar Metas Nutricionales
+                <CheckCircle2 className="size-4" />
+                <span>Aplicar y Guardar Metas</span>
               </button>
             </div>
           </div>

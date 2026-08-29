@@ -177,7 +177,7 @@ export function EventsSection({
                 <p className="text-xs text-slate-400">No hay eventos programados en este grupo.</p>
                 <button
                   onClick={() => openQuickAdd('evento', { hideTabs: true })}
-                  className="text-xs font-bold text-purple-400 hover:underline"
+                  className="text-xs font-bold text-emerald-700 hover:underline dark:text-purple-400"
                 >
                   + Añadir evento
                 </button>

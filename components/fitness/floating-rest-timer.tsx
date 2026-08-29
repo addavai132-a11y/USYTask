@@ -195,14 +195,14 @@ export function FloatingRestTimer() {
 
   return (
     <div className="fixed bottom-20 sm:bottom-6 right-4 sm:right-6 z-50 animate-in slide-in-from-bottom-5 duration-200">
-      <div className="rounded-2xl bg-[#100e23]/95 border border-purple-500/40 p-3.5 shadow-2xl backdrop-blur-2xl flex items-center gap-3.5 w-80 ring-1 ring-white/10">
+      <div className="rounded-2xl bg-white border border-slate-200 p-3.5 shadow-2xl flex items-center gap-3.5 w-80 ring-1 ring-black/5 dark:bg-[#100e23]/95 dark:border-purple-500/40 dark:ring-white/10">
         {/* Animated Countdown Circle / Badge */}
         <div
           className={cn(
             'size-12 rounded-xl flex flex-col items-center justify-center font-mono font-bold text-sm shrink-0 border transition-all duration-300',
             timerState.isPaused
-              ? 'bg-amber-500/20 border-amber-500/40 text-amber-300'
-              : 'bg-purple-600/30 border-purple-500/50 text-purple-200 shadow-md shadow-purple-950/50 animate-pulse'
+              ? 'bg-amber-500/20 border-amber-500/40 text-amber-600 dark:text-amber-300'
+              : 'bg-emerald-50 border-emerald-300 text-emerald-800 shadow-sm animate-pulse dark:bg-purple-600/30 dark:border-purple-500/50 dark:text-purple-200'
           )}
         >
           <span className="text-base font-black tracking-tight leading-none">
@@ -216,15 +216,15 @@ export function FloatingRestTimer() {
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between text-[11px] font-bold mb-1.5">
             <div className="flex items-center gap-1.5 min-w-0">
-              <Timer className="size-3.5 text-purple-400 shrink-0" />
-              <span className="text-white truncate">
+              <Timer className="size-3.5 text-emerald-600 dark:text-purple-400 shrink-0" />
+              <span className="text-slate-900 dark:text-white truncate">
                 {timerState.exerciseName || 'Descanso'}
               </span>
             </div>
             <button
               type="button"
               onClick={handleClose}
-              className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+              className="p-1 rounded-lg text-slate-400 hover:text-slate-900 hover:bg-slate-100 transition-colors dark:hover:text-white dark:hover:bg-white/10"
               title="Cerrar temporizador"
             >
               <X className="size-3.5" />
@@ -232,13 +232,13 @@ export function FloatingRestTimer() {
           </div>
 
           {/* Progress bar */}
-          <div className="h-1.5 w-full bg-white/[0.08] rounded-full overflow-hidden mb-2">
+          <div className="h-1.5 w-full bg-slate-100 dark:bg-white/[0.08] rounded-full overflow-hidden mb-2">
             <div
               className={cn(
                 'h-full rounded-full transition-all duration-300',
                 timerState.isPaused
                   ? 'bg-amber-400'
-                  : 'bg-gradient-to-r from-purple-500 to-indigo-400 shadow-sm'
+                  : 'bg-emerald-500 dark:bg-gradient-to-r dark:from-purple-500 dark:to-indigo-400 shadow-sm'
               )}
               style={{ width: `${progressPercent}%` }}
             />
@@ -250,7 +250,7 @@ export function FloatingRestTimer() {
               <button
                 type="button"
                 onClick={() => handleAdjustTime(-15)}
-                className="px-2 py-1 rounded-lg bg-white/[0.06] text-slate-300 hover:text-white hover:bg-white/15 border border-white/10 active:scale-95 transition-all"
+                className="px-2 py-1 rounded-lg bg-slate-100 text-slate-700 hover:text-slate-900 hover:bg-slate-200 border border-slate-200 active:scale-95 transition-all dark:bg-white/[0.06] dark:text-slate-300 dark:hover:text-white dark:hover:bg-white/15 dark:border-white/10"
                 title="Restar 15 segundos"
               >
                 -15s
@@ -258,7 +258,7 @@ export function FloatingRestTimer() {
               <button
                 type="button"
                 onClick={() => handleAdjustTime(30)}
-                className="px-2 py-1 rounded-lg bg-white/[0.06] text-slate-300 hover:text-white hover:bg-white/15 border border-white/10 active:scale-95 transition-all"
+                className="px-2 py-1 rounded-lg bg-slate-100 text-slate-700 hover:text-slate-900 hover:bg-slate-200 border border-slate-200 active:scale-95 transition-all dark:bg-white/[0.06] dark:text-slate-300 dark:hover:text-white dark:hover:bg-white/15 dark:border-white/10"
                 title="Añadir 30 segundos"
               >
                 +30s
@@ -272,8 +272,8 @@ export function FloatingRestTimer() {
                 className={cn(
                   'px-2 py-1 rounded-lg text-[11px] font-extrabold flex items-center gap-1 transition-all active:scale-95 border',
                   timerState.isPaused
-                    ? 'bg-emerald-600/30 border-emerald-500/50 text-emerald-300 hover:bg-emerald-600/40'
-                    : 'bg-purple-600/30 border-purple-500/40 text-purple-200 hover:bg-purple-600/40'
+                    ? 'bg-emerald-50 border-emerald-300 text-emerald-800 hover:bg-emerald-100 dark:bg-emerald-600/30 dark:border-emerald-500/50 dark:text-emerald-300'
+                    : 'bg-slate-100 border-slate-300 text-slate-800 hover:bg-slate-200 dark:bg-purple-600/30 dark:border-purple-500/40 dark:text-purple-200'
                 )}
               >
                 {timerState.isPaused ? (
@@ -292,7 +292,7 @@ export function FloatingRestTimer() {
               <button
                 type="button"
                 onClick={handleClose}
-                className="px-2 py-1 rounded-lg text-[11px] font-extrabold flex items-center gap-1 bg-white/[0.08] hover:bg-rose-500/20 text-slate-300 hover:text-rose-300 border border-white/10 hover:border-rose-500/30 transition-all active:scale-95"
+                className="px-2 py-1 rounded-lg text-[11px] font-extrabold flex items-center gap-1 bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-600 border border-slate-200 hover:border-rose-200 transition-all active:scale-95 dark:bg-white/[0.08] dark:hover:bg-rose-500/20 dark:text-slate-300 dark:hover:text-rose-300 dark:border-white/10 dark:hover:border-rose-500/30"
                 title="Omitir descanso y empezar la siguiente serie"
               >
                 <FastForward className="size-3" />

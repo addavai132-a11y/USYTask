@@ -854,7 +854,7 @@ function DayDetailModal({
           <div className="flex items-center gap-1.5">
             <button
               onClick={() => onQuickAdd('evento')}
-              className="flex items-center gap-1 rounded-xl bg-purple-50 dark:bg-purple-500/20 hover:bg-purple-100 dark:hover:bg-purple-500/30 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-500/30 px-2.5 py-1.5 text-xs font-bold transition-all active:scale-95"
+              className="flex items-center gap-1 rounded-xl bg-emerald-50 dark:bg-purple-500/20 hover:bg-emerald-100 dark:hover:bg-purple-500/30 text-emerald-800 dark:text-purple-300 border border-emerald-200 dark:border-purple-500/30 px-2.5 py-1.5 text-xs font-bold transition-all active:scale-95"
             >
               <Plus className="size-3" />
               <span>Evento</span>

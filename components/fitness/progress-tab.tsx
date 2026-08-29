@@ -180,7 +180,7 @@ export function ProgressTab({
         }
       }
       return {
-        badgeStyle: 'bg-purple-500/15 text-purple-300 border border-purple-500/30',
+        badgeStyle: 'bg-slate-100 text-slate-800 border border-slate-200 dark:bg-purple-500/15 dark:text-purple-300 dark:border-purple-500/30',
         icon: Scale,
         label: 'Peso estable',
         status: 'neutral',
@@ -190,7 +190,7 @@ export function ProgressTab({
     if (goalPhase === 'definicion') {
       if (isNegative) {
         return {
-          badgeStyle: 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30',
+          badgeStyle: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30',
           icon: TrendingDown,
           label: 'Déficit / Pérdida de grasa',
           status: 'positive',
@@ -198,14 +198,14 @@ export function ProgressTab({
       }
       if (isPositive) {
         return {
-          badgeStyle: 'bg-rose-500/15 text-rose-400 border border-rose-500/30',
+          badgeStyle: 'bg-rose-500/15 text-rose-700 dark:text-rose-400 border border-rose-500/30',
           icon: TrendingUp,
           label: 'Aumento de peso (Ajustar déficit)',
           status: 'negative',
         }
       }
       return {
-        badgeStyle: 'bg-purple-500/15 text-purple-300 border border-purple-500/30',
+        badgeStyle: 'bg-slate-100 text-slate-800 border border-slate-200 dark:bg-purple-500/15 dark:text-purple-300 dark:border-purple-500/30',
         icon: Scale,
         label: 'Peso estable',
         status: 'neutral',
@@ -216,7 +216,7 @@ export function ProgressTab({
     const isWithinMaintenance = Math.abs(weightDiff) <= 0.3
     if (isWithinMaintenance) {
       return {
-        badgeStyle: 'bg-purple-500/15 text-purple-300 border border-purple-500/30',
+        badgeStyle: 'bg-slate-100 text-slate-800 border border-slate-200 dark:bg-purple-500/15 dark:text-purple-300 dark:border-purple-500/30',
         icon: Scale,
         label: 'Mantenimiento óptimo (±0.3 kg)',
         status: 'neutral',

@@ -212,10 +212,10 @@ export function ProfileScreen() {
           {/* Botón Cambiar Contraseña */}
           <button
             onClick={() => setIsChangePasswordOpen(true)}
-            className="flex items-center justify-between rounded-2xl bg-purple-500/10 border border-purple-500/20 p-3 text-left transition-colors hover:bg-purple-500/20 text-slate-900 dark:text-white"
+            className="flex items-center justify-between rounded-2xl bg-slate-50 border border-slate-200 p-3 text-left transition-colors hover:bg-slate-100 text-slate-900 dark:bg-purple-500/10 dark:border-purple-500/20 dark:hover:bg-purple-500/20 dark:text-white"
           >
             <div className="flex items-center gap-3">
-              <div className="flex size-9 items-center justify-center rounded-xl bg-purple-500/20 text-purple-700 dark:text-purple-300 shrink-0">
+              <div className="flex size-9 items-center justify-center rounded-xl bg-slate-100 text-slate-700 dark:bg-purple-500/20 dark:text-purple-300 shrink-0">
                 <KeyRound className="size-5" />
               </div>
               <div>

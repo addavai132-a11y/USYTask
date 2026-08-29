@@ -68,10 +68,10 @@ export function MemberMultiSelectFilter({
     if (isNoneSelected || isAllSelected) {
       return (
         <div className="flex items-center gap-2 min-w-0">
-          <div className="flex size-5.5 items-center justify-center rounded-full bg-purple-500/15 text-purple-700 dark:bg-purple-500/20 dark:text-purple-300 shrink-0">
+          <div className="flex size-5.5 items-center justify-center rounded-full bg-emerald-50 text-emerald-700 dark:bg-purple-500/20 dark:text-purple-300 shrink-0">
             <Users className="size-3" />
           </div>
-          <span className="truncate font-semibold text-slate-800 dark:text-white">
+          <span className="truncate font-bold text-slate-900 dark:text-white">
             {placeholder}
           </span>
         </div>

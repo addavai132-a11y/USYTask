@@ -453,7 +453,7 @@ export function TasksSection({
                           </button>
                         )}
                         {act.type === 'event' && (
-                          <div className="flex size-6 shrink-0 items-center justify-center rounded-md bg-purple-500/20 text-purple-400">
+                          <div className="flex size-6 shrink-0 items-center justify-center rounded-md bg-emerald-50 text-emerald-700 dark:bg-purple-500/20 dark:text-purple-400">
                             <CalendarDays className="size-3.5" />
                           </div>
                         )}
