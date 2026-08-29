@@ -88,7 +88,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" className={`${fontSans.variable} dark min-h-screen min-h-[100dvh] overscroll-none`}>
-      <body className="font-sans antialiased min-h-screen min-h-[100dvh] bg-background text-foreground transition-colors duration-300 overscroll-none touch-pan-y">
+      <body className="font-sans antialiased min-h-screen min-h-[100dvh] bg-background text-foreground transition-colors duration-300 overscroll-none">
         <ThemeModeProvider>
           <HistoryLock />
           {/* Fixed Ambient Aurora Glow Background Layer */}

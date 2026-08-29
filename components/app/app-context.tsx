@@ -613,21 +613,29 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     addTaskStore(task)
 
     // Current user's member in this group
-    const actingMember = getMembersByGroup(activeGroup.id).find((m) => m.name === userName) || getMembersByGroup(activeGroup.id)[0]
+    const groupMembers = getMembersByGroup(activeGroup.id)
+    const actingMember =
+      groupMembers.find((m) => m.name === userName) ||
+      groupMembers[0] ||
+      { id: currentMember?.id || 'usr_default', name: userName || 'Usuario' }
 
-    addActivity({
-      id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `act_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-      groupId: activeGroup.id,
-      type: 'task_created',
-      title: task.title,
-      details: `+${task.points} ⭐`,
-      memberId: actingMember.id,
-      timestamp: new Date().toISOString(),
-    })
+    try {
+      addActivity({
+        id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `act_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+        groupId: activeGroup.id,
+        type: 'task_created',
+        title: task.title,
+        details: `+${task.points} ⭐`,
+        memberId: actingMember.id,
+        timestamp: new Date().toISOString(),
+      })
 
-    notifyTaskDue({
-      taskTitle: task.title,
-    }).catch(() => {})
+      notifyTaskDue({
+        taskTitle: task.title,
+      }).catch(() => {})
+    } catch (e) {
+      console.warn('Activity/Notification creation warning:', e)
+    }
 
     refreshData()
     bump()
@@ -641,25 +649,29 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const task = getTasksByGroup(activeGroup.id).find(t => t.id === taskId)
       if (task) {
         const completedByMember = getMemberByIdStore(result.memberId, activeGroup.id)
-        addActivityStore({
-          id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `act_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-          groupId: activeGroup.id,
-          type: 'task_completed',
-          title: task.title,
-          memberId: result.memberId,
-          timestamp: new Date().toISOString(),
-          points: result.pointsAwarded,
-        })
-        
-        addNotificationStore({
-          id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `notif_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-          groupId: activeGroup.id,
-          type: 'task',
-          title: 'Tarea completada',
-          body: `${completedByMember?.name || 'Alguien'} completó "${task.title}" (+${result.pointsAwarded} ⭐)`,
-          timestamp: new Date().toISOString(),
-          colorVar: 'var(--emerald-500)',
-        })
+        try {
+          addActivityStore({
+            id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `act_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+            groupId: activeGroup.id,
+            type: 'task_completed',
+            title: task.title,
+            memberId: result.memberId,
+            timestamp: new Date().toISOString(),
+            points: result.pointsAwarded,
+          })
+          
+          addNotificationStore({
+            id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `notif_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+            groupId: activeGroup.id,
+            type: 'task',
+            title: 'Tarea completada',
+            body: `${completedByMember?.name || 'Alguien'} completó "${task.title}" (+${result.pointsAwarded} ⭐)`,
+            timestamp: new Date().toISOString(),
+            colorVar: 'var(--emerald-500)',
+          })
+        } catch (e) {
+          console.warn('Activity/Notification creation warning:', e)
+        }
       }
     }
 
@@ -691,32 +703,41 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
     addEventStore(event)
 
-    const actingMember = getMembersByGroup(activeGroup.id).find((m) => m.name === userName) || getMembersByGroup(activeGroup.id)[0]
-    addActivity({
-      id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `act_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-      groupId: activeGroup.id,
-      type: 'event_created',
-      title: event.title,
-      details: time ? `${date || getTodayISO()} · ${time}` : `${date || getTodayISO()}`,
-      memberId: actingMember.id,
-      timestamp: new Date().toISOString(),
-    })
+    const groupMembers = getMembersByGroup(activeGroup.id)
+    const actingMember =
+      groupMembers.find((m) => m.name === userName) ||
+      groupMembers[0] ||
+      { id: currentMember?.id || 'usr_default', name: userName || 'Usuario' }
 
-    addNotification({
-      id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `notif_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-      groupId: activeGroup.id,
-      type: 'event',
-      title: 'Nuevo evento programado',
-      body: `${actingMember.name} añadió "${event.title}"`,
-      timestamp: new Date().toISOString(),
-      colorVar: 'var(--purple-500)',
-    })
+    try {
+      addActivity({
+        id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `act_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+        groupId: activeGroup.id,
+        type: 'event_created',
+        title: event.title,
+        details: time ? `${date || getTodayISO()} · ${time}` : `${date || getTodayISO()}`,
+        memberId: actingMember.id,
+        timestamp: new Date().toISOString(),
+      })
 
-    if (event.time) {
-      notifyEventReminder({
-        eventTitle: event.title,
-        timeStr: event.time,
-      }).catch(() => {})
+      addNotification({
+        id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `notif_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+        groupId: activeGroup.id,
+        type: 'event',
+        title: 'Nuevo evento programado',
+        body: `${actingMember.name} añadió "${event.title}"`,
+        timestamp: new Date().toISOString(),
+        colorVar: 'var(--purple-500)',
+      })
+
+      if (event.time) {
+        notifyEventReminder({
+          eventTitle: event.title,
+          timeStr: event.time,
+        }).catch(() => {})
+      }
+    } catch (e) {
+      console.warn('Activity/Notification creation warning:', e)
     }
 
     refreshData()
@@ -745,30 +766,39 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
     addReminderStore(reminder)
 
-    const actingMember = getMembersByGroup(activeGroup.id).find((m) => m.name === userName) || getMembersByGroup(activeGroup.id)[0]
-    addActivity({
-      id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `act_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-      groupId: activeGroup.id,
-      type: 'reminder_created',
-      title: reminder.title,
-      memberId: actingMember.id,
-      timestamp: new Date().toISOString(),
-    })
+    const groupMembers = getMembersByGroup(activeGroup.id)
+    const actingMember =
+      groupMembers.find((m) => m.name === userName) ||
+      groupMembers[0] ||
+      { id: currentMember?.id || 'usr_default', name: userName || 'Usuario' }
 
-    addNotification({
-      id: `notif_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-      groupId: activeGroup.id,
-      type: 'reminder',
-      title: 'Nuevo recordatorio',
-      body: `${actingMember.name} añadió "${reminder.title}"`,
-      timestamp: new Date().toISOString(),
-      colorVar: 'var(--rose-500)',
-    })
+    try {
+      addActivity({
+        id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `act_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+        groupId: activeGroup.id,
+        type: 'reminder_created',
+        title: reminder.title,
+        memberId: actingMember.id,
+        timestamp: new Date().toISOString(),
+      })
 
-    notifyReminderDue({
-      reminderTitle: reminder.title,
-      dueStr: reminder.dueDate,
-    }).catch(() => {})
+      addNotification({
+        id: `notif_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+        groupId: activeGroup.id,
+        type: 'reminder',
+        title: 'Nuevo recordatorio',
+        body: `${actingMember.name} añadió "${reminder.title}"`,
+        timestamp: new Date().toISOString(),
+        colorVar: 'var(--rose-500)',
+      })
+
+      notifyReminderDue({
+        reminderTitle: reminder.title,
+        dueStr: reminder.dueDate,
+      }).catch(() => {})
+    } catch (e) {
+      console.warn('Activity/Notification creation warning:', e)
+    }
 
     refreshData()
     bump()

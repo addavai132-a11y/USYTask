@@ -39,11 +39,18 @@ export function QuickAdd() {
         setEventDate(quickAddDefaultDate)
         setReminderDate(quickAddDefaultDate)
       } else {
-        setEventDate('')
-        setReminderDate('')
+        setEventDate(getTodayISO())
+        setReminderDate(getTodayISO())
+      }
+      // Auto-assign current member if none selected
+      const defaultMemberId = currentMember?.id || members[0]?.id
+      if (defaultMemberId) {
+        setTaskMembers((prev) => (prev.length === 0 ? [defaultMemberId] : prev))
+        setEventMembers((prev) => (prev.length === 0 ? [defaultMemberId] : prev))
+        setReminderMembers((prev) => (prev.length === 0 ? [defaultMemberId] : prev))
       }
     }
-  }, [quickAddOpen, quickAddTab, quickAddDefaultDate])
+  }, [quickAddOpen, quickAddTab, quickAddDefaultDate, currentMember?.id, members])
 
   // Filter members available for the selected category
   const activeCategory = taskCategories.find((c) => c.id === quickAddDefaultSection || c.name === quickAddDefaultSection)
@@ -100,20 +107,26 @@ export function QuickAdd() {
   }
 
   const handleSaveTask = () => {
-    if (!taskTitle.trim() || taskMembers.length === 0 || !taskPoints.trim() || isNaN(parseInt(taskPoints))) {
+    const title = taskTitle.trim()
+    if (!title) {
       setShowErrors(true)
-      toast('Por favor, rellena los campos obligatorios y asigna al menos un miembro', '❌')
+      toast('Por favor, introduce un título para la tarea', '❌')
       return
     }
+
+    const assigned = taskMembers.length > 0
+      ? taskMembers
+      : [currentMember?.id || members[0]?.id || 'usr_default']
+
     addTask(
-      taskTitle.trim(),
-      parseInt(taskPoints) || 0,
-      taskMembers[0],
+      title,
+      parseInt(taskPoints) || 10,
+      assigned[0],
       quickAddDefaultSection || 'familia',
       'medium',
       taskDueDate || undefined,
       taskDueTime || undefined,
-      taskMembers
+      assigned
     )
     toast('Tarea creada correctamente', '✅')
     resetForms()
@@ -121,13 +134,26 @@ export function QuickAdd() {
   }
 
   const handleSaveEvent = () => {
-    if (!eventTitle.trim() || !eventDate || !eventCategory || eventMembers.length === 0) {
+    const title = eventTitle.trim()
+    if (!title) {
       setShowErrors(true)
-      toast('Por favor, rellena los campos obligatorios y selecciona al menos un miembro', '❌')
+      toast('Por favor, introduce un título para el evento', '❌')
       return
     }
+
+    const assigned = eventMembers.length > 0
+      ? eventMembers
+      : [currentMember?.id || members[0]?.id || 'usr_default']
+
     const finalCat = eventCategory === 'Otros' && eventCustomCategory.trim() ? (eventCustomCategory.trim() as EventCategory) : (eventCategory as EventCategory)
-    addEvent(eventTitle.trim(), eventDate, eventTime || undefined, finalCat, eventMembers, eventLocation || undefined)
+    addEvent(
+      title,
+      eventDate || getTodayISO(),
+      eventTime || undefined,
+      finalCat,
+      assigned,
+      eventLocation || undefined
+    )
     toast('Evento creado correctamente', '📅')
     resetForms()
     closeQuickAdd()
