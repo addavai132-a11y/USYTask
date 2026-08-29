@@ -4,16 +4,23 @@ import type { PushNotificationPayload, NotificationType, NotificationPreferences
 import { DEFAULT_NOTIFICATION_PREFERENCES } from '@/types/notifications'
 
 // Inicializar configuración VAPID
-function ensureVapidConfig() {
+function ensureVapidConfig(): boolean {
   const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
   const privateKey = process.env.VAPID_PRIVATE_KEY
   const subject = process.env.VAPID_SUBJECT || 'mailto:soporte@usyatask.com'
 
   if (!publicKey || !privateKey) {
-    throw new Error('Faltan NEXT_PUBLIC_VAPID_PUBLIC_KEY o VAPID_PRIVATE_KEY en las variables de entorno.')
+    console.warn('Push Service: Faltan NEXT_PUBLIC_VAPID_PUBLIC_KEY o VAPID_PRIVATE_KEY en las variables de entorno.')
+    return false
   }
 
-  webpush.setVapidDetails(subject, publicKey, privateKey)
+  try {
+    webpush.setVapidDetails(subject, publicKey, privateKey)
+    return true
+  } catch (err) {
+    console.error('Error configurando VAPID details:', err)
+    return false
+  }
 }
 
 export interface PushSendResult {
@@ -44,12 +51,8 @@ export async function sendPushNotification(
     return result
   }
 
-  try {
-    ensureVapidConfig()
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : 'Error configurando VAPID'
-    console.error('Push Service VAPID Error:', msg)
-    result.errors.push(msg)
+  if (!ensureVapidConfig()) {
+    result.errors.push('VAPID no configurado en el servidor')
     return result
   }
 

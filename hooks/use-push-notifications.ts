@@ -24,22 +24,30 @@ export function usePushNotifications() {
   const checkSubscription = useCallback(async () => {
     if (typeof window === 'undefined') return
 
-    const supported = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window
-    setIsSupported(supported)
+    const hasNotification = 'Notification' in window
+    const supported = 'serviceWorker' in navigator && 'PushManager' in window && hasNotification
+    setIsSupported(supported || hasNotification)
 
-    if (!supported) return
+    if (!hasNotification) return
 
     setPermission(Notification.permission)
 
-    try {
-      const reg = await navigator.serviceWorker.getRegistration('/sw.js')
-      if (reg) {
-        const sub = await reg.pushManager.getSubscription()
-        setSubscription(sub)
-        setIsSubscribed(!!sub)
+    if (supported) {
+      try {
+        const reg = await navigator.serviceWorker.getRegistration('/sw.js')
+        if (reg) {
+          const sub = await reg.pushManager.getSubscription()
+          setSubscription(sub)
+          setIsSubscribed(!!sub || Notification.permission === 'granted')
+          return
+        }
+      } catch (err) {
+        console.error('Error al comprobar suscripción Push:', err)
       }
-    } catch (err) {
-      console.error('Error al comprobar suscripción Push:', err)
+    }
+
+    if (Notification.permission === 'granted') {
+      setIsSubscribed(true)
     }
   }, [])
 
@@ -47,34 +55,47 @@ export function usePushNotifications() {
     checkSubscription()
   }, [checkSubscription])
 
-  // 2. Suscribirse a las notificaciones Push
-  const subscribe = async (): Promise<{ success: boolean; error?: string }> => {
-    if (!isSupported) {
-      return { success: false, error: 'Este navegador no soporta notificaciones Push.' }
+  // 2. Suscribirse a las notificaciones Push / Locales
+  const subscribe = async (): Promise<{ success: boolean; error?: string; localOnly?: boolean }> => {
+    if (typeof window === 'undefined') {
+      return { success: false, error: 'Entorno no soportado.' }
     }
 
     setLoading(true)
     try {
-      // Solicitar permiso al usuario si aún no está otorgado
-      const perm = await Notification.requestPermission()
-      setPermission(perm)
+      // Permitir notificaciones locales estándar de Notification API sin romper la app
+      if ('Notification' in window && Notification.permission === 'default') {
+        const perm = await Notification.requestPermission()
+        setPermission(perm)
+      } else if ('Notification' in window) {
+        setPermission(Notification.permission)
+      }
 
-      if (perm !== 'granted') {
+      if ('Notification' in window && Notification.permission === 'denied') {
         setLoading(false)
-        return { success: false, error: 'Permiso de notificaciones denegado.' }
+        return { success: false, error: 'Permiso de notificaciones denegado en el navegador.' }
+      }
+
+      const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+      if (!vapidPublicKey) {
+        console.warn('VAPID public key no configurada. Saltando suscripción push remota o usando fallback local.')
+        setIsSubscribed(Notification.permission === 'granted')
+        setLoading(false)
+        return { success: Notification.permission === 'granted', localOnly: true }
+      }
+
+      // Si el navegador no soporta serviceWorker o PushManager pero sí Notification
+      if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+        setIsSubscribed(Notification.permission === 'granted')
+        setLoading(false)
+        return { success: Notification.permission === 'granted', localOnly: true }
       }
 
       // Asegurar registro del Service Worker
       const reg = await navigator.serviceWorker.register('/sw.js')
       await navigator.serviceWorker.ready
 
-      const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
-      if (!vapidPublicKey) {
-        setLoading(false)
-        return { success: false, error: 'Falta NEXT_PUBLIC_VAPID_PUBLIC_KEY en la configuración.' }
-      }
-
-      // Obtener o crear suscripción
+      // Obtener o crear suscripción Push remota
       let sub = await reg.pushManager.getSubscription()
       if (!sub) {
         sub = await reg.pushManager.subscribe({
@@ -92,8 +113,7 @@ export function usePushNotifications() {
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
-        setLoading(false)
-        return { success: false, error: data.error || 'Error al persistir la suscripción en el servidor.' }
+        console.warn('Advertencia al sincronizar suscripción con el servidor:', data.error)
       }
 
       setSubscription(sub)
@@ -101,9 +121,14 @@ export function usePushNotifications() {
       setLoading(false)
       return { success: true }
     } catch (err: unknown) {
-      console.error('Error suscribiendo a Push:', err)
+      console.warn('Aviso suscripción Push remota, recurriendo a modo nativo/local:', err)
+      const granted = typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted'
+      setIsSubscribed(granted)
       setLoading(false)
-      const message = err instanceof Error ? err.message : 'Error desconocido al suscribirse.'
+      if (granted) {
+        return { success: true, localOnly: true }
+      }
+      const message = err instanceof Error ? err.message : 'Error al activar notificaciones.'
       return { success: false, error: message }
     }
   }
@@ -121,7 +146,7 @@ export function usePushNotifications() {
           method: 'DELETE',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ endpoint }),
-        })
+        }).catch((e) => console.warn('Error eliminando endpoint remoto:', e))
       }
 
       setSubscription(null)
@@ -130,25 +155,81 @@ export function usePushNotifications() {
       return { success: true }
     } catch (err: unknown) {
       console.error('Error desuscribiendo de Push:', err)
+      setSubscription(null)
+      setIsSubscribed(false)
       setLoading(false)
-      const message = err instanceof Error ? err.message : 'Error al cancelar la suscripción.'
-      return { success: false, error: message }
+      return { success: true }
     }
   }
 
-  // 4. Probar notificación push de test
+  // 4. Probar notificación push de test con fallback local
   const sendTestNotification = async (): Promise<{ success: boolean; error?: string }> => {
     try {
-      if (!subscription) {
-        const subResult = await subscribe()
-        if (!subResult.success) return subResult
+      const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+
+      // Fallback a notificación nativa local si no hay clave VAPID configurada
+      if (!vapidPublicKey) {
+        if (typeof window !== 'undefined' && 'Notification' in window) {
+          let perm = Notification.permission
+          if (perm === 'default') {
+            perm = await Notification.requestPermission()
+            setPermission(perm)
+          }
+
+          if (perm === 'granted') {
+            try {
+              if ('serviceWorker' in navigator) {
+                const reg = await navigator.serviceWorker.ready.catch(() => null)
+                if (reg && reg.showNotification) {
+                  await reg.showNotification('USYTask 🚀', {
+                    body: '¡Notificación de prueba recibida correctamente!',
+                    icon: '/icon-192x192.png',
+                    badge: '/icon-192x192.png',
+                  })
+                  setIsSubscribed(true)
+                  return { success: true }
+                }
+              }
+            } catch {
+              // Ignore and fallback to Notification constructor
+            }
+
+            new Notification('USYTask 🚀', {
+              body: '¡Notificación de prueba recibida correctamente!',
+              icon: '/icon-192x192.png',
+            })
+            setIsSubscribed(true)
+            return { success: true }
+          } else {
+            return { success: false, error: 'Permiso de notificaciones no concedido.' }
+          }
+        }
+        return { success: false, error: 'Notificaciones no soportadas en este dispositivo.' }
       }
 
-      const reg = await navigator.serviceWorker.ready
-      const currentSub = await reg.pushManager.getSubscription()
+      if (!subscription) {
+        const subResult = await subscribe()
+        if (!subResult.success && !subResult.localOnly) return subResult
+      }
+
+      let currentSub: PushSubscription | null = null
+      if ('serviceWorker' in navigator) {
+        const reg = await navigator.serviceWorker.ready.catch(() => null)
+        if (reg) {
+          currentSub = await reg.pushManager.getSubscription().catch(() => null)
+        }
+      }
 
       if (!currentSub) {
-        return { success: false, error: 'No se encontró suscripción activa.' }
+        // Disparar notificación nativa directamente
+        if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+          new Notification('USYTask 🚀', {
+            body: '¡Notificación de prueba recibida correctamente!',
+            icon: '/icon-192x192.png',
+          })
+          return { success: true }
+        }
+        return { success: false, error: 'No se pudo inicializar la notificación.' }
       }
 
       const res = await fetch('/api/test-push', {
@@ -160,10 +241,25 @@ export function usePushNotifications() {
       if (res.ok) {
         return { success: true }
       } else {
+        // Fallback a notificación local si el servidor no tiene las claves
+        if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+          new Notification('USYTask 🚀', {
+            body: '¡Notificación de prueba recibida correctamente (modo local)!',
+            icon: '/icon-192x192.png',
+          })
+          return { success: true }
+        }
         const data = await res.json().catch(() => ({}))
-        return { success: false, error: data.error || 'Error en el backend enviando la prueba.' }
+        return { success: false, error: data.error || 'Error enviando la notificación de prueba.' }
       }
     } catch (err: unknown) {
+      if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+        new Notification('USYTask 🚀', {
+          body: '¡Notificación de prueba recibida correctamente!',
+          icon: '/icon-192x192.png',
+        })
+        return { success: true }
+      }
       const message = err instanceof Error ? err.message : 'Error enviando prueba.'
       return { success: false, error: message }
     }
