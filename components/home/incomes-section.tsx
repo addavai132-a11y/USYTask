@@ -69,9 +69,9 @@ export function IncomesSection() {
       toast('Por favor, introduce un concepto para el ingreso', '❌')
       return
     }
-    const numAmount = parseFloat(amount)
+    const numAmount = parseFloat(amount.trim().replace(',', '.'))
     if (isNaN(numAmount) || numAmount <= 0) {
-      toast('Por favor, introduce un importe válido', '❌')
+      toast('Por favor, introduce un importe válido mayor que 0', '❌')
       return
     }
 

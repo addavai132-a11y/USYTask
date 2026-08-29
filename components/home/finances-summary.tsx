@@ -1,10 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { TrendingUp, TrendingDown, Wallet, PiggyBank, AlertCircle, PieChart, Edit3 } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { useApp } from '@/components/app/app-context'
-import { formatCurrency, EXPENSE_CATEGORIES, expenseCategoryMeta, formatMonthLabel, getPreviousMonthISO } from '@/types/finances'
+import { formatCurrency, EXPENSE_CATEGORIES, expenseCategoryMeta, formatMonthLabel } from '@/types/finances'
 import { useToast } from '@/components/ui/toast'
 import { cn } from '@/lib/utils'
 
@@ -22,6 +22,10 @@ export function FinancesSummary() {
 
   const [isHuchaModalOpen, setIsHuchaModalOpen] = useState(false)
   const [baseBalanceInput, setBaseBalanceInput] = useState(initialPiggyBankBalance.toString())
+
+  useEffect(() => {
+    setBaseBalanceInput(initialPiggyBankBalance.toString())
+  }, [initialPiggyBankBalance])
 
   // Helper to compute total incomes for a specific monthISO
   function getMonthIncomesSum(monthISO: string): number {
@@ -55,22 +59,8 @@ export function FinancesSummary() {
   const netBalance = totalIncomes - totalExpenses
   const savingsRate = totalIncomes > 0 ? Math.max(0, (netBalance / totalIncomes) * 100) : 0
 
-  // 2. Compute Cumulative Savings (Hucha) up to selectedMonthISO
-  const monthList: string[] = []
-  let curr = selectedMonthISO
-  for (let i = 0; i < 12; i++) {
-    monthList.unshift(curr)
-    curr = getPreviousMonthISO(curr)
-  }
-
-  const historyBreakdown = monthList.map((mISO) => {
-    const incSum = getMonthIncomesSum(mISO)
-    const expSum = getMonthExpensesSum(mISO)
-    const net = incSum - expSum
-    return { monthISO: mISO, incomes: incSum, expenses: expSum, net }
-  })
-
-  const totalAccumulatedSavings = initialPiggyBankBalance + historyBreakdown.reduce((sum, item) => sum + item.net, 0)
+  // 2. Compute Savings (Hucha): Fondo Base + Remanente / Balance Neto del Mes
+  const totalAccumulatedSavings = initialPiggyBankBalance + netBalance
 
   // 3. Category spent map for selectedMonthISO
   const categorySpentMap: Record<string, number> = {}
@@ -85,9 +75,10 @@ export function FinancesSummary() {
   })
 
   function handleSaveBaseBalance() {
-    const val = parseFloat(baseBalanceInput)
-    if (isNaN(val)) {
-      toast('Introduce un importe válido', '❌')
+    const cleaned = baseBalanceInput.trim().replace(',', '.')
+    const val = parseFloat(cleaned)
+    if (isNaN(val) || val < 0) {
+      toast('Introduce un importe válido mayor o igual a 0', '❌')
       return
     }
     saveInitialPiggyBankBalance(val)
