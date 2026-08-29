@@ -5,9 +5,9 @@ import { DEFAULT_NOTIFICATION_PREFERENCES } from '@/types/notifications'
 
 // Inicializar configuración VAPID
 function ensureVapidConfig(): boolean {
-  const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
-  const privateKey = process.env.VAPID_PRIVATE_KEY
-  const subject = process.env.VAPID_SUBJECT || 'mailto:soporte@usyatask.com'
+  const publicKey = (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || '').trim()
+  const privateKey = (process.env.VAPID_PRIVATE_KEY || '').trim()
+  const subject = (process.env.VAPID_SUBJECT || 'mailto:soporte@usyatask.com').trim()
 
   if (!publicKey || !privateKey) {
     console.warn('Push Service: Faltan NEXT_PUBLIC_VAPID_PUBLIC_KEY o VAPID_PRIVATE_KEY en las variables de entorno.')
