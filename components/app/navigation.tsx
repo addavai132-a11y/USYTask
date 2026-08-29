@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { LayoutDashboard, Folders, House, Dumbbell, Users, User, Plus, Moon, Sun, type LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useApp, type Tab } from './app-context'
