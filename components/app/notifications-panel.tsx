@@ -1,6 +1,6 @@
 'use client'
 
-import { Bell, X, Check, CheckCircle2, CalendarPlus, Loader2, Sparkles } from 'lucide-react'
+import { Bell, BellRing, X, Check, CheckCircle2, CalendarPlus, Loader2 } from 'lucide-react'
 import { BottomSheet } from '@/components/ui/bottom-sheet'
 import { useApp } from './app-context'
 import { EmptyState } from '@/components/ui/empty-state'
@@ -70,12 +70,12 @@ export function NotificationsPanel() {
           type="button"
           onClick={handleActivateNotifications}
           disabled={loading}
-          className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white dark:bg-purple-600 dark:hover:bg-purple-500 font-bold text-xs flex items-center gap-1.5 transition-all shadow-sm shrink-0 active:scale-95 disabled:opacity-50"
+          className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors bg-green-600 text-white hover:bg-green-700 dark:bg-purple-600/20 dark:text-purple-300 dark:border dark:border-purple-500/30 dark:hover:bg-purple-600/30 shadow-sm shrink-0 active:scale-95 disabled:opacity-50"
         >
           {loading ? (
             <Loader2 className="size-3.5 animate-spin" />
           ) : (
-            <Sparkles className="size-3.5" />
+            <BellRing className="size-3.5 text-white dark:text-purple-400 shrink-0" />
           )}
           <span>Activar notificaciones</span>
         </button>

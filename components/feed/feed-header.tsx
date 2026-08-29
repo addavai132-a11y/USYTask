@@ -36,13 +36,13 @@ export function FeedHeader() {
             type="button"
             onClick={handleActivate}
             disabled={pushLoading}
-            className="flex items-center gap-1.5 rounded-full border border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20 text-purple-800 dark:bg-purple-600/20 dark:hover:bg-purple-600/30 dark:text-purple-300 px-3 py-1.5 text-xs font-medium transition-all shadow-xs active:scale-95 disabled:opacity-50 shrink-0"
+            className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors bg-green-600 text-white hover:bg-green-700 dark:bg-purple-600/20 dark:text-purple-300 dark:border dark:border-purple-500/30 dark:hover:bg-purple-600/30 shadow-xs active:scale-95 disabled:opacity-50 shrink-0"
             title="Activar notificaciones Push y enviar prueba"
           >
             {pushLoading ? (
               <Loader2 className="size-3.5 animate-spin" />
             ) : (
-              <BellRing className="size-3.5 text-purple-600 dark:text-purple-400 shrink-0" />
+              <BellRing className="size-3.5 text-white dark:text-purple-400 shrink-0" />
             )}
             <span className="text-[11px] sm:text-xs font-semibold whitespace-nowrap">
               Activar notificaciones

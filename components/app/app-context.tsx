@@ -522,39 +522,36 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const initialTabParam = urlParams.get('tab') as Tab | null
     if (initialTabParam && ['inicio', 'organizar', 'hogar', 'fitness', 'familia', 'perfil'].includes(initialTabParam)) {
       setTabState(initialTabParam)
-      window.history.replaceState({ usyTab: initialTabParam }, '', `/app?tab=${initialTabParam}`)
-    } else if (!window.history.state?.usyTab) {
+      window.history.replaceState({ usyTab: initialTabParam, usyRoot: true }, '', `/app?tab=${initialTabParam}`)
+    } else {
       window.history.replaceState({ usyTab: 'inicio', usyRoot: true }, '', '/app')
     }
+
+    // Push anchor state to capture Back button on main tabs
+    window.history.pushState({ usyTab: 'inicio', usyRoot: true }, '', window.location.href)
 
     const handlePopState = (event: PopStateEvent) => {
       // If a modal interceptor handled this popstate (usyModal), ignore here
       if (event.state?.usyModal) return
 
-      const targetTab = event.state?.usyTab as Tab | undefined
-      if (targetTab) {
-        setTabState(targetTab)
-        window.scrollTo({ top: 0 })
-      } else {
-        // At the root baseline of the app: ensure we switch to 'inicio' and stay within /app
-        setTabState('inicio')
-        window.history.replaceState({ usyTab: 'inicio', usyRoot: true }, '', '/app')
-        window.scrollTo({ top: 0 })
-      }
+      // In main tabs (Inicio, Organizar, Hogar, Fitness, Familia, Perfil),
+      // the Back button does nothing and prevents exiting the app or returning to login
+      window.history.pushState({ usyTab: tab, usyRoot: true }, '', window.location.href)
     }
 
     window.addEventListener('popstate', handlePopState)
     return () => window.removeEventListener('popstate', handlePopState)
-  }, [])
+  }, [tab])
 
   const bump = () => setInteractions((n) => n + 1)
 
   const setTab = (t: Tab) => {
     if (typeof window !== 'undefined') {
+      // Flatten history between main tabs using replaceState
       if (t === 'inicio') {
-        window.history.pushState({ usyTab: 'inicio' }, '', '/app')
+        window.history.replaceState({ usyTab: 'inicio', usyRoot: true }, '', '/app')
       } else {
-        window.history.pushState({ usyTab: t }, '', `/app?tab=${t}`)
+        window.history.replaceState({ usyTab: t, usyRoot: true }, '', `/app?tab=${t}`)
       }
       window.scrollTo({ top: 0 })
     }

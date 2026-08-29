@@ -70,3 +70,5 @@ export function ThemeModeProvider({ children }: { children: React.ReactNode }) {
 export function useThemeMode() {
   return useContext(ThemeModeContext)
 }
+
+export const useTheme = useThemeMode

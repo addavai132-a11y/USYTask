@@ -62,9 +62,64 @@ export function FloatingAddButton() {
   )
 }
 
+function SidebarThemeSwitch() {
+  const [mounted, setMounted] = useState(false)
+  const { mode, toggleMode } = useThemeMode()
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  if (!mounted) {
+    return (
+      <div className="mt-4 pt-3 border-t border-slate-200 dark:border-purple-500/15">
+        <div className="h-10 w-full rounded-2xl bg-slate-100 dark:bg-white/[0.04] animate-pulse" />
+      </div>
+    )
+  }
+
+  const isDark = mode === 'dark'
+
+  return (
+    <div className="mt-4 pt-3 border-t border-slate-200 dark:border-purple-500/15">
+      <button
+        onClick={toggleMode}
+        type="button"
+        aria-label={isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+        className="w-full flex items-center justify-between rounded-2xl border border-slate-200 dark:border-purple-500/20 bg-slate-100 dark:bg-white/[0.04] px-3.5 py-2.5 text-xs font-semibold text-slate-800 dark:text-white transition-all hover:bg-slate-200/70 dark:hover:bg-purple-500/15 active:scale-[0.98]"
+      >
+        <div className="flex items-center gap-2.5">
+          {isDark ? (
+            <Moon className="size-4 text-purple-400 transition-transform duration-300 hover:-rotate-12" />
+          ) : (
+            <Sun className="size-4 text-amber-500 transition-transform duration-300 hover:rotate-45" />
+          )}
+          <span className="text-[11.5px] font-bold">
+            {isDark ? 'Modo oscuro' : 'Modo claro'}
+          </span>
+        </div>
+
+        {/* Switch Toggle: bg-purple-600 en oscuro, bg-gray-300 en claro */}
+        <div
+          className={cn(
+            'relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full p-0.5 transition-colors duration-300 ease-in-out',
+            isDark ? 'bg-purple-600' : 'bg-gray-300'
+          )}
+        >
+          <span
+            className={cn(
+              'pointer-events-none inline-block size-4 rounded-full bg-white shadow-md transition-transform duration-300 ease-in-out',
+              isDark ? 'translate-x-4' : 'translate-x-0'
+            )}
+          />
+        </div>
+      </button>
+    </div>
+  )
+}
+
 export function Sidebar() {
   const { tab, setTab, openQuickAdd } = useApp()
-  const { mode, toggleMode } = useThemeMode()
 
   return (
     <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col overflow-y-auto border-r border-slate-200/80 dark:border-purple-500/15 bg-white dark:bg-[#090814]/85 backdrop-blur-2xl px-4 py-6 lg:flex">
@@ -101,35 +156,8 @@ export function Sidebar() {
           )
         })}
 
-        {/* Modo Claro / Oscuro Switch Toggle (Justo debajo de Perfil) */}
-        <div className="mt-4 pt-3 border-t border-slate-200 dark:border-purple-500/15">
-          <button
-            onClick={toggleMode}
-            type="button"
-            className="w-full flex items-center justify-between rounded-2xl border border-slate-200 dark:border-purple-500/20 bg-slate-100 dark:bg-white/[0.04] px-3.5 py-2.5 text-xs font-semibold text-slate-800 dark:text-white transition-all hover:bg-slate-200/70 dark:hover:bg-purple-500/15"
-          >
-            <div className="flex items-center gap-2.5">
-              {mode === 'dark' ? (
-                <Moon className="size-4 text-purple-400" />
-              ) : (
-                <Sun className="size-4 text-amber-500" />
-              )}
-              <span className="text-[11.5px] font-bold">
-                {mode === 'dark' ? 'Modo Oscuro' : 'Modo Claro'}
-              </span>
-            </div>
-
-            {/* Pill Toggle Switch */}
-            <div className="relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full bg-slate-300 dark:bg-purple-950/80 p-0.5 transition-colors">
-              <span
-                className={cn(
-                  'pointer-events-none inline-block size-4 rounded-full shadow-md transition-transform duration-200',
-                  mode === 'dark' ? 'translate-x-4 bg-purple-400' : 'translate-x-0 bg-purple-600'
-                )}
-              />
-            </div>
-          </button>
-        </div>
+        {/* Modo Claro / Oscuro Switch Toggle con SSR hydration safety */}
+        <SidebarThemeSwitch />
       </nav>
 
       <div className="mt-auto flex flex-col gap-2">
