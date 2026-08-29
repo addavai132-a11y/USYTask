@@ -554,11 +554,10 @@ export function NutritionTab({
 
           <button
             onClick={handleOpenGoalModal}
-            className="flex items-center gap-1.5 rounded-full bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3.5 py-1.5 text-xs font-bold text-emerald-800 transition-all active:scale-95 shadow-sm shrink-0 dark:bg-purple-600/20 dark:hover:bg-purple-600/35 dark:border-purple-500/30 dark:text-purple-200"
+            className="border border-slate-300 bg-white text-slate-900 hover:bg-slate-50 font-medium px-4 py-2 rounded-xl flex items-center gap-2 text-xs sm:text-sm transition-all active:scale-95 shadow-xs shrink-0 dark:bg-white/[0.04] dark:border-white/10 dark:text-white dark:hover:bg-white/10"
           >
-            <Settings className="size-3.5" />
-            <span className="hidden sm:inline">Calculadora / Ajustes</span>
-            <span className="sm:hidden">Ajustar</span>
+            <Settings className="size-4 text-slate-700 dark:text-slate-300" />
+            <span>Calculadora / Ajustes</span>
           </button>
         </div>
 
@@ -663,8 +662,8 @@ export function NutritionTab({
               <span className="text-2xl font-black text-slate-900 dark:text-white font-mono">{totals.calories}</span>
               <span className="text-xs font-bold text-slate-500 dark:text-slate-400">/ {nutritionGoal.targetCalories} kcal</span>
             </div>
-            <span className="text-xs font-black text-amber-700 dark:text-amber-400 font-mono">
-              {calPercent}% ({Math.max(0, nutritionGoal.targetCalories - totals.calories)} kcal restantes)
+            <span className="text-xs font-semibold text-slate-600 dark:text-slate-400 font-mono">
+              <strong className="text-slate-900 dark:text-white font-bold">{calPercent}%</strong> ({Math.max(0, nutritionGoal.targetCalories - totals.calories)} kcal restantes)
             </span>
           </div>
 
@@ -717,9 +716,9 @@ export function NutritionTab({
       <button
         type="button"
         onClick={handleOpenAddSection}
-        className="w-full py-2.5 bg-white hover:bg-slate-50 text-slate-800 border border-slate-200 rounded-2xl font-semibold flex items-center justify-center gap-2 transition-all shadow-sm text-xs sm:text-sm active:scale-[0.99] dark:bg-purple-950/40 dark:hover:bg-purple-900/50 dark:text-purple-200 dark:border-purple-500/30"
+        className="w-full py-2.5 bg-white hover:bg-slate-50 text-slate-900 border border-slate-300 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all shadow-sm text-xs sm:text-sm active:scale-[0.99] dark:bg-white/[0.04] dark:hover:bg-white/10 dark:text-white dark:border-white/10"
       >
-        <Plus className="size-4 text-emerald-600 dark:text-purple-400" />
+        <Plus className="size-4 text-emerald-600 stroke-[2.5]" />
         <span>Añadir Toma / Comida</span>
       </button>
 
@@ -1449,11 +1448,11 @@ export function NutritionTab({
               </button>
               <button
                 type="button"
-                onClick={handleSaveGoalSettings}
+                onClick={handleSaveGoals}
                 className="rounded-2xl bg-emerald-600 hover:bg-emerald-700 px-5 py-2.5 text-xs font-black text-white shadow-soft transition-transform active:scale-95 flex items-center gap-1.5"
               >
                 <CheckCircle2 className="size-4" />
-                <span>Aplicar y Guardar Metas</span>
+                <span>Guardar Objetivos</span>
               </button>
             </div>
           </div>
