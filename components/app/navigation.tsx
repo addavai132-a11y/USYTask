@@ -51,16 +51,7 @@ export function BottomNav() {
 }
 
 export function FloatingAddButton() {
-  const { openQuickAdd } = useApp()
-  return (
-    <button
-      onClick={() => openQuickAdd()}
-      aria-label="Añadir nueva actividad"
-      className="fixed bottom-[calc(5.75rem+env(safe-area-inset-bottom,0px))] sm:bottom-28 right-4 sm:right-6 z-40 flex size-14 items-center justify-center rounded-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-xl shadow-emerald-950/30 dark:bg-gradient-to-r dark:from-purple-600 dark:to-indigo-600 dark:shadow-purple-950/80 border border-emerald-500/30 dark:border-purple-400/30 transition-transform active:scale-90 lg:bottom-8 lg:right-8"
-    >
-      <Plus className="size-7 stroke-[2.75] m-auto" />
-    </button>
-  )
+  return null
 }
 
 function SidebarThemeSwitch() {

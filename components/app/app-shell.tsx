@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { AppProvider, useApp } from './app-context'
 import { ToastProvider } from '@/components/ui/toast'
-import { Sidebar, BottomNav, FloatingAddButton } from './navigation'
+import { Sidebar, BottomNav } from './navigation'
 import { QuickAdd } from './quick-add'
 import { NotificationsPanel } from './notifications-panel'
 import { OfflineBanner } from './offline-banner'
@@ -170,7 +170,6 @@ function ShellInner() {
       </div>
 
       <BottomNav />
-      <FloatingAddButton />
       <QuickAdd />
       <NotificationsPanel />
       <InstallPwa />
