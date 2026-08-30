@@ -317,9 +317,9 @@ export function TasksSection({
           <button
             onClick={() => setActivityKind('todas')}
             className={cn(
-              'rounded-xl px-3 py-1.5 text-xs font-bold transition-all whitespace-nowrap',
+              'rounded-xl px-3 py-1.5 text-xs font-black transition-all whitespace-nowrap',
               activityKind === 'todas'
-                ? 'bg-white/15 text-white shadow-sm'
+                ? 'bg-emerald-400 text-slate-950 font-black shadow-sm'
                 : 'text-slate-400 hover:text-white'
             )}
           >
@@ -328,37 +328,37 @@ export function TasksSection({
           <button
             onClick={() => setActivityKind('tareas')}
             className={cn(
-              'flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition-all whitespace-nowrap',
+              'flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-black transition-all whitespace-nowrap',
               activityKind === 'tareas'
-                ? 'bg-blue-500/25 text-blue-300 border border-blue-500/30 shadow-sm'
+                ? 'bg-blue-400 text-slate-950 font-black border border-blue-400 shadow-sm'
                 : 'text-slate-400 hover:text-white'
             )}
           >
-            <span className="size-2 rounded-full bg-blue-500" />
+            <span className={cn('size-2 rounded-full', activityKind === 'tareas' ? 'bg-slate-950' : 'bg-blue-500')} />
             <span>Tareas ({filteredTasks.length})</span>
           </button>
           <button
             onClick={() => setActivityKind('eventos')}
             className={cn(
-              'flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition-all whitespace-nowrap',
+              'flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-black transition-all whitespace-nowrap',
               activityKind === 'eventos'
-                ? 'bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 shadow-sm'
+                ? 'bg-emerald-400 text-slate-950 font-black border border-emerald-400 shadow-sm'
                 : 'text-slate-400 hover:text-white'
             )}
           >
-            <span className="size-2 rounded-full bg-emerald-500" />
+            <span className={cn('size-2 rounded-full', activityKind === 'eventos' ? 'bg-slate-950' : 'bg-emerald-500')} />
             <span>Eventos ({filteredEvents.length})</span>
           </button>
           <button
             onClick={() => setActivityKind('recordatorios')}
             className={cn(
-              'flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition-all whitespace-nowrap',
+              'flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-black transition-all whitespace-nowrap',
               activityKind === 'recordatorios'
-                ? 'bg-orange-500/25 text-orange-300 border border-orange-500/30 shadow-sm'
+                ? 'bg-amber-400 text-slate-950 font-black border border-amber-400 shadow-sm'
                 : 'text-slate-400 hover:text-white'
             )}
           >
-            <span className="size-2 rounded-full bg-orange-500" />
+            <span className={cn('size-2 rounded-full', activityKind === 'recordatorios' ? 'bg-slate-950' : 'bg-orange-500')} />
             <span>Recordatorios ({filteredReminders.length})</span>
           </button>
         </div>

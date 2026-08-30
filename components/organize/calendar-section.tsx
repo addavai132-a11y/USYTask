@@ -545,9 +545,9 @@ export function CalendarSection({
                   className={cn(
                     'text-xs font-medium transition-all leading-none tabular-nums',
                     isToday
-                      ? 'w-5 h-5 text-[11px] flex items-center justify-center rounded-full bg-emerald-600 font-bold text-white shadow-sm'
+                      ? 'w-5 h-5 text-[11px] flex items-center justify-center rounded-full bg-emerald-400 font-black text-slate-950 shadow-sm'
                       : isSelected
-                      ? 'font-bold text-emerald-800 dark:text-emerald-300'
+                      ? 'font-black text-emerald-950 dark:text-emerald-300'
                       : isPast
                       ? 'text-slate-400 dark:text-slate-500'
                       : 'text-slate-800 dark:text-slate-200 group-hover:text-emerald-600 dark:group-hover:text-purple-400'

@@ -403,13 +403,13 @@ export function MembersTab() {
                     type="button"
                     onClick={() => setEditRole(r.id)}
                     className={cn(
-                      'rounded-xl py-2.5 text-xs font-bold border transition-all',
+                      'rounded-xl py-2.5 text-xs font-black border transition-all',
                       editRole === r.id
-                        ? 'border-emerald-500/50 bg-emerald-500/20 text-emerald-200'
+                        ? 'border-emerald-400 bg-emerald-400 text-slate-950 font-black shadow-sm'
                         : 'border-white/10 bg-white/[0.02] text-slate-400 hover:bg-white/[0.06] hover:text-white'
                     )}
                   >
-                    {r.label}
+                    <span className={editRole === r.id ? 'text-slate-950 font-black' : ''}>{r.label}</span>
                   </button>
                 ))}
               </div>

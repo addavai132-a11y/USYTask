@@ -59,9 +59,9 @@ export function AchievementsTab() {
         <button
           onClick={() => setFilter('todos')}
           className={cn(
-            'rounded-lg px-3 py-1 text-xs font-bold transition-all',
+            'rounded-lg px-3 py-1 text-xs font-black transition-all',
             filter === 'todos'
-              ? 'bg-emerald-600 text-white shadow-sm'
+              ? 'bg-emerald-400 text-slate-950 font-black shadow-sm'
               : 'text-slate-400 hover:text-white'
           )}
         >
@@ -70,9 +70,9 @@ export function AchievementsTab() {
         <button
           onClick={() => setFilter('desbloqueados')}
           className={cn(
-            'rounded-lg px-3 py-1 text-xs font-bold transition-all',
+            'rounded-lg px-3 py-1 text-xs font-black transition-all',
             filter === 'desbloqueados'
-              ? 'bg-emerald-600 text-white shadow-sm'
+              ? 'bg-emerald-400 text-slate-950 font-black shadow-sm'
               : 'text-slate-400 hover:text-white'
           )}
         >
@@ -81,9 +81,9 @@ export function AchievementsTab() {
         <button
           onClick={() => setFilter('bloqueados')}
           className={cn(
-            'rounded-lg px-3 py-1 text-xs font-bold transition-all',
+            'rounded-lg px-3 py-1 text-xs font-black transition-all',
             filter === 'bloqueados'
-              ? 'bg-emerald-600 text-white shadow-sm'
+              ? 'bg-emerald-400 text-slate-950 font-black shadow-sm'
               : 'text-slate-400 hover:text-white'
           )}
         >

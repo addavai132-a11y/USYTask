@@ -533,14 +533,14 @@ export function ShoppingSection({
                         type="button"
                         onClick={() => setDraftAisle(isSelected ? 'varios' : a.id)}
                         className={cn(
-                          'px-2 py-0.5 rounded-lg text-[11px] font-bold border transition-all',
+                          'px-2 py-0.5 rounded-lg text-[11px] font-black border transition-all',
                           isSelected
-                            ? 'bg-emerald-600/30 border-emerald-400 text-white shadow-xs'
+                            ? 'bg-emerald-400 border-emerald-400 text-slate-950 font-black shadow-xs'
                             : 'bg-card/40 border-border/60 text-muted-foreground hover:text-foreground hover:bg-card'
                         )}
                       >
                         <span className="mr-1">{a.icon}</span>
-                        <span>{a.label}</span>
+                        <span className={isSelected ? 'text-slate-950 font-black' : ''}>{a.label}</span>
                       </button>
                     )
                   })}
@@ -561,13 +561,13 @@ export function ShoppingSection({
                         type="button"
                         onClick={() => setDraftSupermarket(isSelected ? '' : s)}
                         className={cn(
-                          'px-2 py-0.5 rounded-lg text-[11px] font-bold border transition-all',
+                          'px-2 py-0.5 rounded-lg text-[11px] font-black border transition-all',
                           isSelected
-                            ? 'bg-emerald-600/30 border-emerald-400 text-white shadow-xs'
+                            ? 'bg-emerald-400 border-emerald-400 text-slate-950 font-black shadow-xs'
                             : 'bg-card/40 border-border/60 text-muted-foreground hover:text-foreground hover:bg-card'
                         )}
                       >
-                        {s}
+                        <span className={isSelected ? 'text-slate-950 font-black' : ''}>{s}</span>
                       </button>
                     )
                   })}

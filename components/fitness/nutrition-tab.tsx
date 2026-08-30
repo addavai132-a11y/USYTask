@@ -847,17 +847,17 @@ export function NutritionTab({
               className={cn(
                 'flex-1 min-w-[76px] py-2 px-2 rounded-xl flex flex-col items-center justify-center transition-all text-xs relative select-none',
                 isSelected
-                  ? 'bg-emerald-600 text-white shadow-sm ring-1 ring-emerald-500 font-black dark:bg-purple-600 dark:ring-purple-400'
+                  ? 'bg-emerald-400 text-slate-950 shadow-sm ring-1 ring-emerald-400 font-black dark:bg-emerald-400 dark:text-slate-950 dark:ring-emerald-400'
                   : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-300 dark:hover:text-white dark:hover:bg-white/5 font-semibold'
               )}
             >
               <div className="flex items-center gap-1">
-                <span>{d.short}</span>
+                <span className={isSelected ? 'text-slate-950 font-black' : ''}>{d.short}</span>
                 {isToday && (
                   <span
                     className={cn(
                       'size-1.5 rounded-full',
-                      isSelected ? 'bg-amber-300' : 'bg-emerald-500 dark:bg-purple-400'
+                      isSelected ? 'bg-slate-950' : 'bg-emerald-500 dark:bg-purple-400'
                     )}
                     title="Hoy"
                   />
@@ -866,7 +866,7 @@ export function NutritionTab({
               <span
                 className={cn(
                   'text-[9px] font-mono mt-0.5',
-                  isSelected ? 'text-emerald-100 dark:text-purple-200' : 'text-slate-500 dark:text-slate-400'
+                  isSelected ? 'text-slate-950 font-bold' : 'text-slate-500 dark:text-slate-400'
                 )}
               >
                 {count > 0 ? `${count} alim.` : '0 alim.'}

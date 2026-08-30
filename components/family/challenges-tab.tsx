@@ -148,9 +148,9 @@ export function ChallengesTab() {
           <button
             onClick={() => setFilter('activos')}
             className={cn(
-              'rounded-lg px-3 py-1 text-xs font-bold transition-all',
+              'rounded-lg px-3 py-1 text-xs font-black transition-all',
               filter === 'activos'
-                ? 'bg-emerald-600 text-white shadow-sm'
+                ? 'bg-emerald-400 text-slate-950 font-black shadow-sm'
                 : 'text-slate-400 hover:text-white'
             )}
           >
@@ -159,9 +159,9 @@ export function ChallengesTab() {
           <button
             onClick={() => setFilter('completados')}
             className={cn(
-              'rounded-lg px-3 py-1 text-xs font-bold transition-all',
+              'rounded-lg px-3 py-1 text-xs font-black transition-all',
               filter === 'completados'
-                ? 'bg-emerald-600 text-white shadow-sm'
+                ? 'bg-emerald-400 text-slate-950 font-black shadow-sm'
                 : 'text-slate-400 hover:text-white'
             )}
           >

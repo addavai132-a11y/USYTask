@@ -87,14 +87,14 @@ export function PillTabs<T extends string>({
               key={t.id}
               onClick={() => onChange(t.id)}
               className={cn(
-                'group flex shrink-0 items-center gap-1.5 rounded-full text-xs font-bold transition-all duration-200 cursor-pointer active:scale-95 select-none border',
+                'group flex shrink-0 items-center gap-1.5 rounded-full text-xs font-black transition-all duration-200 cursor-pointer active:scale-95 select-none border',
                 t.deletable && onDelete ? 'pl-3.5 pr-2 py-1.5' : 'px-4 py-2',
                 isActive
-                  ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm dark:bg-gradient-to-r dark:from-purple-600 dark:to-indigo-600 dark:text-white dark:border-purple-500/50 dark:shadow-[0_0_18px_rgba(168,85,247,0.3)]'
-                  : 'bg-white text-slate-700 border-slate-200 hover:bg-emerald-50 hover:text-emerald-900 dark:bg-card dark:text-muted-foreground dark:border-border dark:hover:bg-secondary dark:hover:text-foreground'
+                  ? 'bg-emerald-400 text-slate-950 border-emerald-400 shadow-md font-black dark:bg-emerald-400 dark:text-slate-950 dark:border-emerald-400'
+                  : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100 hover:text-slate-900 dark:bg-card dark:text-muted-foreground dark:border-border dark:hover:bg-secondary dark:hover:text-foreground'
               )}
             >
-              <span>{t.label}</span>
+              <span className={cn(isActive ? 'text-slate-950 font-black' : '')}>{t.label}</span>
 
               {t.deletable && onDelete && (
                 <button
@@ -103,15 +103,14 @@ export function PillTabs<T extends string>({
                     e.stopPropagation()
                     onDelete(t.id)
                   }}
-                  aria-label={`Eliminar categoría ${t.label}`}
                   className={cn(
-                    'flex size-4 items-center justify-center rounded-full transition-colors',
+                    'rounded-full p-0.5 transition-colors',
                     isActive
-                      ? 'hover:bg-white/20 text-white'
-                      : 'hover:bg-slate-300 text-muted-foreground hover:text-foreground'
+                      ? 'text-slate-950/70 hover:bg-black/10 hover:text-slate-950'
+                      : 'text-muted-foreground hover:bg-foreground/10 hover:text-foreground'
                   )}
                 >
-                  <X className="size-3 stroke-[2.5]" />
+                  <X className="size-3" />
                 </button>
               )}
             </div>

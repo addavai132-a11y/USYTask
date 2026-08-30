@@ -56,18 +56,18 @@ export function MemberMultiSelect({
       </div>
 
       <div className="flex flex-wrap gap-2 max-h-36 overflow-y-auto p-0.5">
-        {/* Button [ + Todos ] */}
+        {/* Toggle All */}
         <button
           type="button"
           onClick={handleToggleAll}
           className={cn(
-            'flex items-center gap-1 rounded-xl px-2.5 py-1.5 text-xs font-bold transition-all active:scale-95 border',
+            'flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-black transition-all active:scale-95 border',
             isAllSelected
-              ? 'border-primary bg-primary text-primary-foreground shadow-soft'
-              : 'border-dashed border-primary/50 bg-primary/5 text-primary hover:bg-primary/10'
+              ? 'border-emerald-400 bg-emerald-400 text-slate-950 font-black shadow-sm'
+              : 'border-border bg-secondary/40 text-muted-foreground hover:bg-secondary hover:text-foreground'
           )}
         >
-          <span>{isAllSelected ? '✓ Todos' : '+ Todos'}</span>
+          <span className={isAllSelected ? 'text-slate-950 font-black' : ''}>{isAllSelected ? '✓ Todos' : '+ Todos'}</span>
         </button>
 
         {/* Member Chips */}
@@ -79,15 +79,15 @@ export function MemberMultiSelect({
               type="button"
               onClick={() => handleToggleMember(m.id)}
               className={cn(
-                'flex items-center gap-2 rounded-xl px-3 py-1.5 text-xs font-bold transition-all active:scale-95 border',
+                'flex items-center gap-2 rounded-xl px-3 py-1.5 text-xs font-black transition-all active:scale-95 border',
                 isSelected
-                  ? 'border-primary bg-primary/10 text-primary'
-                  : 'border-border bg-secondary/40 text-muted-foreground hover:bg-secondary'
+                  ? 'border-emerald-400 bg-emerald-400 text-slate-950 font-black shadow-sm'
+                  : 'border-border bg-secondary/40 text-muted-foreground hover:bg-secondary hover:text-foreground'
               )}
             >
               <MemberAvatar member={m} size="xs" />
-              <span>{m.name}</span>
-              {isSelected && <Check className="size-3 text-primary stroke-[3]" />}
+              <span className={isSelected ? 'text-slate-950 font-black' : ''}>{m.name}</span>
+              {isSelected && <Check className="size-3 text-slate-950 stroke-[3]" />}
             </button>
           )
         })}

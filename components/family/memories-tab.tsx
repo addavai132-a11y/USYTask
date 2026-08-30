@@ -233,9 +233,9 @@ export function MemoriesTab() {
           <button
             onClick={() => setMemberFilter('all')}
             className={cn(
-              'px-3 py-1 text-xs font-bold rounded-xl border transition-all shrink-0',
+              'px-3 py-1 text-xs font-black rounded-xl border transition-all shrink-0',
               memberFilter === 'all'
-                ? 'bg-emerald-600 text-white border-emerald-500 shadow-sm dark:bg-purple-600 dark:border-purple-500'
+                ? 'bg-emerald-400 text-slate-950 border-emerald-400 shadow-sm font-black dark:bg-emerald-400 dark:text-slate-950'
                 : 'bg-white border-slate-200 text-slate-600 hover:text-slate-900 dark:bg-white/[0.03] dark:text-slate-400 dark:border-white/10 dark:hover:text-white'
             )}
           >
@@ -246,14 +246,14 @@ export function MemoriesTab() {
               key={m.id}
               onClick={() => setMemberFilter(memberFilter === m.id ? 'all' : m.id)}
               className={cn(
-                'flex items-center gap-1.5 pl-1.5 pr-3 py-1 text-xs font-semibold rounded-xl border transition-all shrink-0',
+                'flex items-center gap-1.5 pl-1.5 pr-3 py-1 text-xs font-black rounded-xl border transition-all shrink-0',
                 memberFilter === m.id
-                  ? 'bg-emerald-50 text-emerald-800 border-emerald-500 shadow-sm dark:bg-purple-500/20 dark:text-purple-200 dark:border-purple-500/40'
+                  ? 'bg-emerald-400 text-slate-950 border-emerald-400 shadow-sm font-black dark:bg-emerald-400 dark:text-slate-950'
                   : 'bg-white border-slate-200 text-slate-600 hover:text-slate-900 dark:bg-white/[0.03] dark:text-slate-400 dark:border-white/10 dark:hover:text-white'
               )}
             >
               <MemberAvatar member={m} size="sm" />
-              <span>{m.name}</span>
+              <span className={memberFilter === m.id ? 'text-slate-950 font-black' : ''}>{m.name}</span>
             </button>
           ))}
         </div>
@@ -594,8 +594,14 @@ export function MemoriesTab() {
 
       {/* ── MODAL: DETALLE COMPLETO DEL RECUERDO CON FOTO AMPLIA ── */}
       {selectedMemory && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-fade-in">
-          <div className="w-full max-w-2xl rounded-3xl border border-slate-200 bg-white dark:border-white/10 dark:bg-[#121026] shadow-2xl animate-in zoom-in-95 duration-150 max-h-[92vh] overflow-y-auto no-scrollbar flex flex-col">
+        <div
+          onClick={() => setSelectedMemory(null)}
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-fade-in cursor-pointer"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-2xl rounded-3xl border border-slate-200 bg-white dark:border-white/10 dark:bg-[#121026] shadow-2xl animate-in zoom-in-95 duration-150 max-h-[92vh] overflow-y-auto no-scrollbar flex flex-col cursor-default"
+          >
             {/* Header / Foto Ampliada */}
             <div className="relative w-full bg-slate-950">
               {selectedMemory.imageUrl ? (

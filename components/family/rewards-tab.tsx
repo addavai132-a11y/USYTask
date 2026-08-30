@@ -252,9 +252,9 @@ export function RewardsTab() {
               type="button"
               onClick={() => setActiveTab('catalogo')}
               className={cn(
-                'px-3 py-1.5 rounded-lg text-xs font-bold transition-all',
+                'px-3 py-1.5 rounded-lg text-xs font-black transition-all',
                 activeTab === 'catalogo'
-                  ? 'bg-emerald-600 text-white shadow-sm dark:bg-purple-600'
+                  ? 'bg-emerald-400 text-slate-950 shadow-sm font-black dark:bg-emerald-400 dark:text-slate-950'
                   : 'text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white'
               )}
             >
@@ -264,9 +264,9 @@ export function RewardsTab() {
               type="button"
               onClick={() => setActiveTab('historial')}
               className={cn(
-                'px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1',
+                'px-3 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1',
                 activeTab === 'historial'
-                  ? 'bg-emerald-600 text-white shadow-sm dark:bg-purple-600'
+                  ? 'bg-emerald-400 text-slate-950 shadow-sm font-black dark:bg-emerald-400 dark:text-slate-950'
                   : 'text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white'
               )}
             >
@@ -497,7 +497,7 @@ export function RewardsTab() {
                         !canAfford
                           ? 'border-slate-200 bg-slate-50 opacity-50 cursor-not-allowed dark:border-white/5 dark:bg-white/[0.01]'
                           : isSelected
-                          ? 'border-emerald-500 bg-emerald-50 text-slate-900 shadow-sm ring-1 ring-emerald-500 dark:border-purple-500 dark:bg-purple-600/20 dark:text-white dark:ring-purple-400'
+                          ? 'border-emerald-400 bg-emerald-400 text-slate-950 font-black shadow-sm ring-2 ring-emerald-400/40 dark:border-emerald-400 dark:bg-emerald-400 dark:text-slate-950'
                           : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700 dark:border-white/10 dark:bg-white/[0.03] dark:text-slate-300 dark:hover:bg-white/[0.06]'
                       )}
                     >
