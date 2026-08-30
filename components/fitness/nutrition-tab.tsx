@@ -18,6 +18,8 @@ interface NutritionTabProps {
   onSaveGoal: (goal: NutritionGoal) => void
   onAddMealItem: (mealType: MealType, item: MealItem, dayOfWeek?: DayOfWeek) => void
   onDeleteMealItem: (mealType: MealType, itemId: string, dayOfWeek?: DayOfWeek) => void
+  onClearMealSection?: (mealType: MealType, dayOfWeek?: DayOfWeek) => void
+  onDeleteMealSectionLogs?: (sectionId: string) => void
   onSaveBodyMetric?: (metric: BodyMetric) => void
 }
 
@@ -112,6 +114,8 @@ export function NutritionTab({
   onSaveGoal,
   onAddMealItem,
   onDeleteMealItem,
+  onClearMealSection,
+  onDeleteMealSectionLogs,
   onSaveBodyMetric,
 }: NutritionTabProps) {
   const { toast } = useToast()
@@ -233,16 +237,31 @@ export function NutritionTab({
     setIsSectionModalOpen(false)
   }
 
+  function handleClearMeal(section: MealSection) {
+    const dayLabel = DAYS_OF_WEEK.find((d) => d.id === selectedDay)?.label || selectedDay
+    confirmDelete({
+      title: `¿Vaciar ${section.name}?`,
+      itemName: `${section.name} (${dayLabel})`,
+      description: `Se eliminarán todos los alimentos registrados en ${section.name} para el ${dayLabel}.`,
+      confirmText: 'Vaciar Toma',
+      onConfirm: () => {
+        onClearMealSection?.(section.id, selectedDay)
+        toast(`Alimentos de "${section.name}" eliminados (${dayLabel})`, '🗑️')
+      },
+    })
+  }
+
   function handleDeleteSection(section: MealSection) {
     confirmDelete({
       title: '¿Eliminar toma de comida?',
       itemName: section.name,
-      description: 'Se eliminará esta sección de tus comidas habituales.',
+      description: 'Se eliminará esta sección de tus comidas habituales y todos sus alimentos registrados.',
       confirmText: 'Eliminar Toma',
       onConfirm: () => {
         const updated = mealSections.filter((s) => s.id !== section.id)
         saveSections(updated)
-        toast(`Toma "${section.name}" eliminada`, '🗑️')
+        onDeleteMealSectionLogs?.(section.id)
+        toast(`Toma "${section.name}" eliminada por completo`, '🗑️')
       },
     })
   }
@@ -960,13 +979,25 @@ export function NutritionTab({
                     <Edit2 className="size-3.5" />
                   </button>
 
-                  {/* Eliminar (Secciones creadas por el usuario) */}
-                  {!section.isDefault && (
+                  {/* Vaciar Alimentos de la Toma para este Día */}
+                  {items.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => handleClearMeal(section)}
+                      className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors dark:hover:text-rose-400 dark:hover:bg-rose-500/10"
+                      title={`Vaciar alimentos de ${section.name}`}
+                    >
+                      <Trash2 className="size-3.5" />
+                    </button>
+                  )}
+
+                  {/* Eliminar Sección Creada por el Usuario */}
+                  {!section.isDefault && items.length === 0 && (
                     <button
                       type="button"
                       onClick={() => handleDeleteSection(section)}
                       className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors dark:hover:text-rose-400 dark:hover:bg-rose-500/10"
-                      title="Eliminar toma"
+                      title={`Eliminar sección ${section.name}`}
                     >
                       <Trash2 className="size-3.5" />
                     </button>
@@ -982,7 +1013,7 @@ export function NutritionTab({
                   {items.map((item) => (
                     <div
                       key={item.id}
-                      className="flex items-center justify-between p-2 rounded-xl bg-slate-50 border border-slate-200 text-xs dark:bg-white/[0.02] dark:border-white/5"
+                      className="flex items-center justify-between p-2 rounded-xl bg-slate-50 border border-slate-200 text-xs dark:bg-white/[0.02] dark:border-white/5 group hover:border-slate-300 dark:hover:border-white/10 transition-colors"
                     >
                       <div className="min-w-0">
                         <p className="font-bold text-slate-900 dark:text-white truncate">{item.name}</p>
@@ -994,8 +1025,11 @@ export function NutritionTab({
 
                       <button
                         type="button"
-                        onClick={() => onDeleteMealItem(section.id, item.id, selectedDay)}
-                        className="p-1 text-slate-400 hover:text-rose-600 transition-colors dark:hover:text-rose-400"
+                        onClick={() => {
+                          onDeleteMealItem(section.id, item.id, selectedDay)
+                          toast(`"${item.name}" eliminado`, '🗑️')
+                        }}
+                        className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-lg transition-colors dark:hover:text-rose-400"
                         title="Eliminar alimento"
                       >
                         <Trash2 className="size-3.5" />

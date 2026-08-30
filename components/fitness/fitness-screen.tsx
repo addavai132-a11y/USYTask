@@ -34,6 +34,8 @@ import {
   getAllMealLogs,
   saveMealItem,
   deleteMealItem,
+  clearMealLog,
+  deleteMealLogsBySection,
 } from '@/lib/fitness-store'
 import { getTodayISO } from '@/lib/date-utils'
 
@@ -166,6 +168,24 @@ export function FitnessScreen() {
     }
   }
 
+  function handleClearMealSection(mealType: MealType, dayOfWeek?: any) {
+    try {
+      clearMealLog(mealType, dayOfWeek, todayISO)
+      refreshData()
+    } catch (err) {
+      console.error('Error in handleClearMealSection in fitness-screen:', err)
+    }
+  }
+
+  function handleDeleteMealSectionLogs(sectionId: string) {
+    try {
+      deleteMealLogsBySection(sectionId)
+      refreshData()
+    } catch (err) {
+      console.error('Error in handleDeleteMealSectionLogs in fitness-screen:', err)
+    }
+  }
+
   return (
     <div className="w-full space-y-6">
       {/* ── Header Principal Centrado ── */}
@@ -227,6 +247,8 @@ export function FitnessScreen() {
           onSaveGoal={handleSaveGoal}
           onAddMealItem={handleAddMealItem}
           onDeleteMealItem={handleDeleteMealItem}
+          onClearMealSection={handleClearMealSection}
+          onDeleteMealSectionLogs={handleDeleteMealSectionLogs}
           onSaveBodyMetric={handleSaveBodyMetric}
         />
       )}

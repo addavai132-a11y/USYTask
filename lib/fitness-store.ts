@@ -12,7 +12,7 @@ import type {
   MuscleGroup,
 } from '@/types/fitness'
 import { calculate1RM } from '@/types/fitness'
-import { getTodayISO } from '@/lib/date-utils'
+import { getTodayISO, getDayOfWeekFromDate } from '@/lib/date-utils'
 import { scheduleCloudSync } from './cloud-sync'
 
 export const ROUTINES_KEY = 'usytask_fitness_routines'
@@ -544,20 +544,75 @@ export function deleteMealItem(
   dayOfWeek?: string
 ): void {
   try {
+    if (!itemId) {
+      console.warn('deleteMealItem: itemId no proporcionado')
+      return
+    }
     const all = loadArray<DailyMealLog>(MEAL_LOGS_KEY, INITIAL_MEAL_LOGS)
-    const mealLog = all.find((m) => {
-      if (m.mealType !== mealType) return false
-      if (dayOfWeek) {
-        return m.dayOfWeek === dayOfWeek
+    let modified = false
+
+    all.forEach((m) => {
+      if (Array.isArray(m.items) && m.items.some((i) => i.id === itemId)) {
+        m.items = m.items.filter((i) => i.id !== itemId)
+        modified = true
       }
-      return m.date === dateISO
     })
-    if (mealLog && Array.isArray(mealLog.items)) {
-      mealLog.items = mealLog.items.filter((i) => i.id !== itemId)
+
+    if (modified) {
       saveArray(MEAL_LOGS_KEY, all)
     }
   } catch (err) {
     console.error('Error deleting meal item in fitness-store:', err)
+  }
+}
+
+/**
+ * Clears all food items for a specific meal intake (e.g. Desayuno, Almuerzo, etc.) on a selected day or date.
+ */
+export function clearMealLog(
+  mealType: DailyMealLog['mealType'],
+  dayOfWeek?: string,
+  dateISO?: string
+): void {
+  try {
+    const all = loadArray<DailyMealLog>(MEAL_LOGS_KEY, INITIAL_MEAL_LOGS)
+    let modified = false
+
+    all.forEach((m) => {
+      const matchType = m.mealType === mealType
+      let matchDay = false
+      if (dayOfWeek) {
+        matchDay = m.dayOfWeek === dayOfWeek || (m.date && getDayOfWeekFromDate(m.date) === dayOfWeek)
+      } else if (dateISO) {
+        matchDay = m.date === dateISO
+      } else {
+        matchDay = true
+      }
+
+      if (matchType && matchDay && Array.isArray(m.items) && m.items.length > 0) {
+        m.items = []
+        modified = true
+      }
+    })
+
+    if (modified) {
+      saveArray(MEAL_LOGS_KEY, all)
+    }
+  } catch (err) {
+    console.error('Error clearing meal log in fitness-store:', err)
+  }
+}
+
+/**
+ * Permanently deletes all meal records associated with a custom meal section across all days.
+ */
+export function deleteMealLogsBySection(sectionId: string): void {
+  try {
+    const all = loadArray<DailyMealLog>(MEAL_LOGS_KEY, INITIAL_MEAL_LOGS)
+    const updated = all.filter((m) => m.mealType !== sectionId)
+    saveArray(MEAL_LOGS_KEY, updated)
+  } catch (err) {
+    console.error('Error deleting meal logs for section:', err)
   }
 }
 

@@ -29,3 +29,14 @@ export function daysUntil(dateStr: string): number {
   target.setHours(0, 0, 0, 0)
   return Math.max(0, Math.ceil((target.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)))
 }
+
+export function getDayOfWeekFromDate(dateISO: string): string {
+  try {
+    const d = new Date(dateISO + 'T00:00:00')
+    if (isNaN(d.getTime())) return ''
+    const map = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado']
+    return map[d.getDay()] || ''
+  } catch {
+    return ''
+  }
+}
