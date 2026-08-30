@@ -99,32 +99,63 @@ export function adjustChallengeDays(
 // ---------------- REWARDS ----------------
 
 export function getAllRewards(): FamilyReward[] {
-  return loadArray<FamilyReward>(REWARDS_KEY)
+  try {
+    return loadArray<FamilyReward>(REWARDS_KEY)
+  } catch (err) {
+    console.error('Error in getAllRewards:', err)
+    return []
+  }
 }
 
 export function getRewardsByGroup(groupId: string): FamilyReward[] {
-  const all = getAllRewards()
-  return all.filter((r) => r.groupId === groupId)
+  try {
+    const all = getAllRewards()
+    return all.filter((r) => r.groupId === groupId)
+  } catch (err) {
+    console.error('Error in getRewardsByGroup:', err)
+    return []
+  }
 }
 
 export function addReward(reward: FamilyReward): void {
-  const all = getAllRewards()
-  all.unshift(reward)
-  saveArray(REWARDS_KEY, all)
+  try {
+    const all = getAllRewards()
+    all.unshift({
+      ...reward,
+      pointCost: Number(reward.pointCost) || 100,
+      stock: reward.stock !== undefined ? Number(reward.stock) : undefined,
+    })
+    saveArray(REWARDS_KEY, all)
+  } catch (err) {
+    console.error('Error in addReward:', err)
+  }
 }
 
 export function updateReward(reward: FamilyReward): void {
-  const all = getAllRewards()
-  const idx = all.findIndex((r) => r.id === reward.id && r.groupId === reward.groupId)
-  if (idx >= 0) {
-    all[idx] = reward
-    saveArray(REWARDS_KEY, all)
+  try {
+    const all = getAllRewards()
+    const idx = all.findIndex((r) => r.id === reward.id)
+    if (idx >= 0) {
+      all[idx] = {
+        ...all[idx],
+        ...reward,
+        pointCost: Number(reward.pointCost) || 100,
+        stock: reward.stock !== undefined ? Number(reward.stock) : undefined,
+      }
+      saveArray(REWARDS_KEY, all)
+    }
+  } catch (err) {
+    console.error('Error in updateReward:', err)
   }
 }
 
 export function deleteReward(id: string, groupId: string): void {
-  const all = getAllRewards()
-  saveArray(REWARDS_KEY, all.filter((r) => !(r.id === id && r.groupId === groupId)))
+  try {
+    const all = getAllRewards()
+    saveArray(REWARDS_KEY, all.filter((r) => r.id !== id))
+  } catch (err) {
+    console.error('Error in deleteReward:', err)
+  }
 }
 
 export function claimReward(
@@ -132,65 +163,75 @@ export function claimReward(
   memberId: string,
   groupId: string
 ): { success: boolean; error?: string; reward?: FamilyReward } {
-  if (!rewardId || !memberId) {
-    return { success: false, error: 'Identificador de recompensa o integrante no válido' }
-  }
-
-  const allRewards = getAllRewards()
-  const rIdx = allRewards.findIndex((r) => r.id === rewardId && (r.groupId === groupId || !groupId))
-  if (rIdx < 0) return { success: false, error: 'Recompensa no encontrada' }
-
-  const reward = allRewards[rIdx]
-
-  if (reward.stock !== undefined && reward.stock <= 0) {
-    return { success: false, error: 'Esta recompensa ya no tiene unidades disponibles (agotada)' }
-  }
-
-  // Check member points with fallback
-  const allMembers = loadArray<Member>(MEMBERS_KEY)
-  let mIdx = allMembers.findIndex((m) => m.id === memberId && (m.groupId === groupId || !groupId))
-  if (mIdx < 0) {
-    mIdx = allMembers.findIndex((m) => m.id === memberId)
-  }
-  if (mIdx < 0) return { success: false, error: 'Integrante no encontrado en el sistema' }
-
-  const member = allMembers[mIdx]
-  const currentPoints = Number(member.points) || 0
-  const cost = Number(reward.pointCost) || 0
-
-  if (currentPoints < cost) {
-    return {
-      success: false,
-      error: `Puntos insuficientes (${currentPoints} pts disponibles). Se requieren ${cost} pts.`,
+  try {
+    if (!rewardId || !memberId) {
+      return { success: false, error: 'Identificador de recompensa o integrante no válido' }
     }
+
+    const allRewards = getAllRewards()
+    const rIdx = allRewards.findIndex((r) => r.id === rewardId)
+    if (rIdx < 0) {
+      console.error('claimReward: Recompensa no encontrada', { rewardId, groupId, allRewards })
+      return { success: false, error: 'Recompensa no encontrada en el catálogo' }
+    }
+
+    const reward = allRewards[rIdx]
+    const cost = Math.max(0, Number(reward.pointCost) || 0)
+
+    if (reward.stock !== undefined && Number(reward.stock) <= 0) {
+      return { success: false, error: 'Esta recompensa ya no tiene unidades disponibles (agotada)' }
+    }
+
+    // Check member points with fallback
+    const allMembers = loadArray<Member>(MEMBERS_KEY)
+    let mIdx = allMembers.findIndex((m) => m.id === memberId)
+    if (mIdx < 0) {
+      console.error('claimReward: Integrante no encontrado', { memberId, groupId, allMembers })
+      return { success: false, error: 'Integrante no encontrado en el sistema' }
+    }
+
+    const member = allMembers[mIdx]
+    const currentPoints = Math.max(0, Number(member.points) || 0)
+
+    if (currentPoints < cost) {
+      return {
+        success: false,
+        error: `Puntos insuficientes (${currentPoints} pts disponibles). Se requieren ${cost} pts.`,
+      }
+    }
+
+    // Deduct points from member
+    allMembers[mIdx] = {
+      ...member,
+      points: Math.max(0, currentPoints - cost),
+    }
+    saveArray(MEMBERS_KEY, allMembers)
+
+    // Append to claimedBy list
+    const updatedClaimedBy = Array.isArray(reward.claimedBy) ? [...reward.claimedBy] : []
+    const claimRecord = {
+      id: `claim_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+      memberId,
+      date: new Date().toISOString(),
+      rewardTitle: reward.title,
+      pointCost: cost,
+    }
+    updatedClaimedBy.unshift(claimRecord)
+
+    const updatedReward: FamilyReward = {
+      ...reward,
+      stock: reward.stock !== undefined ? Math.max(0, Number(reward.stock) - 1) : undefined,
+      claimedBy: updatedClaimedBy,
+    }
+
+    allRewards[rIdx] = updatedReward
+    saveArray(REWARDS_KEY, allRewards)
+
+    return { success: true, reward: updatedReward }
+  } catch (err) {
+    console.error('Error in claimReward in family-store:', err)
+    return { success: false, error: 'Error interno al procesar el canje de recompensa' }
   }
-
-  // Deduct points from member
-  allMembers[mIdx] = {
-    ...member,
-    points: Math.max(0, currentPoints - cost),
-  }
-  saveArray(MEMBERS_KEY, allMembers)
-
-  // Append to claimedBy list
-  const updatedClaimedBy = Array.isArray(reward.claimedBy) ? [...reward.claimedBy] : []
-  updatedClaimedBy.unshift({
-    memberId,
-    date: new Date().toISOString(),
-    rewardTitle: reward.title,
-    pointCost: cost,
-  })
-
-  const updatedReward: FamilyReward = {
-    ...reward,
-    stock: reward.stock !== undefined ? Math.max(0, Number(reward.stock) - 1) : undefined,
-    claimedBy: updatedClaimedBy,
-  }
-
-  allRewards[rIdx] = updatedReward
-  saveArray(REWARDS_KEY, allRewards)
-
-  return { success: true, reward: updatedReward }
 }
 
 // ---------------- MEMORIES ----------------

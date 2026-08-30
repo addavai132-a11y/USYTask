@@ -1,7 +1,21 @@
 'use client'
 
 import { useState } from 'react'
-import { Plus, Gift, Sparkles, Star, CheckCircle2, Trash2, History, AlertCircle, ShoppingBag, Loader2 } from 'lucide-react'
+import {
+  Plus,
+  Gift,
+  Sparkles,
+  Star,
+  CheckCircle2,
+  Trash2,
+  Edit2,
+  History,
+  AlertCircle,
+  ShoppingBag,
+  Loader2,
+  Clock,
+  Coins,
+} from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { MemberAvatar } from '@/components/ui/member-avatar'
 import { EmptyState } from '@/components/ui/empty-state'
@@ -11,6 +25,8 @@ import { useApp } from '@/components/app/app-context'
 import type { FamilyReward, Member } from '@/types'
 import { cn } from '@/lib/utils'
 
+const REWARD_ICONS = ['🎁', '🎮', '🍕', '🎬', '🍦', '🛌', '🏆', '☕', '🎟️', '🚗', '🏖️', '💆', '🍔', '🍿', '🚴', '⭐']
+
 export function RewardsTab() {
   const { toast } = useToast()
   const {
@@ -19,33 +35,36 @@ export function RewardsTab() {
     currentMember,
     getMemberById,
     addFamilyReward,
+    updateFamilyReward,
     deleteFamilyReward,
     claimFamilyReward,
     confirmDelete,
   } = useApp()
 
-  const [isCreating, setIsCreating] = useState(false)
+  const [activeTab, setActiveTab] = useState<'catalogo' | 'historial'>('catalogo')
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [editingRewardId, setEditingRewardId] = useState<string | null>(null)
   const [claimingReward, setClaimingReward] = useState<FamilyReward | null>(null)
   const [selectedMemberId, setSelectedMemberId] = useState<string>('')
-  const [showHistory, setShowHistory] = useState(false)
   const [isClaiming, setIsClaiming] = useState(false)
 
-  // Creation form state
+  // Creation/Edit form state
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [pointCost, setPointCost] = useState<number>(200)
+  const [icon, setIcon] = useState('🎁')
   const [stock, setStock] = useState<string>('')
 
   const handleOpenClaim = (r: FamilyReward) => {
     setClaimingReward(r)
     // Select first member who can afford or current member
-    const affordableMember = members.find((m) => (m.points || 0) >= r.pointCost)
+    const affordableMember = members.find((m) => Number(m.points || 0) >= Number(r.pointCost))
     setSelectedMemberId(currentMember?.id || affordableMember?.id || members[0]?.id || '')
   }
 
   const handleConfirmClaim = async () => {
     if (isClaiming || !claimingReward) return
-    
+
     if (!selectedMemberId) {
       toast('Debes seleccionar un integrante para canjear el premio', '⚠️')
       return
@@ -57,48 +76,93 @@ export function RewardsTab() {
       return
     }
 
-    if ((member.points || 0) < claimingReward.pointCost) {
-      toast(`Puntos insuficientes (${member.points || 0} pts). Necesitas ${claimingReward.pointCost} pts.`, '❌')
+    const memberPoints = Number(member.points) || 0
+    const cost = Number(claimingReward.pointCost) || 0
+
+    if (memberPoints < cost) {
+      toast(`Puntos insuficientes (${memberPoints} pts). Necesitas ${cost} pts.`, '❌')
       return
     }
 
     setIsClaiming(true)
     try {
       const res = claimFamilyReward(claimingReward.id, selectedMemberId)
-      if (res.success) {
+      if (res && res.success) {
         toast(`¡Recompensa "${claimingReward.title}" canjeada para ${member.name}! 🎉`, '✅')
         setClaimingReward(null)
       } else {
-        toast(res.error || 'No se pudo canjear la recompensa', '❌')
+        toast(res?.error || 'No se pudo canjear la recompensa', '❌')
       }
     } catch (err) {
       console.error('Error al canjear recompensa:', err)
-      toast('Error inesperado al canjear la recompensa', '❌')
+      toast('Error inesperado al canjear la recompensa. Inténtalo de nuevo.', '❌')
     } finally {
       setIsClaiming(false)
     }
   }
 
   const handleOpenCreateModal = () => {
+    setEditingRewardId(null)
     setTitle('')
     setDescription('')
     setPointCost(200)
+    setIcon('🎁')
     setStock('')
-    setIsCreating(true)
+    setIsModalOpen(true)
   }
 
-  const handleCreateReward = () => {
-    if (!title.trim()) return
-    addFamilyReward({
-      title: title.trim(),
-      description: description.trim(),
-      pointCost: Math.max(10, pointCost),
-      icon: '🎁',
-      stock: stock ? parseInt(stock, 10) : undefined,
-      claimedBy: [],
-    })
-    toast(`Recompensa "${title.trim()}" añadida al catálogo`, '✅')
-    setIsCreating(false)
+  const handleOpenEditModal = (reward: FamilyReward) => {
+    setEditingRewardId(reward.id)
+    setTitle(reward.title)
+    setDescription(reward.description || '')
+    setPointCost(reward.pointCost || 200)
+    setIcon(reward.icon || '🎁')
+    setStock(reward.stock !== undefined ? reward.stock.toString() : '')
+    setIsModalOpen(true)
+  }
+
+  const handleSaveReward = () => {
+    try {
+      if (!title.trim()) {
+        toast('Introduce un título para la recompensa', '⚠️')
+        return
+      }
+
+      const cost = Math.max(10, Number(pointCost) || 10)
+      const parsedStock = stock.trim() ? parseInt(stock, 10) : undefined
+
+      if (editingRewardId) {
+        const existing = familyRewards.find((r) => r.id === editingRewardId)
+        if (!existing) {
+          toast('Recompensa no encontrada', '❌')
+          return
+        }
+        updateFamilyReward({
+          ...existing,
+          title: title.trim(),
+          description: description.trim(),
+          pointCost: cost,
+          icon: icon || '🎁',
+          stock: parsedStock,
+        })
+        toast(`Recompensa "${title.trim()}" actualizada`, '✏️')
+      } else {
+        addFamilyReward({
+          title: title.trim(),
+          description: description.trim(),
+          pointCost: cost,
+          icon: icon || '🎁',
+          stock: parsedStock,
+          claimedBy: [],
+        })
+        toast(`Recompensa "${title.trim()}" añadida al catálogo`, '✅')
+      }
+
+      setIsModalOpen(false)
+    } catch (err) {
+      console.error('Error in handleSaveReward:', err)
+      toast('Hubo un error al guardar la recompensa', '❌')
+    }
   }
 
   const handleDelete = (id: string, rewardTitle: string) => {
@@ -115,119 +179,236 @@ export function RewardsTab() {
   }
 
   // Flatten all claims for history view
-  const allClaims = familyRewards.flatMap((r) =>
-    (r.claimedBy || []).map((c) => ({
-      ...c,
-      rewardTitle: r.title,
-    }))
-  ).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+  const allClaims = familyRewards
+    .flatMap((r) =>
+      (r.claimedBy || []).map((c) => ({
+        ...c,
+        rewardTitle: r.title,
+        rewardIcon: r.icon || '🎁',
+      }))
+    )
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
 
   return (
     <div className="w-full max-w-2xl mx-auto space-y-4">
-      {/* ── Top Header Controls ── */}
-      <div className="w-full flex items-center justify-between p-3.5 px-5 bg-white/[0.03] border border-white/10 rounded-2xl backdrop-blur-xl">
+      {/* ── Top Header Controls & Tab Selector ── */}
+      <div className="w-full flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 px-5 bg-white border border-slate-200 rounded-2xl shadow-sm dark:bg-[#121026]/90 dark:border-purple-500/20 dark:shadow-xl">
         <div>
-          <span className="text-sm font-bold text-white">Catálogo de Recompensas ({familyRewards.length})</span>
-          <p className="text-xs text-slate-400">Canjea puntos por privilegios y premios</p>
+          <span className="text-sm font-black text-slate-900 dark:text-white">
+            Tienda & Recompensas Familiares
+          </span>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            Canjea puntos ganados por privilegios, premios y regalos del hogar
+          </p>
         </div>
 
         <div className="flex items-center gap-2">
-          {allClaims.length > 0 && (
+          {/* Selector de Pestañas: Catálogo vs Historial */}
+          <div className="flex items-center p-1 rounded-xl bg-slate-100 dark:bg-white/[0.04] border border-slate-200 dark:border-white/10">
             <button
-              onClick={() => setShowHistory(true)}
-              className="flex items-center gap-1.5 rounded-xl bg-white/[0.04] px-3 py-1.5 text-xs font-bold text-slate-300 border border-white/10 hover:bg-white/[0.08] transition-all"
-              title="Historial de canjes"
+              type="button"
+              onClick={() => setActiveTab('catalogo')}
+              className={cn(
+                'px-3 py-1.5 rounded-lg text-xs font-bold transition-all',
+                activeTab === 'catalogo'
+                  ? 'bg-emerald-600 text-white shadow-sm dark:bg-purple-600'
+                  : 'text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white'
+              )}
             >
-              <History className="size-3.5 text-purple-400" />
-              <span className="hidden sm:inline">Historial</span>
+              Catálogo ({familyRewards.length})
             </button>
-          )}
+            <button
+              type="button"
+              onClick={() => setActiveTab('historial')}
+              className={cn(
+                'px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1',
+                activeTab === 'historial'
+                  ? 'bg-emerald-600 text-white shadow-sm dark:bg-purple-600'
+                  : 'text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white'
+              )}
+            >
+              <History className="size-3" />
+              <span>Historial ({allClaims.length})</span>
+            </button>
+          </div>
 
           <button
             onClick={handleOpenCreateModal}
-            className="flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 text-xs font-bold transition-all active:scale-95 shadow-sm"
+            className="flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 text-xs font-bold transition-all active:scale-95 shadow-sm dark:bg-purple-600 dark:hover:bg-purple-500"
           >
             <Plus className="size-3.5" />
-            <span>+ Nueva recompensa</span>
+            <span className="hidden sm:inline">+ Nueva Recompensa</span>
+            <span className="sm:hidden">Nueva</span>
           </button>
         </div>
       </div>
 
-      {/* ── Rewards Grid ── */}
-      {familyRewards.length === 0 ? (
-        <EmptyState
-          emoji="🎁"
-          title="Sin recompensas en el catálogo familiar."
-          action="+ Añadir primera recompensa"
-          onAction={handleOpenCreateModal}
-        />
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {familyRewards.map((r) => {
-            const hasStock = r.stock === undefined || r.stock > 0
-            return (
-              <Card
-                key={r.id}
-                className={cn(
-                  'p-4 bg-white/[0.03] border border-white/10 hover:border-emerald-500/30 transition-all rounded-2xl flex flex-col justify-between gap-3 shadow-sm',
-                  !hasStock && 'opacity-60'
-                )}
-              >
-                <div>
-                  {/* Top: Icon & Cost */}
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <div className="flex size-9 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                      <Gift className="size-4" />
-                    </div>
-
-                    <div className="flex items-center gap-1.5">
-                      <span className="flex items-center gap-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 text-xs font-bold text-emerald-700 dark:text-emerald-300 tabular-nums">
-                        {r.pointCost} pts
-                      </span>
-                      <button
-                        onClick={() => handleDelete(r.id, r.title)}
-                        className="rounded-lg p-1 text-slate-400 hover:bg-white/10 hover:text-white transition-colors"
-                        title="Eliminar recompensa"
-                      >
-                        <Trash2 className="size-3.5" />
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Title & Description */}
-                  <h4 className="font-bold text-sm text-white tracking-tight leading-snug">
-                    {r.title}
-                  </h4>
-                  {r.description && (
-                    <p className="mt-1 text-xs text-slate-400 line-clamp-2 leading-relaxed">
-                      {r.description}
-                    </p>
-                  )}
-                </div>
-
-                {/* Bottom Row: Stock & Canjear Button */}
-                <div className="flex items-center justify-between gap-2 pt-2 border-t border-white/5 text-xs">
-                  <span className="text-[11px] text-slate-400">
-                    {r.stock !== undefined ? `${r.stock} disponibles` : 'Ilimitado'}
-                  </span>
-
-                  <button
-                    onClick={() => handleOpenClaim(r)}
-                    disabled={!hasStock}
+      {/* ── TAB 1: CATÁLOGO DE RECOMPENSAS ── */}
+      {activeTab === 'catalogo' && (
+        <>
+          {familyRewards.length === 0 ? (
+            <EmptyState
+              emoji="🎁"
+              title="Sin recompensas en el catálogo familiar."
+              action="+ Añadir primera recompensa"
+              onAction={handleOpenCreateModal}
+            />
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {familyRewards.map((r) => {
+                const hasStock = r.stock === undefined || r.stock > 0
+                return (
+                  <Card
+                    key={r.id}
                     className={cn(
-                      'rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all',
-                      hasStock
-                        ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm active:scale-95'
-                        : 'bg-white/[0.04] text-slate-500 border border-white/5 cursor-not-allowed'
+                      'p-4 bg-white border border-slate-200 hover:border-emerald-500/40 dark:bg-[#121026]/85 dark:border-purple-500/20 dark:hover:border-purple-500/40 transition-all rounded-2xl flex flex-col justify-between gap-3 shadow-sm',
+                      !hasStock && 'opacity-60'
                     )}
                   >
-                    Canjear
-                  </button>
-                </div>
-              </Card>
-            )
-          })}
-        </div>
+                    <div>
+                      {/* Top: Icon, Cost & Actions */}
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <div className="flex size-9 items-center justify-center rounded-xl bg-emerald-50 text-xl border border-emerald-200 dark:bg-purple-500/15 dark:border-purple-500/30">
+                          {r.icon || '🎁'}
+                        </div>
+
+                        <div className="flex items-center gap-1.5">
+                          <span className="flex items-center gap-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 dark:bg-purple-500/15 dark:text-purple-300 dark:border-purple-500/30 px-2.5 py-0.5 text-xs font-bold tabular-nums">
+                            <Coins className="size-3 text-amber-500" />
+                            <span>{r.pointCost} pts</span>
+                          </span>
+
+                          <button
+                            onClick={() => handleOpenEditModal(r)}
+                            className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-white/10 dark:hover:text-white transition-colors"
+                            title="Editar recompensa"
+                          >
+                            <Edit2 className="size-3.5" />
+                          </button>
+
+                          <button
+                            onClick={() => handleDelete(r.id, r.title)}
+                            className="rounded-lg p-1 text-slate-400 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-500/20 dark:hover:text-rose-400 transition-colors"
+                            title="Eliminar recompensa"
+                          >
+                            <Trash2 className="size-3.5" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Title & Description */}
+                      <h4 className="font-extrabold text-sm text-slate-900 dark:text-white tracking-tight leading-snug">
+                        {r.title}
+                      </h4>
+                      {r.description && (
+                        <p className="mt-1 text-xs text-slate-600 dark:text-slate-400 line-clamp-2 leading-relaxed">
+                          {r.description}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Bottom Row: Stock & Canjear Button */}
+                    <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-white/5 text-xs">
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                        {r.stock !== undefined ? (
+                          r.stock > 0 ? (
+                            `${r.stock} disponibles`
+                          ) : (
+                            <span className="text-rose-500 font-bold">Agotado</span>
+                          )
+                        ) : (
+                          'Ilimitado'
+                        )}
+                      </span>
+
+                      <button
+                        onClick={() => handleOpenClaim(r)}
+                        disabled={!hasStock}
+                        className={cn(
+                          'rounded-xl px-4 py-1.5 text-xs font-bold transition-all active:scale-95',
+                          hasStock
+                            ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm dark:bg-purple-600 dark:hover:bg-purple-500'
+                            : 'bg-slate-100 text-slate-400 border border-slate-200 dark:bg-white/[0.04] dark:text-slate-500 dark:border-white/5 cursor-not-allowed'
+                        )}
+                      >
+                        Canjear
+                      </button>
+                    </div>
+                  </Card>
+                )
+              })}
+            </div>
+          )}
+        </>
+      )}
+
+      {/* ── TAB 2: HISTORIAL DE CANJES ── */}
+      {activeTab === 'historial' && (
+        <Card className="p-4 bg-white border border-slate-200 rounded-2xl shadow-sm space-y-3 dark:bg-[#121026]/90 dark:border-purple-500/20">
+          <div className="flex items-center justify-between pb-2 border-b border-slate-200/80 dark:border-purple-500/15">
+            <h4 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+              <History className="size-3.5 text-emerald-600 dark:text-purple-400" />
+              <span>Historial de Recompensas Canjeadas</span>
+            </h4>
+            <span className="text-xs text-slate-500 font-mono">{allClaims.length} registros</span>
+          </div>
+
+          {allClaims.length === 0 ? (
+            <div className="py-8 text-center text-xs text-slate-400">
+              <p>Aún no se ha canjeado ninguna recompensa.</p>
+              <p className="mt-1 text-[11px]">¡Completa tareas y retos familiares para ganar puntos!</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {allClaims.map((claim, idx) => {
+                const member = getMemberById(claim.memberId)
+                const dateObj = new Date(claim.date)
+                const formattedDate = !isNaN(dateObj.getTime())
+                  ? dateObj.toLocaleDateString('es-ES', {
+                      day: 'numeric',
+                      month: 'short',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })
+                  : claim.date
+
+                return (
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs dark:bg-white/[0.02] dark:border-white/5"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="size-8 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center text-base shrink-0 dark:bg-purple-500/20 dark:border-purple-500/30">
+                        {claim.rewardIcon || '🎁'}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-bold text-slate-900 dark:text-white truncate">
+                          {claim.rewardTitle}
+                        </p>
+                        <div className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400">
+                          {member && <MemberAvatar member={member} size="sm" />}
+                          <span className="font-medium">{member?.name || 'Miembro'}</span>
+                          <span>·</span>
+                          <span className="font-mono">{formattedDate}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="font-black text-rose-600 dark:text-purple-300 font-mono text-xs">
+                        -{claim.pointCost || 0} pts
+                      </span>
+                      <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold dark:bg-emerald-500/20 dark:text-emerald-300">
+                        Completado
+                      </span>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </Card>
       )}
 
       {/* ── MODAL: CANJEAR RECOMPENSA ── */}
@@ -238,19 +419,27 @@ export function RewardsTab() {
       >
         {claimingReward && (
           <div className="flex flex-col gap-4 text-xs">
-            <div className="flex items-center justify-between p-3 rounded-2xl bg-white/[0.04] border border-white/10">
-              <span className="text-slate-400">Coste requerido:</span>
-              <span className="font-bold text-emerald-400 text-sm tabular-nums">
+            <div className="flex items-center justify-between p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 dark:bg-purple-950/30 dark:border-purple-500/20">
+              <div>
+                <span className="text-slate-600 dark:text-slate-400 font-medium">Coste de la recompensa:</span>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">Se descontará del saldo del miembro seleccionado</p>
+              </div>
+              <span className="font-black text-emerald-700 dark:text-purple-300 text-base font-mono tabular-nums">
                 {claimingReward.pointCost} puntos
               </span>
             </div>
 
             <div className="flex flex-col gap-2">
-              <p className="font-bold text-slate-300">¿Quién canjea este premio?</p>
-              <div className="flex flex-col gap-1.5 max-h-48 overflow-y-auto pr-1">
+              <p className="font-extrabold text-slate-900 dark:text-slate-200">
+                ¿Qué integrante de la familia canjea este premio?
+              </p>
+              <div className="flex flex-col gap-1.5 max-h-56 overflow-y-auto pr-1">
                 {members.map((m) => {
-                  const canAfford = (m.points || 0) >= claimingReward.pointCost
+                  const memberPts = Number(m.points) || 0
+                  const cost = Number(claimingReward.pointCost) || 0
+                  const canAfford = memberPts >= cost
                   const isSelected = selectedMemberId === m.id
+                  const remainingAfter = memberPts - cost
 
                   return (
                     <button
@@ -259,25 +448,39 @@ export function RewardsTab() {
                       disabled={!canAfford}
                       onClick={() => setSelectedMemberId(m.id)}
                       className={cn(
-                        'flex items-center justify-between p-2.5 rounded-xl border text-left transition-all',
+                        'flex items-center justify-between p-3 rounded-xl border text-left transition-all',
                         !canAfford
-                          ? 'border-white/5 bg-white/[0.01] opacity-40 cursor-not-allowed'
+                          ? 'border-slate-200 bg-slate-50 opacity-50 cursor-not-allowed dark:border-white/5 dark:bg-white/[0.01]'
                           : isSelected
-                          ? 'border-emerald-500 bg-emerald-500/15 text-white shadow-sm'
-                          : 'border-white/10 bg-white/[0.03] text-slate-300 hover:bg-white/[0.06]'
+                          ? 'border-emerald-500 bg-emerald-50 text-slate-900 shadow-sm ring-1 ring-emerald-500 dark:border-purple-500 dark:bg-purple-600/20 dark:text-white dark:ring-purple-400'
+                          : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700 dark:border-white/10 dark:bg-white/[0.03] dark:text-slate-300 dark:hover:bg-white/[0.06]'
                       )}
                     >
                       <div className="flex items-center gap-2.5">
                         <MemberAvatar member={m} size="sm" />
                         <div>
                           <p className="font-bold text-xs">{m.name}</p>
-                          <p className={cn('text-[10px]', canAfford ? 'text-emerald-300' : 'text-slate-500')}>
-                            Saldo actual: {m.points || 0} pts
+                          <p
+                            className={cn(
+                              'text-[10px] font-medium font-mono',
+                              canAfford
+                                ? 'text-emerald-700 dark:text-emerald-400'
+                                : 'text-rose-600 dark:text-rose-400'
+                            )}
+                          >
+                            Saldo actual: {memberPts} pts
+                            {canAfford && (
+                              <span className="text-slate-500 dark:text-slate-400 ml-1">
+                                (tras canje: {remainingAfter} pts)
+                              </span>
+                            )}
                           </p>
                         </div>
                       </div>
                       {!canAfford && (
-                        <span className="text-[10px] text-slate-500 font-semibold">Puntos insuficientes</span>
+                        <span className="text-[10px] text-rose-600 dark:text-rose-400 font-bold bg-rose-50 dark:bg-rose-500/10 px-2 py-0.5 rounded-md border border-rose-200 dark:border-rose-500/20">
+                          Puntos insuficientes
+                        </span>
                       )}
                     </button>
                   )
@@ -290,7 +493,7 @@ export function RewardsTab() {
                 type="button"
                 disabled={isClaiming}
                 onClick={() => setClaimingReward(null)}
-                className="rounded-xl px-4 py-2 text-xs font-bold text-slate-400 hover:bg-white/10 disabled:opacity-50"
+                className="rounded-xl px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-white/10 disabled:opacity-50"
               >
                 Cancelar
               </button>
@@ -299,18 +502,25 @@ export function RewardsTab() {
                 disabled={
                   isClaiming ||
                   !selectedMemberId ||
-                  !members.some((m) => m.id === selectedMemberId && (m.points || 0) >= claimingReward.pointCost)
+                  !members.some(
+                    (m) =>
+                      m.id === selectedMemberId &&
+                      Number(m.points || 0) >= Number(claimingReward.pointCost)
+                  )
                 }
                 onClick={handleConfirmClaim}
-                className="flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 disabled:pointer-events-none px-5 py-2 text-xs font-bold text-white shadow-sm transition-all active:scale-95"
+                className="flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 disabled:pointer-events-none px-5 py-2 text-xs font-bold text-white shadow-sm transition-all active:scale-95 dark:bg-purple-600 dark:hover:bg-purple-500"
               >
                 {isClaiming ? (
                   <>
                     <Loader2 className="size-3.5 animate-spin" />
-                    <span>Canjeando...</span>
+                    <span>Canjeando premio...</span>
                   </>
                 ) : (
-                  <span>Confirmar canje</span>
+                  <>
+                    <CheckCircle2 className="size-3.5" />
+                    <span>Confirmar Canje</span>
+                  </>
                 )}
               </button>
             </div>
@@ -318,119 +528,111 @@ export function RewardsTab() {
         )}
       </BottomSheet>
 
-      {/* ── MODAL: CREAR RECOMPENSA ── */}
+      {/* ── MODAL: CREAR / EDITAR RECOMPENSA ── */}
       <BottomSheet
-        open={isCreating}
-        onClose={() => setIsCreating(false)}
-        title="Nueva recompensa para la tienda"
+        open={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title={editingRewardId ? 'Editar recompensa' : 'Nueva recompensa para la tienda'}
       >
         <div className="flex flex-col gap-3.5 text-xs">
+          {/* Título */}
           <div className="flex flex-col gap-1">
-            <label className="font-bold text-slate-400">Título del premio <span className="text-red-400">*</span></label>
+            <label className="font-bold text-slate-700 dark:text-slate-300">
+              Título del premio <span className="text-red-500">*</span>
+            </label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Ej. Elegir película del viernes, Tarde de videojuegos..."
+              placeholder="Ej. Elegir película del viernes, Tarde de videojuegos, Postre especial..."
               autoFocus
-              className="w-full rounded-xl border border-white/10 bg-white/[0.04] py-2.5 px-3 text-xs font-medium text-white outline-none focus:border-emerald-500"
+              className="w-full rounded-xl border border-slate-200 bg-white py-2.5 px-3 text-xs font-medium text-slate-900 outline-none focus:border-emerald-500 dark:border-white/10 dark:bg-white/[0.04] dark:text-white"
             />
           </div>
 
+          {/* Selector de Icono */}
+          <div className="flex flex-col gap-1.5">
+            <label className="font-bold text-slate-700 dark:text-slate-300">Icono / Emoji</label>
+            <div className="flex flex-wrap gap-1.5 p-2 rounded-xl bg-slate-50 border border-slate-200 dark:bg-white/[0.02] dark:border-white/10">
+              {REWARD_ICONS.map((emoji) => (
+                <button
+                  key={emoji}
+                  type="button"
+                  onClick={() => setIcon(emoji)}
+                  className={cn(
+                    'size-8 rounded-lg text-base flex items-center justify-center transition-all',
+                    icon === emoji
+                      ? 'bg-emerald-600 text-white scale-110 shadow-sm dark:bg-purple-600'
+                      : 'hover:bg-slate-200 dark:hover:bg-white/10'
+                  )}
+                >
+                  {emoji}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Descripción */}
           <div className="flex flex-col gap-1">
-            <label className="font-bold text-slate-400">Descripción / Detalles (opcional)</label>
+            <label className="font-bold text-slate-700 dark:text-slate-300">
+              Descripción / Condiciones (opcional)
+            </label>
             <textarea
               rows={2}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Condiciones para disfrutar del premio..."
-              className="w-full rounded-xl border border-white/10 bg-white/[0.04] py-2 px-3 text-xs font-medium text-white outline-none focus:border-emerald-500 resize-none"
+              className="w-full rounded-xl border border-slate-200 bg-white py-2 px-3 text-xs font-medium text-slate-900 outline-none focus:border-emerald-500 resize-none dark:border-white/10 dark:bg-white/[0.04] dark:text-white"
             />
           </div>
 
+          {/* Coste y Stock */}
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1">
-              <label className="font-bold text-slate-400">Coste en puntos</label>
+              <label className="font-bold text-slate-700 dark:text-slate-300">Coste en puntos</label>
               <input
                 type="number"
                 min={10}
                 step={10}
                 value={pointCost}
                 onChange={(e) => setPointCost(Math.max(10, parseInt(e.target.value, 10) || 10))}
-                className="w-full rounded-xl border border-white/10 bg-white/[0.04] py-2 px-3 text-xs font-medium text-white outline-none focus:border-emerald-500"
+                className="w-full rounded-xl border border-slate-200 bg-white py-2 px-3 text-xs font-medium text-slate-900 outline-none focus:border-emerald-500 font-mono dark:border-white/10 dark:bg-white/[0.04] dark:text-white"
               />
             </div>
 
             <div className="flex flex-col gap-1">
-              <label className="font-bold text-slate-400">Stock (dejar vacío = ilimitado)</label>
+              <label className="font-bold text-slate-700 dark:text-slate-300">
+                Stock (vacío = ilimitado)
+              </label>
               <input
                 type="number"
                 min={1}
                 value={stock}
                 onChange={(e) => setStock(e.target.value)}
                 placeholder="Ilimitado"
-                className="w-full rounded-xl border border-white/10 bg-white/[0.04] py-2 px-3 text-xs font-medium text-white outline-none focus:border-emerald-500"
+                className="w-full rounded-xl border border-slate-200 bg-white py-2 px-3 text-xs font-medium text-slate-900 outline-none focus:border-emerald-500 font-mono dark:border-white/10 dark:bg-white/[0.04] dark:text-white"
               />
             </div>
           </div>
 
+          {/* Acciones */}
           <div className="mt-2 flex gap-2 justify-end">
             <button
               type="button"
-              onClick={() => setIsCreating(false)}
-              className="rounded-xl px-4 py-2 text-xs font-bold text-slate-400 hover:bg-white/10"
+              onClick={() => setIsModalOpen(false)}
+              className="rounded-xl px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-white/10"
             >
               Cancelar
             </button>
             <button
               type="button"
               disabled={!title.trim()}
-              onClick={handleCreateReward}
-              className="rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 disabled:pointer-events-none px-5 py-2 text-xs font-bold text-white shadow-sm transition-all active:scale-95"
+              onClick={handleSaveReward}
+              className="rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 disabled:pointer-events-none px-5 py-2 text-xs font-bold text-white shadow-sm transition-all active:scale-95 dark:bg-purple-600 dark:hover:bg-purple-500"
             >
-              Guardar recompensa
+              {editingRewardId ? 'Guardar Cambios' : 'Crear Recompensa'}
             </button>
           </div>
-        </div>
-      </BottomSheet>
-
-      {/* ── MODAL: HISTORIAL DE CANJES ── */}
-      <BottomSheet
-        open={showHistory}
-        onClose={() => setShowHistory(false)}
-        title="Historial de canjes"
-      >
-        <div className="flex flex-col gap-2 text-xs max-h-72 overflow-y-auto">
-          {allClaims.length === 0 ? (
-            <p className="text-slate-400 text-center py-6">No hay canjes registrados aún.</p>
-          ) : (
-            allClaims.map((claim, idx) => {
-              const member = getMemberById(claim.memberId)
-              return (
-                <div
-                  key={idx}
-                  className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.02] border border-white/5"
-                >
-                  <div className="flex items-center gap-2">
-                    {member ? (
-                      <MemberAvatar member={member} size="sm" />
-                    ) : (
-                      <div className="size-7 rounded-full bg-white/10" />
-                    )}
-                    <div>
-                      <p className="font-bold text-white text-xs">{claim.rewardTitle}</p>
-                      <p className="text-[10px] text-slate-400">
-                        Canjeado por {member?.name || 'Miembro'} · {new Date(claim.date).toLocaleDateString('es-ES')}
-                      </p>
-                    </div>
-                  </div>
-                  {claim.pointCost && (
-                    <span className="font-bold text-purple-300 text-xs">-{claim.pointCost} pts</span>
-                  )}
-                </div>
-              )
-            })
-          )}
         </div>
       </BottomSheet>
     </div>
