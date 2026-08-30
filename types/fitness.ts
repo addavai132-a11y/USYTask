@@ -81,6 +81,7 @@ export interface Exercise {
   equipment: EquipmentType
   targetRpeRir?: string
   restSeconds?: number
+  isCustom?: boolean
   notes?: string
 }
 
@@ -103,6 +104,7 @@ export interface WorkoutSet {
   reps: number
   rpe?: number
   completed: boolean
+  restSeconds?: number // Tiempo de descanso específico tras esta serie en segundos (ej. 60, 90, 180, 240)
   prevWeightKg?: number
   prevReps?: number
 }

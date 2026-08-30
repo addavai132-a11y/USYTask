@@ -12,7 +12,7 @@ import {
   equipmentLabels,
   routineCategoryLabels,
 } from '@/types/fitness'
-import { PREDEFINED_EXERCISES } from '@/lib/fitness-store'
+import { PREDEFINED_EXERCISES, getAllExercisesCatalog, saveCustomExercise } from '@/lib/fitness-store'
 import { ROUTINE_TEMPLATES, type RoutineTemplateVariant } from '@/lib/fitness-templates'
 import { cn } from '@/lib/utils'
 
@@ -43,10 +43,15 @@ export function RoutinesTab({
   const [selectedExercises, setSelectedExercises] = useState<Exercise[]>([])
   const [selectedVariantIndex, setSelectedVariantIndex] = useState(0)
 
-  // Exercise Picker Modal
+  // Exercise Picker Modal & Custom Exercise Creation
   const [isExercisePickerOpen, setIsExercisePickerOpen] = useState(false)
   const [exerciseSearch, setExerciseSearch] = useState('')
   const [exerciseMuscleFilter, setExerciseMuscleFilter] = useState<string>('all')
+  const [isCreatingCustomEx, setIsCreatingCustomEx] = useState(false)
+  const [customExName, setCustomExName] = useState('')
+  const [customExMuscle, setCustomExMuscle] = useState<MuscleGroup>('pecho')
+  const [customExEquipment, setCustomExEquipment] = useState<EquipmentType>('mancuerna')
+  const [customExRest, setCustomExRest] = useState('90')
 
   const filteredRoutines = routines.filter((r) => {
     if (categoryFilter === 'all') return true
@@ -113,8 +118,30 @@ export function RoutinesTab({
     setIsModalOpen(false)
   }
 
-  // Filter exercises in picker
-  const filteredCatalog = PREDEFINED_EXERCISES.filter((ex) => {
+  function handleCreateCustomExercise() {
+    if (!customExName.trim()) {
+      toast('Escribe el nombre del ejercicio personalizado', '❌')
+      return
+    }
+    const newEx: Exercise = {
+      id: `ex_custom_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+      name: customExName.trim(),
+      muscleGroup: customExMuscle,
+      equipment: customExEquipment,
+      restSeconds: parseInt(customExRest, 10) || 90,
+      isCustom: true,
+    }
+    saveCustomExercise(newEx)
+    setSelectedExercises((prev) => [...prev, newEx])
+    setCustomExName('')
+    setCustomExRest('90')
+    setIsCreatingCustomEx(false)
+    toast(`✅ Ejercicio personalizado "${newEx.name}" creado y añadido`, '🏋️')
+  }
+
+  // Filter exercises in picker combining predefined + custom
+  const allExercises = getAllExercisesCatalog()
+  const filteredCatalog = allExercises.filter((ex) => {
     if (exerciseMuscleFilter !== 'all' && ex.muscleGroup !== exerciseMuscleFilter) return false
     if (exerciseSearch.trim()) {
       const q = exerciseSearch.toLowerCase()
@@ -476,10 +503,10 @@ export function RoutinesTab({
 
                 {selectedExercises.length === 0 ? (
                   <div className="p-4 rounded-2xl border border-dashed border-slate-300 dark:border-purple-500/30 text-center text-xs text-slate-500 dark:text-slate-400">
-                    No has añadido ejercicios aún. Pulsa el botón superior para explorar el catálogo.
+                    No has añadido ejercicios aún. Pulsa el botón superior para explorar el catálogo o crear uno personalizado.
                   </div>
                 ) : (
-                  <div className="space-y-2 max-h-56 overflow-y-auto custom-fitness-scroll p-1 pr-2">
+                  <div className="space-y-2 max-h-60 overflow-y-auto custom-fitness-scroll p-1 pr-2">
                     {selectedExercises.map((ex, idx) => {
                       const meta = muscleGroupLabels[ex.muscleGroup]
                       return (
@@ -487,26 +514,54 @@ export function RoutinesTab({
                           key={`${ex.id}_${idx}`}
                           className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-slate-50 border border-slate-200 dark:bg-white/[0.03] dark:border-white/10"
                         >
-                          <div className="flex items-center gap-2 min-w-0">
+                          <div className="flex items-center gap-2 min-w-0 flex-1">
                             <span className="size-5 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[10px] flex items-center justify-center shrink-0 dark:bg-purple-500/20 dark:text-purple-300">
                               {idx + 1}
                             </span>
-                            <div className="min-w-0">
-                              <p className="font-bold text-slate-900 dark:text-white text-xs truncate">{ex.name}</p>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-1.5 truncate">
+                                <p className="font-bold text-slate-900 dark:text-white text-xs truncate">{ex.name}</p>
+                                {ex.isCustom && (
+                                  <span className="px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-600 dark:text-amber-400 text-[9px] font-black uppercase">
+                                    Personalizado
+                                  </span>
+                                )}
+                              </div>
                               <span className="text-[10px] text-slate-500 dark:text-slate-400">
                                 {meta?.icon} {meta?.label} · {equipmentLabels[ex.equipment]}
                               </span>
                             </div>
                           </div>
 
-                          <button
-                            type="button"
-                            onClick={() => setSelectedExercises((prev) => prev.filter((_, i) => i !== idx))}
-                            className="p-1 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors dark:hover:text-rose-400 dark:hover:bg-rose-500/10"
-                            title="Eliminar ejercicio"
-                          >
-                            <Trash2 className="size-3.5" />
-                          </button>
+                          {/* Control de Descanso y Borrado */}
+                          <div className="flex items-center gap-2 shrink-0">
+                            <div className="flex items-center gap-1 rounded-lg bg-white dark:bg-white/[0.06] border border-slate-200 dark:border-white/10 px-2 py-0.5 text-[10px]">
+                              <span className="text-slate-400 font-semibold hidden sm:inline">Descanso:</span>
+                              <input
+                                type="number"
+                                step="5"
+                                min="0"
+                                value={ex.restSeconds ?? 90}
+                                onChange={(e) => {
+                                  const val = parseInt(e.target.value, 10) || 0
+                                  setSelectedExercises((prev) =>
+                                    prev.map((item, i) => (i === idx ? { ...item, restSeconds: val } : item))
+                                  )
+                                }}
+                                className="w-9 text-center font-bold bg-transparent text-slate-900 dark:text-white outline-none"
+                              />
+                              <span className="text-slate-400 font-semibold">s</span>
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => setSelectedExercises((prev) => prev.filter((_, i) => i !== idx))}
+                              className="p-1 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors dark:hover:text-rose-400 dark:hover:bg-rose-500/10"
+                              title="Eliminar ejercicio"
+                            >
+                              <Trash2 className="size-3.5" />
+                            </button>
+                          </div>
                         </div>
                       )
                     })}
@@ -539,13 +594,13 @@ export function RoutinesTab({
       {/* ── MODAL EXPLORADOR / BUSCADOR DE EJERCICIOS ── */}
       {isExercisePickerOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-150 max-h-[85vh] flex flex-col space-y-3 dark:bg-[#100e23] dark:border-purple-500/30">
+          <div className="w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-150 max-h-[88vh] flex flex-col space-y-3 dark:bg-[#100e23] dark:border-purple-500/30">
             {/* Cabecera y Buscador (Fijos arriba) */}
             <div className="shrink-0 space-y-3">
               <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-purple-500/15">
                 <div>
                   <h3 className="text-base font-black text-slate-900 dark:text-white">Catálogo de Ejercicios</h3>
-                  <p className="text-[11px] text-slate-600 dark:text-slate-400">Selecciona los ejercicios que formarán parte de tu rutina</p>
+                  <p className="text-[11px] text-slate-600 dark:text-slate-400">Selecciona o crea ejercicios personalizados para tu rutina</p>
                 </div>
                 <button
                   onClick={() => setIsExercisePickerOpen(false)}
@@ -554,6 +609,116 @@ export function RoutinesTab({
                   <X className="size-5" />
                 </button>
               </div>
+
+              {/* Botón para alternar creación de ejercicio personalizado */}
+              <div className="flex items-center justify-between gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsCreatingCustomEx((prev) => !prev)
+                    if (!customExName && exerciseSearch) {
+                      setCustomExName(exerciseSearch)
+                    }
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-700 dark:text-amber-300 border border-amber-500/30 text-xs font-bold transition-all active:scale-95"
+                >
+                  <Plus className="size-3.5" />
+                  <span>{isCreatingCustomEx ? 'Ocultar Creador' : '+ Añadir Ejercicio Personalizado'}</span>
+                </button>
+
+                <span className="text-[10px] text-slate-400">
+                  {filteredCatalog.length} ejercicios encontrados
+                </span>
+              </div>
+
+              {/* Formulario de Creación de Ejercicio Personalizado */}
+              {isCreatingCustomEx && (
+                <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 space-y-2.5 animate-fade-in text-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-amber-800 dark:text-amber-300">✨ Nuevo Ejercicio Personalizado</span>
+                    <button
+                      type="button"
+                      onClick={() => setIsCreatingCustomEx(false)}
+                      className="text-slate-400 hover:text-slate-600 dark:hover:text-white"
+                    >
+                      <X className="size-3.5" />
+                    </button>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="font-semibold text-slate-700 dark:text-slate-300">Nombre del Ejercicio <span className="text-red-500">*</span></label>
+                    <input
+                      type="text"
+                      value={customExName}
+                      onChange={(e) => setCustomExName(e.target.value)}
+                      placeholder="Ej. Press Guilotina, Elevación Y-Raise..."
+                      className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-white/[0.04] py-1.5 px-3 text-xs font-medium text-slate-900 dark:text-white outline-none focus:border-amber-500"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="space-y-1">
+                      <label className="font-semibold text-slate-700 dark:text-slate-300">Músculo</label>
+                      <CustomSelect<MuscleGroup>
+                        value={customExMuscle}
+                        onChange={setCustomExMuscle}
+                        options={[
+                          { value: 'pecho', label: '🏋️‍♂️ Pecho' },
+                          { value: 'espalda', label: '🚣 Espalda' },
+                          { value: 'hombro', label: '🎯 Hombro' },
+                          { value: 'cuadriceps', label: '🦵 Cuádriceps' },
+                          { value: 'isquios', label: '🏃 Isquios' },
+                          { value: 'gluteo', label: '🍑 Glúteo' },
+                          { value: 'biceps', label: '💪 Bíceps' },
+                          { value: 'triceps', label: '⚡ Tríceps' },
+                          { value: 'gemelo', label: '🦶 Gemelo' },
+                          { value: 'core', label: '🛡️ Core' },
+                          { value: 'cardio', label: '❤️‍🔥 Cardio' },
+                        ]}
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="font-semibold text-slate-700 dark:text-slate-300">Equipo</label>
+                      <CustomSelect<EquipmentType>
+                        value={customExEquipment}
+                        onChange={setCustomExEquipment}
+                        options={[
+                          { value: 'mancuerna', label: 'Mancuerna' },
+                          { value: 'barra', label: 'Barra' },
+                          { value: 'polea', label: 'Polea' },
+                          { value: 'maquina', label: 'Máquina' },
+                          { value: 'peso_corporal', label: 'Peso Corporal' },
+                          { value: 'kettlebell', label: 'Kettlebell' },
+                          { value: 'otro', label: 'Otro' },
+                        ]}
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="font-semibold text-slate-700 dark:text-slate-300">Descanso (s)</label>
+                      <input
+                        type="number"
+                        step="5"
+                        min="0"
+                        value={customExRest}
+                        onChange={(e) => setCustomExRest(e.target.value)}
+                        className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-white/[0.04] py-1.5 px-3 text-xs font-bold text-center text-slate-900 dark:text-white outline-none focus:border-amber-500"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={handleCreateCustomExercise}
+                      className="px-3.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-sm transition-all active:scale-95"
+                    >
+                      Guardar y Añadir a la Rutina
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* Búsqueda y Filtro de Músculo */}
               <div className="flex gap-2">
@@ -590,42 +755,65 @@ export function RoutinesTab({
             </div>
 
             {/* Listado de Ejercicios (Contenedor scrolleable con scrollbar personalizada) */}
-            <div className="flex-1 overflow-y-auto pr-2 space-y-2.5 max-h-[50vh] md:max-h-[55vh] pb-2 custom-fitness-scroll">
-              {filteredCatalog.map((ex) => {
-                const isAdded = selectedExercises.some((e) => e.id === ex.id)
-                const meta = muscleGroupLabels[ex.muscleGroup]
-
-                return (
+            <div className="flex-1 overflow-y-auto pr-2 space-y-2 max-h-[45vh] pb-2 custom-fitness-scroll">
+              {filteredCatalog.length === 0 ? (
+                <div className="text-center py-6 text-xs text-slate-500 dark:text-slate-400 space-y-2">
+                  <p>No se encontró ningún ejercicio con ese nombre.</p>
                   <button
-                    key={ex.id}
                     type="button"
-                    onClick={() => handleToggleExerciseInRoutine(ex)}
-                    className={cn(
-                      'w-full flex items-center justify-between p-2.5 rounded-xl border text-left transition-all active:scale-[0.99]',
-                      isAdded
-                        ? 'bg-emerald-50 border-emerald-300 text-slate-900 dark:bg-purple-950/60 dark:border-purple-500/50 dark:text-white'
-                        : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-700 dark:bg-white/[0.02] dark:border-white/10 dark:hover:bg-white/[0.06] dark:text-slate-300'
-                    )}
+                    onClick={() => {
+                      setIsCreatingCustomEx(true)
+                      setCustomExName(exerciseSearch)
+                    }}
+                    className="px-3.5 py-1.5 rounded-xl bg-amber-500/20 text-amber-700 dark:text-amber-300 font-bold hover:underline"
                   >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <span className="text-lg shrink-0">{meta?.icon}</span>
-                      <div className="min-w-0">
-                        <p className="font-bold text-xs truncate">{ex.name}</p>
-                        <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
-                          {meta?.label} · {equipmentLabels[ex.equipment]} {ex.targetRpeRir ? `· ${ex.targetRpeRir}` : ''}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className={cn(
-                      'size-5 rounded-lg border flex items-center justify-center shrink-0 transition-colors',
-                      isAdded ? 'bg-emerald-600 border-emerald-600 text-white dark:bg-purple-600 dark:border-purple-500' : 'border-slate-300 dark:border-white/20'
-                    )}>
-                      {isAdded && <Check className="size-3.5 stroke-[3]" />}
-                    </div>
+                    Crear "{exerciseSearch}" como ejercicio personalizado
                   </button>
-                )
-              })}
+                </div>
+              ) : (
+                filteredCatalog.map((ex) => {
+                  const isAdded = selectedExercises.some((e) => e.id === ex.id)
+                  const meta = muscleGroupLabels[ex.muscleGroup]
+
+                  return (
+                    <button
+                      key={ex.id}
+                      type="button"
+                      onClick={() => handleToggleExerciseInRoutine(ex)}
+                      className={cn(
+                        'w-full flex items-center justify-between p-2.5 rounded-xl border text-left transition-all active:scale-[0.99]',
+                        isAdded
+                          ? 'bg-emerald-50 border-emerald-300 text-slate-900 dark:bg-purple-950/60 dark:border-purple-500/50 dark:text-white'
+                          : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-700 dark:bg-white/[0.02] dark:border-white/10 dark:hover:bg-white/[0.06] dark:text-slate-300'
+                      )}
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <span className="text-lg shrink-0">{meta?.icon}</span>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            <p className="font-bold text-xs truncate">{ex.name}</p>
+                            {ex.isCustom && (
+                              <span className="px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-600 dark:text-amber-400 text-[8px] font-black uppercase">
+                                Personalizado
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
+                            {meta?.label} · {equipmentLabels[ex.equipment]} {ex.targetRpeRir ? `· ${ex.targetRpeRir}` : ''}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className={cn(
+                        'size-5 rounded-lg border flex items-center justify-center shrink-0 transition-colors',
+                        isAdded ? 'bg-emerald-600 border-emerald-600 text-white dark:bg-purple-600 dark:border-purple-500' : 'border-slate-300 dark:border-white/20'
+                      )}>
+                        {isAdded && <Check className="size-3.5 stroke-[3]" />}
+                      </div>
+                    </button>
+                  )
+                })
+              )}
             </div>
 
             {/* Pie de Modal (Fijo abajo) */}

@@ -22,6 +22,7 @@ export const NUTRITION_GOAL_KEY = 'usytask_fitness_nutrition_goal'
 export const MEAL_LOGS_KEY = 'usytask_fitness_meal_logs'
 export const ACTIVE_WORKOUT_KEY = 'usytask_active_workout_session'
 export const REST_TIMER_KEY = 'usytask_active_rest_timer'
+export const CUSTOM_EXERCISES_KEY = 'usytask_fitness_custom_exercises'
 
 export interface ActiveWorkoutState {
   routineId: string
@@ -110,6 +111,33 @@ export const PREDEFINED_EXERCISES: Exercise[] = [
   { id: 'ex_ab_wheel', name: 'Rueda Abdominal (Ab Wheel)', muscleGroup: 'core', equipment: 'otro', targetRpeRir: 'RPE 8', restSeconds: 60 },
   { id: 'ex_treadmill_hiit', name: 'Cardio HIIT / Cinta Inclinada', muscleGroup: 'cardio', equipment: 'maquina', notes: '20 min a pulsaciones zona 3-4' },
 ]
+
+export function getCustomExercises(): Exercise[] {
+  return loadArray<Exercise>(CUSTOM_EXERCISES_KEY, [])
+}
+
+export function saveCustomExercise(exercise: Exercise): Exercise[] {
+  const custom = getCustomExercises()
+  const idx = custom.findIndex((e) => e.id === exercise.id || e.name.toLowerCase() === exercise.name.toLowerCase())
+  if (idx >= 0) {
+    custom[idx] = { ...exercise, isCustom: true }
+  } else {
+    custom.unshift({ ...exercise, isCustom: true })
+  }
+  saveArray(CUSTOM_EXERCISES_KEY, custom)
+  return custom
+}
+
+export function deleteCustomExercise(id: string): Exercise[] {
+  const custom = getCustomExercises().filter((e) => e.id !== id)
+  saveArray(CUSTOM_EXERCISES_KEY, custom)
+  return custom
+}
+
+export function getAllExercisesCatalog(): Exercise[] {
+  const custom = getCustomExercises()
+  return [...custom, ...PREDEFINED_EXERCISES]
+}
 
 // ── INITIAL DEFAULT ROUTINES ──
 export const INITIAL_ROUTINES: WorkoutRoutine[] = [

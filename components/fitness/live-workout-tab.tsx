@@ -35,11 +35,16 @@ import {
   getActiveWorkoutSession,
   saveActiveWorkoutSession,
   clearActiveWorkoutSession,
+  getAllExercisesCatalog,
+  saveCustomExercise,
   type ActiveWorkoutState,
 } from '@/lib/fitness-store'
 import { triggerRestTimer, FloatingRestTimer } from './floating-rest-timer'
 import { getTodayISO } from '@/lib/date-utils'
 import { cn } from '@/lib/utils'
+import type { Exercise, MuscleGroup, EquipmentType } from '@/types/fitness'
+import { equipmentLabels } from '@/types/fitness'
+import { Search } from 'lucide-react'
 
 interface LiveWorkoutTabProps {
   routines: WorkoutRoutine[]
@@ -57,47 +62,53 @@ function generateSetId(exerciseId: string, setIdx: number): string {
 
 function buildInitialExercisesForRoutine(routine: WorkoutRoutine | undefined): WorkoutExerciseSession[] {
   if (!routine) return []
-  return routine.exercises.map((ex) => ({
-    exerciseId: ex.id,
-    exerciseName: ex.name,
-    muscleGroup: ex.muscleGroup,
-    equipment: ex.equipment,
-    targetRestSeconds: ex.restSeconds || 90,
-    sets: [
-      {
-        id: generateSetId(ex.id, 1),
-        setNumber: 1,
-        type: 'calentamiento',
-        weightKg: 40,
-        reps: 10,
-        completed: false,
-        prevWeightKg: 40,
-        prevReps: 10,
-      },
-      {
-        id: generateSetId(ex.id, 2),
-        setNumber: 2,
-        type: 'efectiva',
-        weightKg: 70,
-        reps: 8,
-        rpe: 8,
-        completed: false,
-        prevWeightKg: 67.5,
-        prevReps: 8,
-      },
-      {
-        id: generateSetId(ex.id, 3),
-        setNumber: 3,
-        type: 'efectiva',
-        weightKg: 75,
-        reps: 6,
-        rpe: 8.5,
-        completed: false,
-        prevWeightKg: 72.5,
-        prevReps: 6,
-      },
-    ],
-  }))
+  return routine.exercises.map((ex) => {
+    const defaultRest = ex.restSeconds || 90
+    return {
+      exerciseId: ex.id,
+      exerciseName: ex.name,
+      muscleGroup: ex.muscleGroup,
+      equipment: ex.equipment,
+      targetRestSeconds: defaultRest,
+      sets: [
+        {
+          id: generateSetId(ex.id, 1),
+          setNumber: 1,
+          type: 'calentamiento',
+          weightKg: 40,
+          reps: 10,
+          restSeconds: Math.min(defaultRest, 60),
+          completed: false,
+          prevWeightKg: 40,
+          prevReps: 10,
+        },
+        {
+          id: generateSetId(ex.id, 2),
+          setNumber: 2,
+          type: 'efectiva',
+          weightKg: 70,
+          reps: 8,
+          rpe: 8,
+          restSeconds: defaultRest,
+          completed: false,
+          prevWeightKg: 67.5,
+          prevReps: 8,
+        },
+        {
+          id: generateSetId(ex.id, 3),
+          setNumber: 3,
+          type: 'efectiva',
+          weightKg: 75,
+          reps: 6,
+          rpe: 8.5,
+          restSeconds: defaultRest,
+          completed: false,
+          prevWeightKg: 72.5,
+          prevReps: 6,
+        },
+      ],
+    }
+  })
 }
 
 export function LiveWorkoutTab({
@@ -159,6 +170,16 @@ export function LiveWorkoutTab({
 
   const [isResetModalOpen, setIsResetModalOpen] = useState(false)
   const [isFinishModalOpen, setIsFinishModalOpen] = useState(false)
+
+  // Exercise Picker Modal & Custom Exercise Creation for Live Workout
+  const [isAddExerciseModalOpen, setIsAddExerciseModalOpen] = useState(false)
+  const [liveExerciseSearch, setLiveExerciseSearch] = useState('')
+  const [liveMuscleFilter, setLiveMuscleFilter] = useState<string>('all')
+  const [isCreatingCustomExLive, setIsCreatingCustomExLive] = useState(false)
+  const [customExNameLive, setCustomExNameLive] = useState('')
+  const [customExMuscleLive, setCustomExMuscleLive] = useState<MuscleGroup>('pecho')
+  const [customExEquipmentLive, setCustomExEquipmentLive] = useState<EquipmentType>('mancuerna')
+  const [customExRestLive, setCustomExRestLive] = useState('90')
 
   // ── REACTIVE AUTO-SAVE TO LOCALSTORAGE ──
   const persistCurrentWorkout = useCallback(
@@ -293,6 +314,7 @@ export function LiveWorkoutTab({
       const ex = updated[exerciseIndex]
       const lastSet = ex.sets[ex.sets.length - 1]
       const newSetNumber = ex.sets.length + 1
+      const defaultRest = lastSet?.restSeconds ?? ex.targetRestSeconds ?? 90
       ex.sets.push({
         id: generateSetId(ex.exerciseId, newSetNumber),
         setNumber: newSetNumber,
@@ -300,6 +322,7 @@ export function LiveWorkoutTab({
         weightKg: lastSet ? lastSet.weightKg : 60,
         reps: lastSet ? lastSet.reps : 8,
         rpe: 8,
+        restSeconds: defaultRest,
         completed: false,
         prevWeightKg: lastSet ? lastSet.weightKg : 60,
         prevReps: lastSet ? lastSet.reps : 8,
@@ -320,7 +343,7 @@ export function LiveWorkoutTab({
     })
   }
 
-  // Toggle Set Complete & Trigger Persistent Floating Rest Timer
+  // Toggle Set Complete & Trigger Persistent Floating Rest Timer with exact set rest time
   function handleToggleSetComplete(exerciseIndex: number, setIndex: number) {
     setSessionExercises((prev) => {
       const updated = [...prev]
@@ -329,12 +352,73 @@ export function LiveWorkoutTab({
       targetSet.completed = willBeCompleted
 
       if (willBeCompleted) {
-        const restSecs = updated[exerciseIndex].targetRestSeconds || 90
+        const restSecs = targetSet.restSeconds ?? updated[exerciseIndex].targetRestSeconds ?? 90
         const exName = updated[exerciseIndex].exerciseName
-        triggerRestTimer(restSecs, exName)
+        triggerRestTimer(restSecs, `${exName} (Serie ${targetSet.setNumber})`)
+        toast(`⏰ Descanso de ${restSecs}s activado para Serie ${targetSet.setNumber}`, '⏱️')
       }
       return updated
     })
+  }
+
+  // Add Exercise to Live Session
+  function handleAddExerciseToLive(ex: Exercise) {
+    const defaultRest = ex.restSeconds || 90
+    const newExerciseSession: WorkoutExerciseSession = {
+      exerciseId: ex.id,
+      exerciseName: ex.name,
+      muscleGroup: ex.muscleGroup,
+      equipment: ex.equipment,
+      targetRestSeconds: defaultRest,
+      sets: [
+        {
+          id: generateSetId(ex.id, 1),
+          setNumber: 1,
+          type: 'efectiva',
+          weightKg: 40,
+          reps: 10,
+          restSeconds: defaultRest,
+          completed: false,
+          prevWeightKg: 40,
+          prevReps: 10,
+        },
+        {
+          id: generateSetId(ex.id, 2),
+          setNumber: 2,
+          type: 'efectiva',
+          weightKg: 50,
+          reps: 8,
+          rpe: 8,
+          restSeconds: defaultRest,
+          completed: false,
+          prevWeightKg: 50,
+          prevReps: 8,
+        },
+      ],
+    }
+    setSessionExercises((prev) => [...prev, newExerciseSession])
+    setIsAddExerciseModalOpen(false)
+    toast(`✅ "${ex.name}" añadido al entreno`, '🏋️')
+  }
+
+  function handleCreateAndAddCustomExerciseLive() {
+    if (!customExNameLive.trim()) {
+      toast('Escribe el nombre del ejercicio personalizado', '❌')
+      return
+    }
+    const newEx: Exercise = {
+      id: `ex_custom_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+      name: customExNameLive.trim(),
+      muscleGroup: customExMuscleLive,
+      equipment: customExEquipmentLive,
+      restSeconds: parseInt(customExRestLive, 10) || 90,
+      isCustom: true,
+    }
+    saveCustomExercise(newEx)
+    handleAddExerciseToLive(newEx)
+    setCustomExNameLive('')
+    setCustomExRestLive('90')
+    setIsCreatingCustomExLive(false)
   }
 
   // Update Set Values (Kg, Reps, Type, RPE)
@@ -537,12 +621,12 @@ export function LiveWorkoutTab({
               {/* Tabla de Series */}
               <div className="space-y-1.5 overflow-x-auto no-scrollbar">
                 {/* Cabecera de Columnas */}
-                <div className="grid grid-cols-12 gap-1.5 text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 px-1 text-center">
+                <div className="grid grid-cols-12 gap-1.5 text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 px-1 text-center items-center">
                   <div className="col-span-1">Set</div>
                   <div className="col-span-3">Tipo</div>
-                  <div className="col-span-2">Anterior</div>
                   <div className="col-span-2">Kg</div>
                   <div className="col-span-2">Reps</div>
+                  <div className="col-span-2">Descanso</div>
                   <div className="col-span-2">✓</div>
                 </div>
 
@@ -578,15 +662,10 @@ export function LiveWorkoutTab({
                             { value: 'fallo', label: 'F · Al Fallo' },
                           ]}
                           triggerClassName={cn(
-                            'py-1 px-2 text-[11px] rounded-lg transition-colors font-semibold',
+                            'py-1 px-1.5 text-[11px] rounded-lg transition-colors font-semibold truncate',
                             set.completed && 'border-emerald-400 text-emerald-900 dark:text-emerald-200'
                           )}
                         />
-                      </div>
-
-                      {/* Anterior (Ghost indicator) */}
-                      <div className="col-span-2 font-mono text-[10px] text-slate-400 dark:text-slate-500 truncate">
-                        {set.prevWeightKg ? `${set.prevWeightKg}k×${set.prevReps}` : '—'}
                       </div>
 
                       {/* Kg / Peso Input */}
@@ -603,6 +682,7 @@ export function LiveWorkoutTab({
                               e.target.value === '' ? 0 : parseFloat(e.target.value)
                             )
                           }
+                          placeholder="Kg"
                           className={cn(
                             'w-full rounded-lg border py-1 text-center font-mono font-bold text-xs outline-none transition-colors',
                             set.completed
@@ -625,6 +705,7 @@ export function LiveWorkoutTab({
                               e.target.value === '' ? 0 : parseInt(e.target.value, 10)
                             )
                           }
+                          placeholder="Reps"
                           className={cn(
                             'w-full rounded-lg border py-1 text-center font-mono font-bold text-xs outline-none transition-colors',
                             set.completed
@@ -634,20 +715,47 @@ export function LiveWorkoutTab({
                         />
                       </div>
 
-                      {/* Check Complete Circular Emerald Button */}
-                      <div className="col-span-2 flex items-center justify-center gap-1.5">
+                      {/* Descanso por Serie (s) Input */}
+                      <div className="col-span-2 relative">
+                        <input
+                          type="number"
+                          step="5"
+                          min="0"
+                          value={set.restSeconds ?? exerciseSession.targetRestSeconds ?? 90}
+                          onChange={(e) =>
+                            handleUpdateSet(
+                              exIdx,
+                              setIdx,
+                              'restSeconds',
+                              e.target.value === '' ? 0 : parseInt(e.target.value, 10)
+                            )
+                          }
+                          className={cn(
+                            'w-full rounded-lg border py-1 pr-3 text-center font-mono font-bold text-xs outline-none transition-colors',
+                            set.completed
+                              ? 'border-emerald-400 bg-emerald-100/50 text-emerald-950 dark:border-emerald-500/40 dark:bg-emerald-950/40 dark:text-emerald-100'
+                              : 'border-slate-300 bg-white text-slate-900 focus:border-emerald-500 dark:border-purple-500/20 dark:bg-white/[0.04] dark:text-white dark:focus:border-purple-500'
+                          )}
+                        />
+                        <span className="absolute right-1 top-1/2 -translate-y-1/2 text-[9px] font-bold text-slate-400 pointer-events-none">
+                          s
+                        </span>
+                      </div>
+
+                      {/* Check Complete Circular Button & Delete */}
+                      <div className="col-span-2 flex items-center justify-center gap-1">
                         <button
                           type="button"
                           onClick={() => handleToggleSetComplete(exIdx, setIdx)}
                           className={cn(
-                            'size-8 rounded-full flex items-center justify-center transition-all duration-200 active:scale-90 select-none shrink-0 cursor-pointer',
+                            'size-7 sm:size-8 rounded-full flex items-center justify-center transition-all duration-200 active:scale-90 select-none shrink-0 cursor-pointer',
                             set.completed
                               ? 'bg-emerald-600 hover:bg-emerald-700 border border-emerald-500 text-white shadow-sm ring-2 ring-emerald-500/30'
                               : 'bg-white border border-slate-300 text-slate-400 hover:border-emerald-500 hover:text-emerald-600 hover:bg-emerald-50 dark:bg-white/[0.05] dark:border-white/20 dark:text-slate-400 dark:hover:border-purple-400 dark:hover:text-white dark:hover:bg-purple-500/10'
                           )}
-                          title={set.completed ? 'Serie completada (clic para desmarcar)' : 'Marcar serie como completada'}
+                          title={set.completed ? 'Serie completada (clic para desmarcar)' : `Completar serie (inicia descanso de ${set.restSeconds ?? exerciseSession.targetRestSeconds ?? 90}s)`}
                         >
-                          <Check className={cn('size-4 stroke-[3.5] transition-transform duration-200', set.completed && 'scale-110')} />
+                          <Check className={cn('size-3.5 sm:size-4 stroke-[3.5] transition-transform duration-200', set.completed && 'scale-110')} />
                         </button>
 
                         <button
@@ -676,7 +784,224 @@ export function LiveWorkoutTab({
             </Card>
           )
         })}
+
+        {/* Botón para añadir ejercicio dinámico en vivo */}
+        <button
+          type="button"
+          onClick={() => setIsAddExerciseModalOpen(true)}
+          className="w-full flex items-center justify-center gap-2 p-3.5 rounded-2xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-800 text-xs font-black transition-all active:scale-95 shadow-sm dark:bg-white/[0.03] dark:border-white/10 dark:text-white dark:hover:bg-white/[0.06]"
+        >
+          <Plus className="size-4 text-emerald-600 dark:text-purple-400" />
+          <span>+ Añadir Ejercicio a la Sesión en Vivo</span>
+        </button>
       </div>
+
+      {/* ── MODAL AÑADIR EJERCICIO EN VIVO ── */}
+      {isAddExerciseModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-150 max-h-[88vh] flex flex-col space-y-3 dark:bg-[#100e23] dark:border-purple-500/30">
+            {/* Cabecera y Buscador (Fijos arriba) */}
+            <div className="shrink-0 space-y-3">
+              <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-purple-500/15">
+                <div>
+                  <h3 className="text-base font-black text-slate-900 dark:text-white">Añadir Ejercicio al Entreno</h3>
+                  <p className="text-[11px] text-slate-600 dark:text-slate-400">Selecciona o crea un ejercicio para incorporarlo a esta sesión</p>
+                </div>
+                <button
+                  onClick={() => setIsAddExerciseModalOpen(false)}
+                  className="rounded-full p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors dark:hover:text-white dark:hover:bg-white/10"
+                >
+                  <X className="size-5" />
+                </button>
+              </div>
+
+              {/* Botón para alternar creación de ejercicio personalizado */}
+              <div className="flex items-center justify-between gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsCreatingCustomExLive((prev) => !prev)
+                    if (!customExNameLive && liveExerciseSearch) {
+                      setCustomExNameLive(liveExerciseSearch)
+                    }
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-700 dark:text-amber-300 border border-amber-500/30 text-xs font-bold transition-all active:scale-95"
+                >
+                  <Plus className="size-3.5" />
+                  <span>{isCreatingCustomExLive ? 'Ocultar Creador' : '+ Crear Ejercicio Personalizado'}</span>
+                </button>
+              </div>
+
+              {/* Formulario de Creación de Ejercicio Personalizado en Vivo */}
+              {isCreatingCustomExLive && (
+                <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 space-y-2.5 animate-fade-in text-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-amber-800 dark:text-amber-300">✨ Nuevo Ejercicio Personalizado</span>
+                    <button
+                      type="button"
+                      onClick={() => setIsCreatingCustomExLive(false)}
+                      className="text-slate-400 hover:text-slate-600 dark:hover:text-white"
+                    >
+                      <X className="size-3.5" />
+                    </button>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="font-semibold text-slate-700 dark:text-slate-300">Nombre del Ejercicio <span className="text-red-500">*</span></label>
+                    <input
+                      type="text"
+                      value={customExNameLive}
+                      onChange={(e) => setCustomExNameLive(e.target.value)}
+                      placeholder="Ej. Press Guillotina, Curl Spider..."
+                      className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-white/[0.04] py-1.5 px-3 text-xs font-medium text-slate-900 dark:text-white outline-none focus:border-amber-500"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="space-y-1">
+                      <label className="font-semibold text-slate-700 dark:text-slate-300">Músculo</label>
+                      <CustomSelect<MuscleGroup>
+                        value={customExMuscleLive}
+                        onChange={setCustomExMuscleLive}
+                        options={[
+                          { value: 'pecho', label: '🏋️‍♂️ Pecho' },
+                          { value: 'espalda', label: '🚣 Espalda' },
+                          { value: 'hombro', label: '🎯 Hombro' },
+                          { value: 'cuadriceps', label: '🦵 Cuádriceps' },
+                          { value: 'isquios', label: '🏃 Isquios' },
+                          { value: 'gluteo', label: '🍑 Glúteo' },
+                          { value: 'biceps', label: '💪 Bíceps' },
+                          { value: 'triceps', label: '⚡ Tríceps' },
+                          { value: 'gemelo', label: '🦶 Gemelo' },
+                          { value: 'core', label: '🛡️ Core' },
+                          { value: 'cardio', label: '❤️‍🔥 Cardio' },
+                        ]}
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="font-semibold text-slate-700 dark:text-slate-300">Equipo</label>
+                      <CustomSelect<EquipmentType>
+                        value={customExEquipmentLive}
+                        onChange={setCustomExEquipmentLive}
+                        options={[
+                          { value: 'mancuerna', label: 'Mancuerna' },
+                          { value: 'barra', label: 'Barra' },
+                          { value: 'polea', label: 'Polea' },
+                          { value: 'maquina', label: 'Máquina' },
+                          { value: 'peso_corporal', label: 'Peso Corporal' },
+                          { value: 'kettlebell', label: 'Kettlebell' },
+                          { value: 'otro', label: 'Otro' },
+                        ]}
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="font-semibold text-slate-700 dark:text-slate-300">Descanso (s)</label>
+                      <input
+                        type="number"
+                        step="5"
+                        min="0"
+                        value={customExRestLive}
+                        onChange={(e) => setCustomExRestLive(e.target.value)}
+                        className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-white/[0.04] py-1.5 px-3 text-xs font-bold text-center text-slate-900 dark:text-white outline-none focus:border-amber-500"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={handleCreateAndAddCustomExerciseLive}
+                      className="px-3.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-sm transition-all active:scale-95"
+                    >
+                      Añadir a esta Sesión
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Búsqueda y Filtro de Músculo */}
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-slate-400" />
+                  <input
+                    value={liveExerciseSearch}
+                    onChange={(e) => setLiveExerciseSearch(e.target.value)}
+                    placeholder="Buscar ejercicio..."
+                    className="w-full rounded-full border border-slate-200 bg-white py-2 px-3 pl-8 text-xs font-medium text-slate-800 placeholder:text-slate-400 outline-none focus:border-emerald-500 dark:border-purple-500/20 dark:bg-white/[0.04] dark:text-white dark:focus:border-purple-500"
+                  />
+                </div>
+
+                <CustomSelect<string>
+                  value={liveMuscleFilter}
+                  onChange={setLiveMuscleFilter}
+                  options={[
+                    { value: 'all', label: 'Todos los músculos' },
+                    { value: 'pecho', label: '🏋️‍♂️ Pecho' },
+                    { value: 'espalda', label: '🚣 Espalda' },
+                    { value: 'hombro', label: '🎯 Hombro' },
+                    { value: 'cuadriceps', label: '🦵 Cuádriceps' },
+                    { value: 'isquios', label: '🏃 Isquios' },
+                    { value: 'gluteo', label: '🍑 Glúteo' },
+                    { value: 'biceps', label: '💪 Bíceps' },
+                    { value: 'triceps', label: '⚡ Tríceps' },
+                    { value: 'gemelo', label: '🦶 Gemelo' },
+                    { value: 'core', label: '🛡️ Core' },
+                    { value: 'cardio', label: '❤️‍🔥 Cardio' },
+                  ]}
+                  className="w-44"
+                />
+              </div>
+            </div>
+
+            {/* Listado de Ejercicios */}
+            <div className="flex-1 overflow-y-auto pr-2 space-y-2 max-h-[45vh] pb-2 custom-fitness-scroll">
+              {getAllExercisesCatalog()
+                .filter((ex) => {
+                  if (liveMuscleFilter !== 'all' && ex.muscleGroup !== liveMuscleFilter) return false
+                  if (liveExerciseSearch.trim()) {
+                    const q = liveExerciseSearch.toLowerCase()
+                    return ex.name.toLowerCase().includes(q) || ex.muscleGroup.toLowerCase().includes(q)
+                  }
+                  return true
+                })
+                .map((ex) => {
+                  const meta = muscleGroupLabels[ex.muscleGroup]
+                  return (
+                    <button
+                      key={ex.id}
+                      type="button"
+                      onClick={() => handleAddExerciseToLive(ex)}
+                      className="w-full flex items-center justify-between p-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 dark:bg-white/[0.02] dark:border-white/10 dark:hover:bg-white/[0.06] dark:text-slate-300 text-left transition-all active:scale-[0.99]"
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <span className="text-lg shrink-0">{meta?.icon}</span>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            <p className="font-bold text-xs truncate">{ex.name}</p>
+                            {ex.isCustom && (
+                              <span className="px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-600 dark:text-amber-400 text-[8px] font-black uppercase">
+                                Personalizado
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
+                            {meta?.label} · {equipmentLabels[ex.equipment]} · Descanso: {ex.restSeconds || 90}s
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="px-2.5 py-1 rounded-lg bg-emerald-600 text-white font-bold text-[11px] shrink-0">
+                        + Añadir
+                      </div>
+                    </button>
+                  )
+                })}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── MODAL DE CONFIRMACIÓN PARA REINICIAR SESIÓN ── */}
       {isResetModalOpen && (
