@@ -117,31 +117,26 @@ export function BillsSection() {
   const currentUtilityMeta = getUtilityMeta(utilityType, customUtilityUnit)
   const unitLabel = currentUtilityMeta.unit
 
-  // ── MANEJADORES DE CÁLCULO INDEPENDIENTES ──
+  // ── MANEJADORES DE INPUT INDEPENDIENTES (PRIORIDAD AL USUARIO) ──
   const handleAmountChange = (val: string) => {
     setAmount(val)
-    const numAmt = parseFloat(val.replace(',', '.'))
-    const numCons = parseFloat(consumptionValue.replace(',', '.'))
-    if (!isNaN(numAmt) && !isNaN(numCons) && numCons > 0) {
-      const calc = numAmt / numCons
-      setUnitPrice(calc.toFixed(4).replace(/\.?0+$/, ''))
-    }
   }
 
   const handleConsumptionChange = (val: string) => {
     setConsumptionValue(val)
-    const numCons = parseFloat(val.replace(',', '.'))
-    const numAmt = parseFloat(amount.replace(',', '.'))
-
-    if (!isNaN(numCons) && numCons > 0 && !isNaN(numAmt) && numAmt > 0) {
-      setUnitPrice((numAmt / numCons).toFixed(4).replace(/\.?0+$/, ''))
-    }
   }
 
   const handleUnitPriceChange = (val: string) => {
     setUnitPrice(val)
-    // El importe se mantiene independiente para no sobrescribir el total de la factura
   }
+
+  // Sugerencia auxiliar informativa (NUNCA sobrescribe automáticamente el input manual)
+  const numAmt = parseFloat(amount.replace(',', '.'))
+  const numCons = parseFloat(consumptionValue.replace(',', '.'))
+  const suggestedUnitPrice =
+    !isNaN(numAmt) && numAmt > 0 && !isNaN(numCons) && numCons > 0
+      ? (numAmt / numCons).toFixed(4).replace(/\.?0+$/, '')
+      : null
 
   function handleOpenCreate() {
     setEditingId(null)
@@ -170,21 +165,19 @@ export function BillsSection() {
     setCategory(bill.category || 'hogar')
     setCustomCategoryInput(bill.customCategory || '')
 
-    if (bill.consumption && bill.consumption.consumptionValue) {
+    if (bill.consumption && (bill.consumption.consumptionValue !== undefined && bill.consumption.consumptionValue !== null)) {
       setHasConsumption(true)
       const uType = bill.consumption.utilityType || 'electricidad'
       setUtilityType(uType)
       setCustomUtilityName(bill.consumption.customUtilityName || '')
       setCustomUtilityUnit(bill.consumption.customUtilityUnit || '')
-      const consVal = bill.consumption.consumptionValue.toString()
+      const consVal = bill.consumption.consumptionValue ? bill.consumption.consumptionValue.toString() : ''
       setConsumptionValue(consVal)
       
-      const calcPrice = bill.consumption.unitPrice
+      const savedPrice = bill.consumption.unitPrice !== undefined && bill.consumption.unitPrice !== null
         ? bill.consumption.unitPrice.toString()
-        : bill.amount && bill.consumption.consumptionValue
-        ? (bill.amount / bill.consumption.consumptionValue).toFixed(4).replace(/\.?0+$/, '')
         : ''
-      setUnitPrice(calcPrice)
+      setUnitPrice(savedPrice)
       setKilometers(bill.consumption.kilometers ? bill.consumption.kilometers.toString() : '')
     } else {
       setHasConsumption(false)
@@ -204,16 +197,17 @@ export function BillsSection() {
       toast('Introduce el nombre o servicio de la factura', '❌')
       return
     }
-    const numAmount = parseFloat(amount)
+    const numAmount = parseFloat(amount.replace(',', '.'))
     if (isNaN(numAmount) || numAmount <= 0) {
       toast('Introduce un importe válido', '❌')
       return
     }
 
     const numDueDay = parseInt(dueDay, 10) || 1
-    const parsedUnits = parseFloat(consumptionValue) || 0
-    const parsedPrice = parseFloat(unitPrice) || (parsedUnits > 0 ? numAmount / parsedUnits : 0)
-    const parsedKm = parseFloat(kilometers) || 0
+    const parsedUnits = parseFloat(consumptionValue.replace(',', '.')) || 0
+    const rawPrice = unitPrice.trim() ? parseFloat(unitPrice.replace(',', '.')) : NaN
+    const parsedPrice = !isNaN(rawPrice) && rawPrice >= 0 ? rawPrice : undefined
+    const parsedKm = parseFloat(kilometers.replace(',', '.')) || 0
 
     let consumptionData: ConsumptionData | undefined = undefined
     if (hasConsumption && parsedUnits > 0) {
@@ -361,11 +355,24 @@ export function BillsSection() {
                           <h4 className="text-sm font-bold text-slate-900 dark:text-white tracking-tight leading-snug">
                             {bill.name}
                           </h4>
-                          <div className="flex items-center gap-1.5 mt-0.5 text-[10px] text-slate-500 dark:text-slate-400 font-medium">
+                          <div className="flex flex-wrap items-center gap-1.5 mt-0.5 text-[10px] text-slate-500 dark:text-slate-400 font-medium">
                             <span>Día {bill.dueDay}</span>
                             <span>·</span>
                             <span className="capitalize">{bill.billingCycle}</span>
                             {bill.autopay && <span>· Domiciliado</span>}
+                            {bill.consumption && bill.consumption.consumptionValue && (
+                              <>
+                                <span>·</span>
+                                <span className="text-emerald-700 dark:text-purple-300 font-bold">
+                                  {bill.consumption.consumptionValue} {bill.consumption.consumptionUnit || ''}
+                                  {bill.consumption.unitPrice !== undefined && bill.consumption.unitPrice !== null && (
+                                    <span className="font-normal text-slate-500 dark:text-slate-400 ml-1">
+                                      ({bill.consumption.unitPrice} €/{bill.consumption.consumptionUnit || 'ud'})
+                                    </span>
+                                  )}
+                                </span>
+                              </>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -555,13 +562,23 @@ export function BillsSection() {
                             step="any"
                             value={unitPrice}
                             onChange={(e) => handleUnitPriceChange(e.target.value)}
-                            placeholder="0.0000"
+                            placeholder={suggestedUnitPrice || '0.0000'}
                             className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-white/[0.04] py-2 pl-3 pr-12 text-xs font-medium text-slate-900 dark:text-white outline-none focus:border-emerald-500 dark:focus:border-purple-500"
                           />
                           <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] font-bold text-slate-600 dark:text-slate-400 pointer-events-none">
                             {currentUtilityMeta.unitPriceSuffix}
                           </span>
                         </div>
+                        {suggestedUnitPrice && unitPrice !== suggestedUnitPrice && (
+                          <button
+                            type="button"
+                            onClick={() => setUnitPrice(suggestedUnitPrice)}
+                            className="text-[10px] text-emerald-600 dark:text-purple-400 hover:underline text-left mt-0.5"
+                            title="Haz clic si deseas usar el precio medio automático"
+                          >
+                            💡 Sugerir: {suggestedUnitPrice} {currentUtilityMeta.unitPriceSuffix}
+                          </button>
+                        )}
                       </div>
                     </div>
 
