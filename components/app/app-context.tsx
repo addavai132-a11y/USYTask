@@ -403,7 +403,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const cMember = activeMembers.find((m) => m.name === userName) || activeMembers[0] || null
       setCurrentMember(cMember)
       setActivities(getActivitiesByGroup(active.id))
-      setNotifications(getNotificationsByGroup(active.id))
       setShoppingLists(getShoppingListsByGroup(active.id))
       setShoppingItems(getShoppingItemsByGroup(active.id))
       setTaskCategories(getTaskCategoriesByGroup(active.id))
@@ -411,11 +410,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setDailyMenus(getDailyMenusByGroup(active.id))
       setWeeklyMenus(getWeeklyMenusByGroup(active.id))
       processMonthlyRecurringItems(active.id, selectedMonthISO)
-      checkProximityAndRecurringAlerts(active.id, activeMembers)
+      // Run proximity alerts first (may write new notifications), THEN read notifications
+      try { checkProximityAndRecurringAlerts(active.id, activeMembers) } catch (e) { console.warn('[refreshData] proximity alerts error:', e) }
       setIncomes(getIncomesByGroup(active.id))
       setExpenses(getExpensesByGroup(active.id))
       setBills(getBillsByGroup(active.id))
       setBudgets(getBudgetsByGroup(active.id))
+      // Read notifications ONCE, after proximity alerts may have written new ones
       setNotifications(getNotificationsByGroup(active.id))
       setInitialPiggyBankBalance(getPiggyBankBalance(active.id))
 
@@ -991,8 +992,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const member: Member = {
       id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `mem_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
       name,
+      role: 'adult',      // Required field in Member interface
       initials,
-      color: color.name,
       colorVar: color.var,
       avatarColor: color.value,
       points: 0,

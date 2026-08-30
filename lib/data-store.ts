@@ -64,7 +64,9 @@ export function updateMemberPoints(memberId: string, groupId: string, pointsToAd
   const all = getAllMembers()
   const idx = all.findIndex((m) => m.id === memberId && m.groupId === groupId)
   if (idx >= 0) {
-    all[idx] = { ...all[idx], points: all[idx].points + pointsToAdd }
+    const current = Number(all[idx].points) || 0
+    const delta = Number(pointsToAdd) || 0
+    all[idx] = { ...all[idx], points: current + delta }
     saveArray(MEMBERS_KEY, all)
   }
 }
@@ -615,9 +617,16 @@ export function getIncomesByGroup(groupId: string): Income[] {
 }
 
 export function addIncome(income: Income): void {
-  const all = getAllIncomes()
-  all.unshift(income)
-  saveArray(INCOMES_KEY, all)
+  try {
+    const all = getAllIncomes()
+    all.unshift({
+      ...income,
+      amount: Number(income.amount) || 0,
+    })
+    saveArray(INCOMES_KEY, all)
+  } catch (err) {
+    console.error('Error in addIncome:', err)
+  }
 }
 
 export function updateIncome(income: Income): void {
@@ -793,7 +802,8 @@ export function processMonthlyRecurringItems(groupId: string, monthISO: string):
     )
 
     if (!exists) {
-      const dayNum = Math.min(daysInMonth, Math.max(1, Number(bill.dueDay) || 1))
+      const dueDay = Number(bill.dueDay)
+      const dayNum = isNaN(dueDay) ? 1 : Math.min(daysInMonth, Math.max(1, dueDay))
       const dateStr = `${yearMonth}-${dayNum.toString().padStart(2, '0')}`
       const newExpense: Expense = {
         id: `exp_sub_${bill.id}_${yearMonth}`,
@@ -838,7 +848,8 @@ export function processMonthlyRecurringItems(groupId: string, monthISO: string):
     )
 
     if (!existsInMonth) {
-      const dayNum = Math.min(daysInMonth, Math.max(1, Number(inc.billingDay) || 1))
+      const billingDay = Number(inc.billingDay)
+      const dayNum = isNaN(billingDay) ? 1 : Math.min(daysInMonth, Math.max(1, billingDay))
       const dateStr = `${yearMonth}-${dayNum.toString().padStart(2, '0')}`
       const newIncome: Income = {
         id: `inc_rec_${inc.id}_${yearMonth}`,

@@ -39,14 +39,20 @@ export async function handleGoogleAuth() {
  * Gets active Supabase session user and syncs with local session storage.
  */
 export async function getActiveUserSession(): Promise<UserProfile | null> {
-  const supabase = createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  try {
+    const supabase = createClient()
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser()
 
-  if (!user) {
-    return getStoredSession()
-  }
+    if (error) {
+      console.warn('getActiveUserSession: Supabase getUser warning:', error.message)
+    }
+
+    if (!user) {
+      return getStoredSession()
+    }
 
   const meta = user.user_metadata || {}
   const dateOfBirth = meta.date_of_birth || meta.dateOfBirth || null
@@ -69,8 +75,12 @@ export async function getActiveUserSession(): Promise<UserProfile | null> {
     createdAt: user.created_at || new Date().toISOString(),
   }
 
-  setStoredSession(profile)
-  return profile
+    setStoredSession(profile)
+    return profile
+  } catch (err) {
+    console.error('getActiveUserSession failed:', err)
+    return getStoredSession()
+  }
 }
 
 /**
@@ -131,27 +141,53 @@ export async function updateUserProfile(
  */
 export async function handleLogout(): Promise<void> {
   try {
+    await fetch('/auth/signout', { method: 'POST', credentials: 'include' })
+  } catch (err) {
+    console.warn('Server signOut warning:', err)
+  }
+
+  try {
     const supabase = createClient()
-    await supabase.auth.signOut({ scope: 'local' })
+    await supabase.auth.signOut()
   } catch (err) {
     console.warn('Supabase signOut warning:', err)
-  } finally {
+  }
+
+  try {
+    const { clearAllLocalData } = await import('./cloud-sync')
+    clearAllLocalData()
+  } catch (err) {
+    console.warn('clearAllLocalData warning:', err)
+  }
+
+  clearStoredSession()
+
+  try {
     if (typeof window !== 'undefined') {
-      try {
-        localStorage.clear()
-        sessionStorage.clear()
-      } catch {}
-      try {
-        if (typeof document !== 'undefined') {
-          document.cookie.split(';').forEach((c) => {
-            const eqPos = c.indexOf('=')
-            const name = eqPos > -1 ? c.substr(0, eqPos).trim() : c.trim()
-            if (name.startsWith('sb-') || name.includes('supabase') || name.includes('auth')) {
-              document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;`
-            }
-          })
-        }
-      } catch {}
+      localStorage.clear()
+      sessionStorage.clear()
     }
+  } catch (err) {
+    console.error('Error clearing web storage on logout:', err)
+  }
+
+  try {
+    if (typeof document !== 'undefined') {
+      document.cookie.split(';').forEach((c) => {
+        const eqPos = c.indexOf('=')
+        const name = eqPos > -1 ? c.substr(0, eqPos).trim() : c.trim()
+        if (!name) return
+        document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;`
+      })
+    }
+  } catch (err) {
+    console.error('Error clearing cookies on logout:', err)
+  }
+
+  // Force a full page reload to guarantee React Context state is cleared in memory.
+  // This prevents data from a previous user from briefly appearing to the next user
+  // who logs in on the same browser tab without a page refresh.
+  if (typeof window !== 'undefined') {
+    window.location.replace('/login')
   }
 }

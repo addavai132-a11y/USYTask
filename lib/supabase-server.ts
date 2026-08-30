@@ -18,7 +18,12 @@ export async function createClient() {
     },
     cookies: {
       getAll() {
-        return cookieStore.getAll()
+        try {
+          return cookieStore.getAll?.() || []
+        } catch (err) {
+          console.error('[supabase-server] Error reading cookies:', err)
+          return []
+        }
       },
       setAll(cookiesToSet) {
         try {

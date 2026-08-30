@@ -6,6 +6,7 @@ export interface Member {
   name: string
   role: 'adult' | 'child' | 'adulto' | 'hijo' | 'invitado'
   initials: string
+  color?: string        // Display-friendly color name (e.g. 'Azul', 'Rosa')
   colorVar: string
   avatarColor: string
   points: number

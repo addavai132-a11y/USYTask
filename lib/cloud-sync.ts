@@ -53,6 +53,8 @@ export interface CloudBackupPayload {
   memories: any[]
 }
 
+const LAST_AUTH_USER_KEY = 'usytask_last_auth_user_id'
+
 const STORAGE_KEYS = {
   groups: 'usytask_groups',
   activeGroupId: 'usytask_active_group_id',
@@ -74,6 +76,17 @@ const STORAGE_KEYS = {
   challenges: 'usytask_family_challenges',
   rewards: 'usytask_family_rewards',
   memories: 'usytask_family_memories',
+  session: 'usytask_user_session',
+  lastAuthUser: LAST_AUTH_USER_KEY,
+  fitnessRoutines: 'usytask_fitness_routines',
+  fitnessSessions: 'usytask_fitness_sessions',
+  fitnessPrs: 'usytask_fitness_prs',
+  fitnessBodyMetrics: 'usytask_fitness_body_metrics',
+  fitnessNutritionGoal: 'usytask_fitness_nutrition_goal',
+  fitnessMealLogs: 'usytask_fitness_meal_logs',
+  fitnessActiveWorkout: 'usytask_active_workout_session',
+  fitnessRestTimer: 'usytask_active_rest_timer',
+  fitnessCustomExercises: 'usytask_fitness_custom_exercises',
 }
 
 let syncTimeout: NodeJS.Timeout | null = null
@@ -191,11 +204,9 @@ export function hydrateLocalFromCloud(payload: CloudBackupPayload): boolean {
 export function clearAllLocalData(): void {
   if (typeof window === 'undefined') return
   try {
-    // Clear known keys
     Object.values(STORAGE_KEYS).forEach((key) => {
       localStorage.removeItem(key)
     })
-    // Clear any extra usytask_* or auth keys from localStorage
     const keysToRemove: string[] = []
     for (let i = 0; i < localStorage.length; i++) {
       const k = localStorage.key(i)
@@ -204,11 +215,23 @@ export function clearAllLocalData(): void {
       }
     }
     keysToRemove.forEach((k) => localStorage.removeItem(k))
-
-    // Clear sessionStorage as well
     sessionStorage.clear()
   } catch (err) {
     console.error('Error clearing local data:', err)
+  }
+}
+
+function isolateLocalDataForUser(userId: string): void {
+  if (typeof window === 'undefined' || !userId) return
+  try {
+    const lastId = localStorage.getItem(LAST_AUTH_USER_KEY)
+    if (lastId && lastId !== userId) {
+      console.warn('[cloud-sync] Usuario distinto detectado. Purgando datos locales del titular anterior.')
+      clearAllLocalData()
+    }
+    localStorage.setItem(LAST_AUTH_USER_KEY, userId)
+  } catch (err) {
+    console.error('Error isolating local data for user:', err)
   }
 }
 
@@ -227,6 +250,8 @@ export async function syncFromSupabaseCloud(): Promise<{ success: boolean; resto
     if (userError || !user) {
       return { success: false, restored: false }
     }
+
+    isolateLocalDataForUser(user.id)
 
     const cloudBackup = user.user_metadata?.usytask_cloud_backup as CloudBackupPayload | undefined
 

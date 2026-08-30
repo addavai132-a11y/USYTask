@@ -1,11 +1,16 @@
 import { createBrowserClient } from '@supabase/ssr'
 
 export function createClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
-  const supabaseKey =
+  const supabaseUrl = (process.env.NEXT_PUBLIC_SUPABASE_URL || '').trim()
+  const supabaseKey = (
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
     ''
+  ).trim()
+
+  if (!supabaseUrl || !supabaseKey) {
+    console.error('[Supabase] Faltan NEXT_PUBLIC_SUPABASE_URL o la anon/publishable key')
+  }
 
   return createBrowserClient(supabaseUrl, supabaseKey, {
     isSingleton: true,

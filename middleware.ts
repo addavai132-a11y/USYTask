@@ -1,26 +1,125 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-export async function middleware(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({
-    request,
-  })
+const SESSION_MAX_AGE = 31536000
+const GET_USER_TIMEOUT_MS = 3500
 
+function passthrough(request: NextRequest) {
+  return NextResponse.next({ request })
+}
+
+function isSafeInternalPath(path: string): boolean {
+  return path.startsWith('/') && !path.startsWith('//') && !path.includes('\\')
+}
+
+function hasSupabaseAccessCookie(
+  cookies: Array<{ name?: string }> | undefined | null
+): boolean {
+  if (!cookies || !Array.isArray(cookies)) return false
+  return cookies.some((cookie) => {
+    const name = cookie?.name || ''
+    if (!name) return false
+    const isAuthToken =
+      name.includes('-auth-token') &&
+      !name.includes('code-verifier') &&
+      !name.includes('auth-token-code')
+    return isAuthToken
+  })
+}
+
+function persistentCookieOptions(options?: Record<string, unknown>) {
+  const rest = { ...(options || {}) }
+  delete rest.expires
+  return {
+    ...rest,
+    maxAge: SESSION_MAX_AGE,
+    path: '/',
+    sameSite: 'lax' as const,
+    secure: process.env.NODE_ENV === 'production',
+  }
+}
+
+function copyCookies(from: NextResponse, to: NextResponse) {
   try {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
-    const supabaseKey =
+    from.cookies?.getAll?.()?.forEach((cookie) => {
+      if (!cookie?.name) return
+      try {
+        to.cookies.set(cookie.name, cookie.value, persistentCookieOptions())
+      } catch {
+        try {
+          to.cookies.set(cookie.name, cookie.value)
+        } catch (err) {
+          console.error('[Middleware] Failed copying cookie', cookie.name, err)
+        }
+      }
+    })
+  } catch (err) {
+    console.error('[Middleware] Failed copying cookies onto redirect:', err)
+  }
+}
+
+async function getUserWithTimeout(
+  getUser: () => Promise<{ data?: { user?: unknown } | null } | null>
+) {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined
+  try {
+    const timeout = new Promise<null>((resolve) => {
+      timeoutId = setTimeout(() => resolve(null), GET_USER_TIMEOUT_MS)
+    })
+    const result = await Promise.race([Promise.resolve().then(getUser), timeout])
+    return result
+  } catch (err) {
+    console.warn('[Middleware] Auth check fallback:', err)
+    return null
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId)
+  }
+}
+
+export async function middleware(request: NextRequest) {
+  try {
+    const pathname = request.nextUrl?.pathname || ''
+
+    // Never run session refresh on the OAuth callback or APIs:
+    // PKCE/code-verifier cookies + getUser() is a common Vercel 500 for first logins.
+    if (
+      pathname.startsWith('/auth/callback') ||
+      pathname.startsWith('/auth/signout') ||
+      pathname.startsWith('/api/')
+    ) {
+      return passthrough(request)
+    }
+
+    const supabaseUrl = (process.env.NEXT_PUBLIC_SUPABASE_URL || '').trim()
+    const supabaseKey = (
       process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
       ''
+    ).trim()
 
-    // If Supabase environment variables are missing, proceed without breaking
     if (!supabaseUrl || !supabaseKey) {
-      return supabaseResponse
+      return passthrough(request)
     }
+
+    let incomingCookies: Array<{ name: string; value: string }> = []
+    try {
+      incomingCookies = request.cookies?.getAll?.() || []
+    } catch (err) {
+      console.warn('[Middleware] Could not read cookies:', err)
+      incomingCookies = []
+    }
+
+    // First-time visitors have no session cookie. Skip the Auth network call
+    // so a slow or failed getUser() cannot produce MIDDLEWARE_INVOCATION_FAILED.
+    if (!hasSupabaseAccessCookie(incomingCookies)) {
+      return passthrough(request)
+    }
+
+    let supabaseResponse = passthrough(request)
 
     const supabase = createServerClient(supabaseUrl, supabaseKey, {
       cookieOptions: {
-        maxAge: 31536000, // 1 año en segundos
+        maxAge: SESSION_MAX_AGE,
         path: '/',
         sameSite: 'lax',
         secure: process.env.NODE_ENV === 'production',
@@ -35,24 +134,32 @@ export async function middleware(request: NextRequest) {
         },
         setAll(cookiesToSet) {
           try {
-            cookiesToSet.forEach(({ name, value }) => {
-              request.cookies?.set?.(name, value)
+            cookiesToSet?.forEach?.((cookie) => {
+              const name = cookie?.name
+              const value = cookie?.value
+              if (!name || typeof value !== 'string') return
+              try {
+                request.cookies?.set?.(name, value)
+              } catch {
+                // Request cookie bag may be immutable in some runtimes
+              }
             })
             supabaseResponse = NextResponse.next({
               request,
             })
-            cookiesToSet.forEach(({ name, value, options }) => {
-              const maxAge = 31536000
-              const expires = new Date(Date.now() + maxAge * 1000)
-              const persistentOptions = {
-                ...options,
-                maxAge,
-                expires,
-                path: '/',
-                sameSite: 'lax' as const,
-                secure: process.env.NODE_ENV === 'production',
+            cookiesToSet?.forEach?.((cookie) => {
+              const name = cookie?.name
+              const value = cookie?.value
+              if (!name || typeof value !== 'string') return
+              try {
+                supabaseResponse.cookies.set(
+                  name,
+                  value,
+                  persistentCookieOptions(cookie.options as Record<string, unknown>)
+                )
+              } catch (cookieErr) {
+                console.error('[Middleware] Error setting cookie', name, cookieErr)
               }
-              supabaseResponse.cookies?.set?.(name, value, persistentOptions)
             })
           } catch (cookieErr) {
             console.error('[Middleware] Error setting cookies:', cookieErr)
@@ -61,29 +168,25 @@ export async function middleware(request: NextRequest) {
       },
     })
 
-    // Refresh token automatically if needed (safely handled)
-    let user = null
-    try {
-      const userResponse = await supabase.auth.getUser()
-      user = userResponse?.data?.user || null
-    } catch (authErr) {
-      console.warn('[Middleware] Auth check fallback:', authErr)
-      user = null
-    }
+    const userResponse = await getUserWithTimeout(() => supabase.auth.getUser())
+    const user = (userResponse as { data?: { user?: { id?: string } | null } } | null)?.data
+      ?.user || null
 
-    const pathname = request.nextUrl?.pathname || ''
-
-    // If user is already authenticated and visits '/', '/login', or '/register', redirect automatically to /app
-    if (user && (pathname === '/' || pathname === '/login' || pathname === '/register')) {
-      const nextTarget = request.nextUrl?.searchParams?.get?.('next') || '/app'
+    if (
+      user &&
+      (pathname === '/' || pathname === '/login' || pathname === '/register')
+    ) {
+      const nextParam = request.nextUrl?.searchParams?.get?.('next') || '/app'
+      const nextTarget = isSafeInternalPath(nextParam) ? nextParam : '/app'
       const redirectUrl = new URL(nextTarget, request.url)
-      return NextResponse.redirect(redirectUrl)
+      const redirectResponse = NextResponse.redirect(redirectUrl)
+      copyCookies(supabaseResponse, redirectResponse)
+      return redirectResponse
     }
 
     return supabaseResponse
   } catch (error) {
     console.error('[Middleware Critical Exception]', error)
-    // Always return a valid NextResponse to prevent 500 MIDDLEWARE_INVOCATION_FAILED
     return NextResponse.next({
       request,
     })
@@ -92,12 +195,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico, manifest, icons, service worker, etc.
-     */
     '/((?!_next/static|_next/image|favicon\\.ico|manifest\\.webmanifest|sw\\.js|icon-.*|apple-.*|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }
