@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Plus,
   Gift,
@@ -15,6 +15,7 @@ import {
   Loader2,
   Clock,
   Coins,
+  Timer,
 } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { MemberAvatar } from '@/components/ui/member-avatar'
@@ -24,6 +25,7 @@ import { useToast } from '@/components/ui/toast'
 import { useApp } from '@/components/app/app-context'
 import type { FamilyReward, Member } from '@/types'
 import { cn } from '@/lib/utils'
+import { cleanExpiredRewardClaims, CLAIM_EXPIRATION_MS } from '@/lib/family-store'
 
 const REWARD_ICONS = ['🎁', '🎮', '🍕', '🎬', '🍦', '🛌', '🏆', '☕', '🎟️', '🚗', '🏖️', '💆', '🍔', '🍿', '🚴', '⭐']
 
@@ -188,19 +190,45 @@ export function RewardsTab() {
     })
   }
 
+  // Live timestamp for 30-minute auto-expiration of claims
+  const [now, setNow] = useState<number>(Date.now())
+
+  useEffect(() => {
+    // Run cleanup on mount
+    cleanExpiredRewardClaims()
+
+    const interval = setInterval(() => {
+      setNow(Date.now())
+      cleanExpiredRewardClaims()
+    }, 30000) // check and prune every 30 seconds
+
+    return () => clearInterval(interval)
+  }, [])
+
   // Filter only active available rewards (unlimited or stock > 0)
   const availableRewards = familyRewards.filter(
     (r) => r.stock === undefined || r.stock === null || Number(r.stock) > 0
   )
 
-  // Flatten all claims for history view
+  // Flatten all claims for history view (auto-expiring after 30 minutes)
   const allClaims = familyRewards
     .flatMap((r) =>
-      (r.claimedBy || []).map((c) => ({
-        ...c,
-        rewardTitle: r.title,
-        rewardIcon: r.icon || '🎁',
-      }))
+      (r.claimedBy || [])
+        .filter((c) => {
+          const claimTime = new Date(c.date || (c as any).createdAt || 0).getTime()
+          if (isNaN(claimTime) || claimTime === 0) return false
+          return (now - claimTime) >= 0 && (now - claimTime) <= CLAIM_EXPIRATION_MS
+        })
+        .map((c) => {
+          const claimTime = new Date(c.date || (c as any).createdAt || 0).getTime()
+          const minutesRemaining = Math.max(1, Math.ceil((CLAIM_EXPIRATION_MS - (now - claimTime)) / 60000))
+          return {
+            ...c,
+            rewardTitle: r.title,
+            rewardIcon: r.icon || '🎁',
+            minutesRemaining,
+          }
+        })
     )
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
 
@@ -346,21 +374,29 @@ export function RewardsTab() {
         </>
       )}
 
-      {/* ── TAB 2: HISTORIAL DE CANJES ── */}
+      {/* ── TAB 2: HISTORIAL DE CANJES (AUTO-EXPIRA EN 30 MINUTOS) ── */}
       {activeTab === 'historial' && (
         <Card className="p-4 bg-white border border-slate-200 rounded-2xl shadow-sm space-y-3 dark:bg-[#121026]/90 dark:border-purple-500/20">
-          <div className="flex items-center justify-between pb-2 border-b border-slate-200/80 dark:border-purple-500/15">
-            <h4 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
-              <History className="size-3.5 text-emerald-600 dark:text-purple-400" />
-              <span>Historial de Recompensas Canjeadas</span>
-            </h4>
-            <span className="text-xs text-slate-500 font-mono">{allClaims.length} registros</span>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 pb-2 border-b border-slate-200/80 dark:border-purple-500/15">
+            <div>
+              <h4 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+                <History className="size-3.5 text-emerald-600 dark:text-purple-400" />
+                <span>Historial de Recompensas Canjeadas</span>
+              </h4>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-0.5">
+                <Timer className="size-3 text-amber-500" />
+                <span>Los registros se eliminan automáticamente tras 30 minutos del canje.</span>
+              </p>
+            </div>
+            <span className="text-xs font-mono font-bold text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-white/[0.04] px-2 py-0.5 rounded-lg shrink-0">
+              {allClaims.length} {allClaims.length === 1 ? 'registro activo' : 'registros activos'}
+            </span>
           </div>
 
           {allClaims.length === 0 ? (
-            <div className="py-8 text-center text-xs text-slate-400">
-              <p>Aún no se ha canjeado ninguna recompensa.</p>
-              <p className="mt-1 text-[11px]">¡Completa tareas y retos familiares para ganar puntos!</p>
+            <div className="py-8 text-center text-xs text-slate-400 space-y-1">
+              <p className="font-semibold text-slate-600 dark:text-slate-300">Sin canjes recientes en los últimos 30 minutos.</p>
+              <p className="text-[11px]">Los registros de canjes anteriores a 30 minutos se han eliminado automáticamente.</p>
             </div>
           ) : (
             <div className="space-y-2">
@@ -371,7 +407,6 @@ export function RewardsTab() {
                   ? dateObj.toLocaleDateString('es-ES', {
                       day: 'numeric',
                       month: 'short',
-                      year: 'numeric',
                       hour: '2-digit',
                       minute: '2-digit',
                     })
@@ -379,11 +414,11 @@ export function RewardsTab() {
 
                 return (
                   <div
-                    key={idx}
-                    className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs dark:bg-white/[0.02] dark:border-white/5"
+                    key={claim.id || idx}
+                    className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-2xl bg-slate-50 border border-slate-200 gap-2 text-xs dark:bg-white/[0.02] dark:border-white/5"
                   >
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="size-8 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center text-base shrink-0 dark:bg-purple-500/20 dark:border-purple-500/30">
+                      <div className="size-9 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-lg shrink-0 dark:bg-purple-500/20 dark:border-purple-500/30">
                         {claim.rewardIcon || '🎁'}
                       </div>
                       <div className="min-w-0">
@@ -399,12 +434,18 @@ export function RewardsTab() {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0 pt-1 sm:pt-0 border-t sm:border-t-0 border-slate-200/60 dark:border-white/5">
+                      <span className="flex items-center gap-1 text-[10px] font-mono font-bold text-amber-700 bg-amber-50 border border-amber-200/60 dark:bg-amber-500/10 dark:text-amber-300 dark:border-amber-500/20 px-2 py-0.5 rounded-full">
+                        <Timer className="size-2.5" />
+                        <span>Expira en {claim.minutesRemaining}m</span>
+                      </span>
+
                       <span className="font-black text-rose-600 dark:text-purple-300 font-mono text-xs">
                         -{claim.pointCost || 0} pts
                       </span>
+
                       <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold dark:bg-emerald-500/20 dark:text-emerald-300">
-                        Completado
+                        Canjeado
                       </span>
                     </div>
                   </div>

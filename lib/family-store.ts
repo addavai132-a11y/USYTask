@@ -98,9 +98,58 @@ export function adjustChallengeDays(
 
 // ---------------- REWARDS ----------------
 
+// Expiración automática del historial de canjes: 30 minutos (en milisegundos)
+export const CLAIM_EXPIRATION_MS = 30 * 60 * 1000
+
+export function cleanExpiredRewardClaims(rewards?: FamilyReward[]): { cleaned: FamilyReward[]; hasChanges: boolean } {
+  try {
+    const list = rewards || loadArray<FamilyReward>(REWARDS_KEY)
+    const now = Date.now()
+    let hasChanges = false
+
+    const cleaned = list.map((reward) => {
+      if (!Array.isArray(reward.claimedBy) || reward.claimedBy.length === 0) {
+        return reward
+      }
+
+      const activeClaims = reward.claimedBy.filter((claim) => {
+        const claimTime = new Date(claim.date || (claim as any).createdAt || 0).getTime()
+        if (isNaN(claimTime) || claimTime === 0) return false
+        const age = now - claimTime
+        return age >= 0 && age <= CLAIM_EXPIRATION_MS
+      })
+
+      if (activeClaims.length !== reward.claimedBy.length) {
+        hasChanges = true
+        return {
+          ...reward,
+          claimedBy: activeClaims,
+        }
+      }
+
+      return reward
+    })
+
+    if (hasChanges && !rewards) {
+      saveArray(REWARDS_KEY, cleaned)
+      scheduleCloudSync()
+    }
+
+    return { cleaned, hasChanges }
+  } catch (err) {
+    console.error('Error in cleanExpiredRewardClaims:', err)
+    return { cleaned: rewards || [], hasChanges: false }
+  }
+}
+
 export function getAllRewards(): FamilyReward[] {
   try {
-    return loadArray<FamilyReward>(REWARDS_KEY)
+    const raw = loadArray<FamilyReward>(REWARDS_KEY)
+    const { cleaned, hasChanges } = cleanExpiredRewardClaims(raw)
+    if (hasChanges) {
+      saveArray(REWARDS_KEY, cleaned)
+    }
+    return cleaned
   } catch (err) {
     console.error('Error in getAllRewards:', err)
     return []
@@ -213,14 +262,21 @@ export function claimReward(
     }
     saveArray(MEMBERS_KEY, allMembers)
 
-    // Append to claimedBy list
-    const updatedClaimedBy = Array.isArray(reward.claimedBy) ? [...reward.claimedBy] : []
+    // Append to claimedBy list and prune any expired claims older than 30 mins
+    const now = Date.now()
+    const rawClaims = Array.isArray(reward.claimedBy) ? reward.claimedBy : []
+    const updatedClaimedBy = rawClaims.filter((claim) => {
+      const claimTime = new Date(claim.date || (claim as any).createdAt || 0).getTime()
+      return !isNaN(claimTime) && (now - claimTime) <= CLAIM_EXPIRATION_MS
+    })
+
     const claimRecord = {
-      id: `claim_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+      id: `claim_${now}_${Math.random().toString(36).slice(2, 6)}`,
       memberId: member.id,
-      date: new Date().toISOString(),
+      date: new Date(now).toISOString(),
       rewardTitle: reward.title,
       pointCost: cost,
+      createdAt: new Date(now).toISOString(),
     }
     updatedClaimedBy.unshift(claimRecord)
 
@@ -232,6 +288,7 @@ export function claimReward(
 
     allRewards[rIdx] = updatedReward
     saveArray(REWARDS_KEY, allRewards)
+    scheduleCloudSync()
 
     return { success: true, reward: updatedReward }
   } catch (err) {
