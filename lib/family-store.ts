@@ -32,8 +32,47 @@ function saveArray<T>(key: string, data: T[]): void {
 
 // ---------------- CHALLENGES ----------------
 
+// Expiración automática de retos completados: 30 minutos (en milisegundos)
+export const CHALLENGE_EXPIRATION_MS = 30 * 60 * 1000
+
+export function cleanExpiredCompletedChallenges(challenges?: FamilyChallenge[]): { cleaned: FamilyChallenge[]; hasChanges: boolean } {
+  try {
+    const list = challenges || loadArray<FamilyChallenge>(CHALLENGES_KEY)
+    const now = Date.now()
+    let hasChanges = false
+
+    const cleaned = list.filter((chal) => {
+      if (chal.status !== 'completado') return true
+      const completedTime = new Date(chal.completedAt || (chal as any).updatedAt || (chal as any).date || 0).getTime()
+      if (isNaN(completedTime) || completedTime === 0) return true
+      const age = now - completedTime
+      const isExpired = age > CHALLENGE_EXPIRATION_MS
+      if (isExpired) {
+        hasChanges = true
+        return false
+      }
+      return true
+    })
+
+    if (hasChanges && !challenges) {
+      saveArray(CHALLENGES_KEY, cleaned)
+      scheduleCloudSync()
+    }
+
+    return { cleaned, hasChanges }
+  } catch (err) {
+    console.error('Error in cleanExpiredCompletedChallenges:', err)
+    return { cleaned: challenges || [], hasChanges: false }
+  }
+}
+
 export function getAllChallenges(): FamilyChallenge[] {
-  return loadArray<FamilyChallenge>(CHALLENGES_KEY)
+  const raw = loadArray<FamilyChallenge>(CHALLENGES_KEY)
+  const { cleaned, hasChanges } = cleanExpiredCompletedChallenges(raw)
+  if (hasChanges) {
+    saveArray(CHALLENGES_KEY, cleaned)
+  }
+  return cleaned
 }
 
 export function getChallengesByGroup(groupId: string): FamilyChallenge[] {

@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { Plus, Trophy, CheckCircle2, Trash2 } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Plus, Trophy, CheckCircle2, Trash2, Timer } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { MemberAvatar } from '@/components/ui/member-avatar'
 import { EmptyState } from '@/components/ui/empty-state'
@@ -12,6 +12,7 @@ import { useToast } from '@/components/ui/toast'
 import { useApp } from '@/components/app/app-context'
 import { CHALLENGE_CATEGORIES, type FamilyChallenge, type ChallengeCategory } from '@/types'
 import { getTodayISO } from '@/lib/date-utils'
+import { cleanExpiredCompletedChallenges, CHALLENGE_EXPIRATION_MS } from '@/lib/family-store'
 import { cn } from '@/lib/utils'
 
 export function ChallengesTab() {
@@ -29,6 +30,16 @@ export function ChallengesTab() {
 
   const [filter, setFilter] = useState<'activos' | 'completados'>('activos')
   const [isCreating, setIsCreating] = useState(false)
+  const [now, setNow] = useState<number>(Date.now())
+
+  useEffect(() => {
+    cleanExpiredCompletedChallenges()
+    const interval = setInterval(() => {
+      setNow(Date.now())
+      cleanExpiredCompletedChallenges()
+    }, 30000) // prune every 30 seconds
+    return () => clearInterval(interval)
+  }, [])
 
   // Form states
   const [title, setTitle] = useState('')
@@ -41,7 +52,23 @@ export function ChallengesTab() {
   const today = getTodayISO()
 
   const activeChallenges = familyChallenges.filter((c) => c.status !== 'completado')
-  const completedChallenges = familyChallenges.filter((c) => c.status === 'completado')
+  const completedChallenges = familyChallenges
+    .filter((c) => {
+      if (c.status !== 'completado') return false
+      const completedTime = new Date(c.completedAt || (c as any).updatedAt || (c as any).date || 0).getTime()
+      if (isNaN(completedTime) || completedTime === 0) return true
+      return (now - completedTime) <= CHALLENGE_EXPIRATION_MS
+    })
+    .map((c) => {
+      const completedTime = new Date(c.completedAt || (c as any).updatedAt || (c as any).date || 0).getTime()
+      const minutesRemaining = !isNaN(completedTime) && completedTime > 0
+        ? Math.max(1, Math.ceil((CHALLENGE_EXPIRATION_MS - (now - completedTime)) / 60000))
+        : 30
+      return {
+        ...c,
+        minutesRemaining,
+      }
+    })
   const displayedChallenges = filter === 'activos' ? activeChallenges : completedChallenges
 
   const handleOpenCreateModal = () => {
@@ -116,7 +143,7 @@ export function ChallengesTab() {
   return (
     <div className="w-full max-w-2xl mx-auto space-y-4">
       {/* ── Top Header Controls ── */}
-      <div className="w-full flex items-center justify-between p-3.5 px-5 bg-white/[0.03] border border-white/10 rounded-2xl backdrop-blur-xl">
+      <div className="w-full flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 px-5 bg-white/[0.03] border border-white/10 rounded-2xl backdrop-blur-xl">
         <div className="flex items-center gap-1.5 p-1 bg-white/[0.04] border border-white/10 rounded-xl">
           <button
             onClick={() => setFilter('activos')}
@@ -151,6 +178,13 @@ export function ChallengesTab() {
         </button>
       </div>
 
+      {filter === 'completados' && (
+        <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-300">
+          <Timer className="size-3.5 shrink-0" />
+          <span>Los retos completados se eliminan automáticamente tras 30 minutos de su finalización.</span>
+        </div>
+      )}
+
       {/* ── Challenges List ── */}
       {displayedChallenges.length === 0 ? (
         <EmptyState
@@ -158,7 +192,12 @@ export function ChallengesTab() {
           title={
             filter === 'activos'
               ? 'Sin retos activos en este momento.'
-              : 'Aún no hay retos completados.'
+              : 'Sin retos completados en los últimos 30 minutos.'
+          }
+          description={
+            filter === 'activos'
+              ? 'Crea un nuevo reto familiar para motivar hábitos y tareas conjuntas.'
+              : 'Los retos completados hace más de 30 minutos se han eliminado automáticamente.'
           }
           action={filter === 'activos' ? '+ Añadir primer reto' : undefined}
           onAction={filter === 'activos' ? handleOpenCreateModal : undefined}
@@ -174,7 +213,7 @@ export function ChallengesTab() {
                 key={c.id}
                 className={cn(
                   'p-4 bg-white/[0.03] border border-white/10 hover:border-emerald-500/30 transition-all rounded-2xl flex flex-col gap-3 shadow-sm',
-                  isCompleted && 'opacity-70'
+                  isCompleted && 'opacity-85'
                 )}
               >
                 {/* Header */}
@@ -188,7 +227,7 @@ export function ChallengesTab() {
                         <h4 className="font-bold text-sm text-white tracking-tight leading-snug">
                           {c.title}
                         </h4>
-                        <span className="rounded-md bg-white/[0.04] border border-white/10 px-1.5 py-0.5 text-[10px] font-semibold text-slate-300 capitalize">
+                        <span className="rounded-md bg-emerald-400 text-slate-950 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider">
                           {c.category}
                         </span>
                       </div>
@@ -257,10 +296,16 @@ export function ChallengesTab() {
                         </button>
                       </div>
                     ) : (
-                      <span className="inline-flex items-center gap-1 rounded-xl bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 text-xs font-bold text-emerald-300">
-                        <CheckCircle2 className="size-3.5" />
-                        <span>Completado 🎉</span>
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="flex items-center gap-1 text-[10px] font-mono font-bold text-amber-300 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full">
+                          <Timer className="size-2.5" />
+                          <span>Expira en {c.minutesRemaining}m</span>
+                        </span>
+                        <span className="inline-flex items-center gap-1 rounded-xl bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 text-xs font-bold text-emerald-300">
+                          <CheckCircle2 className="size-3.5" />
+                          <span>Completado 🎉</span>
+                        </span>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -330,22 +375,26 @@ export function ChallengesTab() {
 
           <div className="flex flex-col gap-1">
             <label className="font-bold text-slate-400">Categoría</label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
-              {CHALLENGE_CATEGORIES.map((cat) => (
-                <button
-                  key={cat.id}
-                  type="button"
-                  onClick={() => setCategory(cat.id as ChallengeCategory)}
-                  className={cn(
-                    'rounded-xl border py-2 px-2 text-center text-xs font-bold transition-all',
-                    category === cat.id
-                      ? 'border-emerald-500/50 bg-emerald-500/20 text-emerald-200'
-                      : 'border-white/10 bg-white/[0.02] text-slate-400 hover:bg-white/[0.06] hover:text-white'
-                  )}
-                >
-                  {cat.label}
-                </button>
-              ))}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+              {CHALLENGE_CATEGORIES.map((cat) => {
+                const isSelected = category === cat.id
+                return (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => setCategory(cat.id as ChallengeCategory)}
+                    className={cn(
+                      'rounded-xl border py-2.5 px-2.5 text-center text-xs font-black transition-all flex items-center justify-center gap-1.5 shadow-sm',
+                      isSelected
+                        ? 'border-emerald-400 bg-emerald-400 text-slate-950 font-black ring-2 ring-emerald-400/40'
+                        : 'border-white/10 bg-white/[0.04] text-slate-300 hover:bg-white/[0.08] hover:text-white'
+                    )}
+                  >
+                    <span>{cat.icon}</span>
+                    <span className={isSelected ? 'text-slate-950 font-black' : ''}>{cat.label}</span>
+                  </button>
+                )
+              })}
             </div>
           </div>
 

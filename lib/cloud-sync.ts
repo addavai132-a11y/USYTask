@@ -26,6 +26,7 @@ import {
   getAllRewards,
   getAllMemories,
   cleanExpiredRewardClaims,
+  cleanExpiredCompletedChallenges,
 } from './family-store'
 
 export interface CloudBackupPayload {
@@ -206,7 +207,8 @@ export function hydrateLocalFromCloud(payload: CloudBackupPayload): boolean {
       localStorage.setItem(STORAGE_KEYS.budgets, JSON.stringify(payload.budgets))
     }
     if (payload.challenges) {
-      localStorage.setItem(STORAGE_KEYS.challenges, JSON.stringify(payload.challenges))
+      const { cleaned } = cleanExpiredCompletedChallenges(payload.challenges)
+      localStorage.setItem(STORAGE_KEYS.challenges, JSON.stringify(cleaned))
     }
     if (payload.rewards) {
       const { cleaned } = cleanExpiredRewardClaims(payload.rewards)
