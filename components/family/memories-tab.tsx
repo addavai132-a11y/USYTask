@@ -12,6 +12,9 @@ import {
   Loader2,
   RefreshCw,
   Sparkles,
+  Users,
+  Tag,
+  Maximize2,
 } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { MemberAvatar } from '@/components/ui/member-avatar'
@@ -37,6 +40,7 @@ export function MemoriesTab() {
   const { familyMemories, members, currentMember, getMemberById, addFamilyMemory, deleteFamilyMemory, confirmDelete } = useApp()
 
   const [isCreating, setIsCreating] = useState(false)
+  const [selectedMemory, setSelectedMemory] = useState<FamilyMemory | null>(null)
   const [memberFilter, setMemberFilter] = useState<string>('all')
 
   // Form state
@@ -271,11 +275,12 @@ export function MemoriesTab() {
             return (
               <Card
                 key={mem.id}
-                className="overflow-hidden p-0 bg-white border border-slate-200 hover:border-emerald-500/40 dark:bg-white/[0.03] dark:border-white/10 dark:hover:border-purple-500/30 transition-all rounded-3xl flex flex-col justify-between shadow-sm group"
+                onClick={() => setSelectedMemory(mem)}
+                className="overflow-hidden p-0 bg-white border border-slate-200 hover:border-emerald-500/50 hover:shadow-md dark:bg-white/[0.03] dark:border-white/10 dark:hover:border-purple-500/40 transition-all rounded-3xl flex flex-col justify-between shadow-sm group cursor-pointer active:scale-[0.99]"
               >
                 {/* Header Banner o Foto Subida */}
                 {mem.imageUrl ? (
-                  <div className="relative h-44 w-full overflow-hidden bg-slate-900 border-b border-slate-200 dark:border-white/10">
+                  <div className="relative h-48 w-full overflow-hidden bg-slate-900 border-b border-slate-200 dark:border-white/10">
                     <img
                       src={mem.imageUrl}
                       alt={mem.title}
@@ -291,18 +296,27 @@ export function MemoriesTab() {
                         })}
                       </span>
 
-                      <button
-                        onClick={() => handleDelete(mem.id, mem.title)}
-                        className="flex size-7 items-center justify-center rounded-full bg-black/60 backdrop-blur-md text-white/80 hover:bg-rose-500 hover:text-white transition-all"
-                        title="Eliminar recuerdo"
-                      >
-                        <Trash2 className="size-3.5" />
-                      </button>
+                      <div className="flex items-center gap-1.5">
+                        <span className="flex size-7 items-center justify-center rounded-full bg-black/60 backdrop-blur-md text-white/80 group-hover:bg-emerald-600 group-hover:text-white transition-colors" title="Ver foto ampliada">
+                          <Maximize2 className="size-3.5" />
+                        </span>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleDelete(mem.id, mem.title)
+                          }}
+                          className="flex size-7 items-center justify-center rounded-full bg-black/60 backdrop-blur-md text-white/80 hover:bg-rose-500 hover:text-white transition-all"
+                          title="Eliminar recuerdo"
+                        >
+                          <Trash2 className="size-3.5" />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ) : (
                   <div
-                    className="relative h-24 w-full p-3 flex items-start justify-between border-b border-slate-200 dark:border-white/10"
+                    className="relative h-28 w-full p-3 flex items-start justify-between border-b border-slate-200 dark:border-white/10"
                     style={{ background: mem.imagePlaceholder || GRADIENT_PRESETS[0].bg }}
                   >
                     <span className="flex items-center gap-1 rounded-full bg-black/50 backdrop-blur-md px-2.5 py-0.5 text-[10px] font-semibold text-white">
@@ -314,20 +328,29 @@ export function MemoriesTab() {
                       })}
                     </span>
 
-                    <button
-                      onClick={() => handleDelete(mem.id, mem.title)}
-                      className="flex size-7 items-center justify-center rounded-full bg-black/50 backdrop-blur-md text-white/80 hover:bg-rose-500 hover:text-white transition-all"
-                      title="Eliminar recuerdo"
-                    >
-                      <Trash2 className="size-3.5" />
-                    </button>
+                    <div className="flex items-center gap-1.5">
+                      <span className="flex size-7 items-center justify-center rounded-full bg-black/50 backdrop-blur-md text-white/80 group-hover:bg-emerald-600 group-hover:text-white transition-colors" title="Ver detalle">
+                        <Maximize2 className="size-3.5" />
+                      </span>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleDelete(mem.id, mem.title)
+                        }}
+                        className="flex size-7 items-center justify-center rounded-full bg-black/50 backdrop-blur-md text-white/80 hover:bg-rose-500 hover:text-white transition-all"
+                        title="Eliminar recuerdo"
+                      >
+                        <Trash2 className="size-3.5" />
+                      </button>
+                    </div>
                   </div>
                 )}
 
                 {/* Content */}
                 <div className="p-4 flex flex-col justify-between gap-3 flex-1">
                   <div>
-                    <h4 className="font-bold text-sm text-slate-900 dark:text-white tracking-tight leading-snug">
+                    <h4 className="font-bold text-sm text-slate-900 dark:text-white tracking-tight leading-snug group-hover:text-emerald-600 dark:group-hover:text-purple-400 transition-colors">
                       {mem.title}
                     </h4>
                     {mem.description && (
@@ -568,6 +591,147 @@ export function MemoriesTab() {
           </div>
         </div>
       </BottomSheet>
+
+      {/* ── MODAL: DETALLE COMPLETO DEL RECUERDO CON FOTO AMPLIA ── */}
+      {selectedMemory && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-fade-in">
+          <div className="w-full max-w-2xl rounded-3xl border border-slate-200 bg-white dark:border-white/10 dark:bg-[#121026] shadow-2xl animate-in zoom-in-95 duration-150 max-h-[92vh] overflow-y-auto no-scrollbar flex flex-col">
+            {/* Header / Foto Ampliada */}
+            <div className="relative w-full bg-slate-950">
+              {selectedMemory.imageUrl ? (
+                <div className="relative w-full max-h-[55vh] flex items-center justify-center bg-black overflow-hidden">
+                  <img
+                    src={selectedMemory.imageUrl}
+                    alt={selectedMemory.title}
+                    className="w-full max-h-[55vh] object-contain"
+                  />
+                  <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-[#121026] via-transparent to-transparent opacity-40 dark:opacity-80" />
+                </div>
+              ) : (
+                <div
+                  className="w-full h-44 p-6 flex flex-col justify-end"
+                  style={{ background: selectedMemory.imagePlaceholder || GRADIENT_PRESETS[0].bg }}
+                >
+                  <span className="text-4xl mb-2">📸</span>
+                </div>
+              )}
+
+              {/* Botón Cerrar Flotante */}
+              <button
+                type="button"
+                onClick={() => setSelectedMemory(null)}
+                className="absolute top-4 right-4 z-10 flex size-9 items-center justify-center rounded-full bg-black/60 hover:bg-black/90 text-white backdrop-blur-md transition-all shadow-lg active:scale-95 border border-white/20"
+                title="Cerrar vista detallada"
+              >
+                <X className="size-5" />
+              </button>
+            </div>
+
+            {/* Cuerpo del Detalle */}
+            <div className="p-6 space-y-4 flex-1">
+              {/* Fecha y Metadatos */}
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="flex items-center gap-1.5 rounded-full bg-slate-100 dark:bg-white/[0.06] border border-slate-200 dark:border-white/10 px-3 py-1 text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  <Calendar className="size-3.5 text-emerald-600 dark:text-purple-400" />
+                  <span>
+                    {new Date(selectedMemory.date).toLocaleDateString('es-ES', {
+                      weekday: 'long',
+                      day: 'numeric',
+                      month: 'long',
+                      year: 'numeric',
+                    })}
+                  </span>
+                </span>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const memId = selectedMemory.id
+                    const memTitle = selectedMemory.title
+                    setSelectedMemory(null)
+                    handleDelete(memId, memTitle)
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold text-rose-500 hover:bg-rose-500/10 transition-colors"
+                >
+                  <Trash2 className="size-3.5" />
+                  <span>Eliminar</span>
+                </button>
+              </div>
+
+              {/* Título */}
+              <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight leading-snug">
+                {selectedMemory.title}
+              </h2>
+
+              {/* Descripción Completa */}
+              {selectedMemory.description ? (
+                <div className="p-4 rounded-2xl bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/5">
+                  <p className="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap leading-relaxed">
+                    {selectedMemory.description}
+                  </p>
+                </div>
+              ) : (
+                <p className="text-xs text-slate-400 italic">Sin descripción detallada.</p>
+              )}
+
+              {/* Integrantes Protagonistas */}
+              {selectedMemory.taggedMemberIds && selectedMemory.taggedMemberIds.length > 0 && (
+                <div className="space-y-2 pt-2 border-t border-slate-200/80 dark:border-white/5">
+                  <span className="text-xs font-extrabold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                    <Users className="size-3.5 text-emerald-600 dark:text-purple-400" />
+                    <span>Protagonistas</span>
+                  </span>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedMemory.taggedMemberIds
+                      .map((id) => getMemberById(id))
+                      .filter(Boolean)
+                      .map((m) => (
+                        <div
+                          key={m!.id}
+                          className="flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 dark:bg-white/[0.06] border border-slate-200 dark:border-white/10 text-xs font-bold text-slate-800 dark:text-white"
+                        >
+                          <MemberAvatar member={m!} size="sm" />
+                          <span>{m!.name}</span>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Etiquetas */}
+              {selectedMemory.tags && selectedMemory.tags.length > 0 && (
+                <div className="space-y-1.5 pt-2 border-t border-slate-200/80 dark:border-white/5">
+                  <span className="text-xs font-extrabold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                    <Tag className="size-3.5 text-emerald-600 dark:text-purple-400" />
+                    <span>Etiquetas</span>
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {selectedMemory.tags.map((t) => (
+                      <span
+                        key={t}
+                        className="px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200 dark:bg-purple-500/15 dark:text-purple-300 dark:border-purple-500/30 text-xs font-bold"
+                      >
+                        #{t}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Footer Modal con Botón Cerrar */}
+              <div className="pt-4 border-t border-slate-200/80 dark:border-white/10 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setSelectedMemory(null)}
+                  className="rounded-2xl bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-100 px-6 py-2.5 text-xs font-bold text-white shadow-sm transition-transform active:scale-95"
+                >
+                  Volver a la Galería
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
