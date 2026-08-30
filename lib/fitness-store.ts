@@ -470,35 +470,88 @@ export function saveNutritionGoal(goal: NutritionGoal): void {
   }
 }
 
-export function getAllMealLogs(dateISO: string): DailyMealLog[] {
-  const loaded = loadArray<DailyMealLog>(MEAL_LOGS_KEY, INITIAL_MEAL_LOGS)
-  return loaded.filter((m) => m.date === dateISO)
-}
-
-export function saveMealItem(dateISO: string, mealType: DailyMealLog['mealType'], item: DailyMealLog['items'][0]): void {
-  const all = loadArray<DailyMealLog>(MEAL_LOGS_KEY)
-  let mealLog = all.find((m) => m.date === dateISO && m.mealType === mealType)
-  if (!mealLog) {
-    mealLog = {
-      id: `meal_${Date.now()}`,
-      groupId: 'default',
-      date: dateISO,
-      mealType,
-      items: [item],
-    }
-    all.push(mealLog)
-  } else {
-    mealLog.items.push(item)
+export function getAllMealLogs(dateOrDay?: string): DailyMealLog[] {
+  try {
+    const loaded = loadArray<DailyMealLog>(MEAL_LOGS_KEY, INITIAL_MEAL_LOGS)
+    if (!dateOrDay) return loaded
+    return loaded.filter((m) => m.date === dateOrDay || m.dayOfWeek === dateOrDay)
+  } catch (err) {
+    console.error('Error loading meal logs from store:', err)
+    return INITIAL_MEAL_LOGS
   }
-  saveArray(MEAL_LOGS_KEY, all)
 }
 
-export function deleteMealItem(dateISO: string, mealType: DailyMealLog['mealType'], itemId: string): void {
-  const all = loadArray<DailyMealLog>(MEAL_LOGS_KEY)
-  const mealLog = all.find((m) => m.date === dateISO && m.mealType === mealType)
-  if (mealLog) {
-    mealLog.items = mealLog.items.filter((i) => i.id !== itemId)
+export function saveMealItem(
+  dateISO: string,
+  mealType: DailyMealLog['mealType'],
+  item: DailyMealLog['items'][0],
+  dayOfWeek?: string
+): void {
+  try {
+    if (!item || !item.name) {
+      console.warn('saveMealItem: Item inválido o sin nombre', item)
+      return
+    }
+    const all = loadArray<DailyMealLog>(MEAL_LOGS_KEY, INITIAL_MEAL_LOGS)
+    let mealLog = all.find(
+      (m) => (m.date === dateISO || (dayOfWeek && m.dayOfWeek === dayOfWeek)) && m.mealType === mealType
+    )
+    if (!mealLog) {
+      mealLog = {
+        id: `meal_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+        groupId: 'default',
+        date: dateISO,
+        dayOfWeek: dayOfWeek as any,
+        mealType: mealType || 'desayuno',
+        items: [
+          {
+            ...item,
+            calories: Number(item.calories) || 0,
+            protein: Number(item.protein) || 0,
+            carbs: Number(item.carbs) || 0,
+            fats: Number(item.fats) || 0,
+          },
+        ],
+      }
+      all.push(mealLog)
+    } else {
+      if (!Array.isArray(mealLog.items)) {
+        mealLog.items = []
+      }
+      if (dayOfWeek && !mealLog.dayOfWeek) {
+        mealLog.dayOfWeek = dayOfWeek as any
+      }
+      mealLog.items.push({
+        ...item,
+        calories: Number(item.calories) || 0,
+        protein: Number(item.protein) || 0,
+        carbs: Number(item.carbs) || 0,
+        fats: Number(item.fats) || 0,
+      })
+    }
     saveArray(MEAL_LOGS_KEY, all)
+  } catch (err) {
+    console.error('Error saving meal item in fitness-store:', err)
+  }
+}
+
+export function deleteMealItem(
+  dateISO: string,
+  mealType: DailyMealLog['mealType'],
+  itemId: string,
+  dayOfWeek?: string
+): void {
+  try {
+    const all = loadArray<DailyMealLog>(MEAL_LOGS_KEY, INITIAL_MEAL_LOGS)
+    const mealLog = all.find(
+      (m) => (m.date === dateISO || (dayOfWeek && m.dayOfWeek === dayOfWeek)) && m.mealType === mealType
+    )
+    if (mealLog && Array.isArray(mealLog.items)) {
+      mealLog.items = mealLog.items.filter((i) => i.id !== itemId)
+      saveArray(MEAL_LOGS_KEY, all)
+    }
+  } catch (err) {
+    console.error('Error deleting meal item in fitness-store:', err)
   }
 }
 

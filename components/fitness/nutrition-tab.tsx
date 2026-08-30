@@ -6,7 +6,7 @@ import { Card } from '@/components/ui/card'
 import { CustomSelect } from '@/components/ui/custom-select'
 import { useToast } from '@/components/ui/toast'
 import { useApp } from '@/components/app/app-context'
-import type { DailyMealLog, MealItem, MealType, NutritionGoal, MealSection, BodyMetric } from '@/types/fitness'
+import type { DailyMealLog, MealItem, MealType, NutritionGoal, MealSection, BodyMetric, DayOfWeek } from '@/types/fitness'
 import { DEFAULT_MEAL_SECTIONS } from '@/types/fitness'
 import { getTodayISO } from '@/lib/date-utils'
 import { cn } from '@/lib/utils'
@@ -16,9 +16,25 @@ interface NutritionTabProps {
   mealLogs: DailyMealLog[]
   bodyMetrics?: BodyMetric[]
   onSaveGoal: (goal: NutritionGoal) => void
-  onAddMealItem: (mealType: MealType, item: MealItem) => void
-  onDeleteMealItem: (mealType: MealType, itemId: string) => void
+  onAddMealItem: (mealType: MealType, item: MealItem, dayOfWeek?: DayOfWeek) => void
+  onDeleteMealItem: (mealType: MealType, itemId: string, dayOfWeek?: DayOfWeek) => void
   onSaveBodyMetric?: (metric: BodyMetric) => void
+}
+
+const DAYS_OF_WEEK: { id: DayOfWeek; label: string; short: string; icon: string }[] = [
+  { id: 'lunes', label: 'Lunes', short: 'Lun', icon: '📅' },
+  { id: 'martes', label: 'Martes', short: 'Mar', icon: '📅' },
+  { id: 'miercoles', label: 'Miércoles', short: 'Mié', icon: '📅' },
+  { id: 'jueves', label: 'Jueves', short: 'Jue', icon: '📅' },
+  { id: 'viernes', label: 'Viernes', short: 'Vie', icon: '📅' },
+  { id: 'sabado', label: 'Sábado', short: 'Sáb', icon: '🎉' },
+  { id: 'domingo', label: 'Domingo', short: 'Dom', icon: '☀️' },
+]
+
+function getInitialDayOfWeek(): DayOfWeek {
+  const dayIdx = new Date().getDay()
+  const map: DayOfWeek[] = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado']
+  return map[dayIdx] || 'lunes'
 }
 
 const COMMON_FOOD_PRESETS: { name: string; calories: number; protein: number; carbs: number; fats: number; quantity: string }[] = [
@@ -86,6 +102,54 @@ export function NutritionTab({
 }: NutritionTabProps) {
   const { toast } = useToast()
   const { shoppingLists, addShoppingItem, addShoppingList, confirmDelete } = useApp()
+
+  // ── ESTADO DEL DÍA DE LA SEMANA ACTIVO (LUNES A DOMINGO) ──
+  const [selectedDay, setSelectedDay] = useState<DayOfWeek>(() => getInitialDayOfWeek())
+  const todayDayOfWeek = getInitialDayOfWeek()
+
+  // Logs filtrados exclusivamente para el día seleccionado
+  const currentDayLogs = useMemo(() => {
+    return mealLogs.filter((log) => {
+      if (log.dayOfWeek) {
+        return log.dayOfWeek === selectedDay
+      }
+      if (log.date) {
+        const d = new Date(log.date + 'T00:00:00')
+        if (!isNaN(d.getTime())) {
+          const map: DayOfWeek[] = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado']
+          return map[d.getDay()] === selectedDay
+        }
+      }
+      return false
+    })
+  }, [mealLogs, selectedDay])
+
+  // Conteo de alimentos por día para los badges del selector
+  const itemsCountByDay = useMemo(() => {
+    const counts: Record<DayOfWeek, number> = {
+      lunes: 0,
+      martes: 0,
+      miercoles: 0,
+      jueves: 0,
+      viernes: 0,
+      sabado: 0,
+      domingo: 0,
+    }
+    mealLogs.forEach((log) => {
+      let dKey: DayOfWeek | null = log.dayOfWeek || null
+      if (!dKey && log.date) {
+        const d = new Date(log.date + 'T00:00:00')
+        if (!isNaN(d.getTime())) {
+          const map: DayOfWeek[] = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado']
+          dKey = map[d.getDay()] || null
+        }
+      }
+      if (dKey && counts[dKey] !== undefined && Array.isArray(log.items)) {
+        counts[dKey] += log.items.length
+      }
+    })
+    return counts
+  }, [mealLogs])
 
   // ── SECCIONES DE COMIDAS PERSONALIZADAS Y DINÁMICAS ──
   const [mealSections, setMealSections] = useState<MealSection[]>(() => {
@@ -379,24 +443,28 @@ export function NutritionTab({
     }
   }, [calcWeight, calcHeight, calcAge, calcGender, calcActivity, calcGoalPhase, calcPace])
 
-  // ── CONSUMED MACROS TOTALS ──
+  // ── CONSUMED MACROS TOTALS (Filtrados por el día seleccionado) ──
   const totals = useMemo(() => {
     let calories = 0
     let protein = 0
     let carbs = 0
     let fats = 0
 
-    mealLogs.forEach((log) => {
-      log.items.forEach((item) => {
-        calories += item.calories || 0
-        protein += item.protein || 0
-        carbs += item.carbs || 0
-        fats += item.fats || 0
-      })
+    currentDayLogs.forEach((log) => {
+      if (Array.isArray(log?.items)) {
+        log.items.forEach((item) => {
+          if (item) {
+            calories += Number(item.calories) || 0
+            protein += Number(item.protein) || 0
+            carbs += Number(item.carbs) || 0
+            fats += Number(item.fats) || 0
+          }
+        })
+      }
     })
 
     return { calories, protein, carbs, fats }
-  }, [mealLogs])
+  }, [currentDayLogs])
 
   const calPercent = Math.min(100, Math.round((totals.calories / (nutritionGoal.targetCalories || 1)) * 100))
   const proPercent = Math.min(100, Math.round((totals.protein / (nutritionGoal.targetProtein || 1)) * 100))
@@ -443,28 +511,34 @@ export function NutritionTab({
   }
 
   function handleSaveFood() {
-    if (!foodName.trim()) {
-      toast('Escribe el nombre del alimento', '❌')
-      return
-    }
-    const cals = parseFloat(foodCalories) || 0
-    const p = parseFloat(foodProtein) || 0
-    const c = parseFloat(foodCarbs) || 0
-    const f = parseFloat(foodFats) || 0
+    try {
+      if (!foodName.trim()) {
+        toast('Escribe el nombre del alimento u opción', '❌')
+        return
+      }
+      const cals = parseFloat(foodCalories) || 0
+      const p = parseFloat(foodProtein) || 0
+      const c = parseFloat(foodCarbs) || 0
+      const f = parseFloat(foodFats) || 0
 
-    const item: MealItem = {
-      id: `item_${Date.now()}`,
-      name: foodName.trim(),
-      calories: cals,
-      protein: p,
-      carbs: c,
-      fats: f,
-      quantity: foodQuantity.trim() || undefined,
-    }
+      const item: MealItem = {
+        id: `item_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+        name: foodName.trim(),
+        calories: Math.max(0, cals),
+        protein: Math.max(0, p),
+        carbs: Math.max(0, c),
+        fats: Math.max(0, f),
+        quantity: foodQuantity.trim() || undefined,
+      }
 
-    onAddMealItem(targetMealType, item)
-    toast('🥗 Alimento añadido al registro diario', '✅')
-    setIsAddFoodModalOpen(false)
+      onAddMealItem(targetMealType, item, selectedDay)
+      const dayLabel = DAYS_OF_WEEK.find((d) => d.id === selectedDay)?.label || selectedDay
+      toast(`🥗 "${item.name}" añadido a ${targetMealLabel} (${dayLabel})`, '✅')
+      setIsAddFoodModalOpen(false)
+    } catch (err) {
+      console.error('Error in handleSaveFood:', err)
+      toast('Hubo un error al guardar el alimento. Inténtalo de nuevo.', '❌')
+    }
   }
 
   function handleSaveGoals() {
@@ -712,6 +786,50 @@ export function NutritionTab({
         </div>
       </Card>
 
+      {/* ── SELECTOR SEMANAL COMPLETO (LUNES A DOMINGO) ── */}
+      <div className="w-full flex items-center gap-1.5 p-1.5 bg-white border border-slate-200 rounded-2xl shadow-sm overflow-x-auto no-scrollbar dark:bg-white/[0.03] dark:border-white/10">
+        {DAYS_OF_WEEK.map((d) => {
+          const isSelected = selectedDay === d.id
+          const isToday = todayDayOfWeek === d.id
+          const count = itemsCountByDay[d.id] || 0
+
+          return (
+            <button
+              key={d.id}
+              type="button"
+              onClick={() => setSelectedDay(d.id)}
+              className={cn(
+                'flex-1 min-w-[76px] py-2 px-2 rounded-xl flex flex-col items-center justify-center transition-all text-xs relative select-none',
+                isSelected
+                  ? 'bg-emerald-600 text-white shadow-sm ring-1 ring-emerald-500 font-black dark:bg-purple-600 dark:ring-purple-400'
+                  : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-300 dark:hover:text-white dark:hover:bg-white/5 font-semibold'
+              )}
+            >
+              <div className="flex items-center gap-1">
+                <span>{d.short}</span>
+                {isToday && (
+                  <span
+                    className={cn(
+                      'size-1.5 rounded-full',
+                      isSelected ? 'bg-amber-300' : 'bg-emerald-500 dark:bg-purple-400'
+                    )}
+                    title="Hoy"
+                  />
+                )}
+              </div>
+              <span
+                className={cn(
+                  'text-[9px] font-mono mt-0.5',
+                  isSelected ? 'text-emerald-100 dark:text-purple-200' : 'text-slate-500 dark:text-slate-400'
+                )}
+              >
+                {count > 0 ? `${count} alim.` : '0 alim.'}
+              </span>
+            </button>
+          )
+        })}
+      </div>
+
       {/* ── BOTÓN SUPERIOR PARA AÑADIR TOMA / COMIDA (ENTRE METAS Y COMIDAS) ── */}
       <button
         type="button"
@@ -725,13 +843,13 @@ export function NutritionTab({
       {/* ── BLOQUES DE COMIDAS DIARIAS (PREDETERMINADAS + PERSONALIZADAS) ── */}
       <div className="space-y-3">
         {mealSections.map((section, idx) => {
-          const log = mealLogs.find((l) => l.mealType === section.id)
-          const items = log?.items || []
+          const log = currentDayLogs.find((l) => l.mealType === section.id)
+          const items = Array.isArray(log?.items) ? log.items : []
 
-          const mealCalories = items.reduce((sum, i) => sum + (i.calories || 0), 0)
-          const mealProtein = items.reduce((sum, i) => sum + (i.protein || 0), 0)
-          const mealCarbs = items.reduce((sum, i) => sum + (i.carbs || 0), 0)
-          const mealFats = items.reduce((sum, i) => sum + (i.fats || 0), 0)
+          const mealCalories = items.reduce((sum, i) => sum + (Number(i.calories) || 0), 0)
+          const mealProtein = items.reduce((sum, i) => sum + (Number(i.protein) || 0), 0)
+          const mealCarbs = items.reduce((sum, i) => sum + (Number(i.carbs) || 0), 0)
+          const mealFats = items.reduce((sum, i) => sum + (Number(i.fats) || 0), 0)
 
           return (
             <Card
@@ -820,7 +938,7 @@ export function NutritionTab({
 
               {/* Lista de Alimentos */}
               {items.length === 0 ? (
-                <p className="text-xs text-slate-400 italic py-1">Sin alimentos registrados en esta toma.</p>
+                <p className="text-xs text-slate-400 italic py-1">Sin alimentos registrados para este día.</p>
               ) : (
                 <div className="space-y-1.5">
                   {items.map((item) => (
@@ -838,7 +956,7 @@ export function NutritionTab({
 
                       <button
                         type="button"
-                        onClick={() => onDeleteMealItem(section.id, item.id)}
+                        onClick={() => onDeleteMealItem(section.id, item.id, selectedDay)}
                         className="p-1 text-slate-400 hover:text-rose-600 transition-colors dark:hover:text-rose-400"
                         title="Eliminar alimento"
                       >

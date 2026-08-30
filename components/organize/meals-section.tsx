@@ -208,92 +208,97 @@ export function MealsSection() {
 
   // Save Menu Form
   function handleSaveMenu() {
-    if (!menuTitle.trim()) {
-      toast('Por favor, indica un nombre para el menú', '❌')
-      return
-    }
-
-    if (menuType === 'daily') {
-      const mealsMap: any = {}
-      MEAL_TYPES.forEach((type) => {
-        const data = dailyFormMeals[type]
-        if (data.name.trim()) {
-          const ings = data.ingredients
-            .split(/,|\n/)
-            .map((i) => i.trim())
-            .filter(Boolean)
-          mealsMap[type] = {
-            id: `m_${type}_${Date.now()}`,
-            name: data.name.trim(),
-            type,
-            ingredients: ings.length > 0 ? ings : undefined,
-            recipeInstructions: data.recipe.trim() || undefined,
-          }
-        }
-      })
-
-      if (editingDailyId) {
-        updateDailyMenu({
-          id: editingDailyId,
-          groupId: '',
-          title: menuTitle.trim(),
-          date: menuDate,
-          meals: mealsMap,
-        })
-        toast('Menú diario actualizado', '✅')
-      } else {
-        addDailyMenu({
-          title: menuTitle.trim(),
-          date: menuDate,
-          meals: mealsMap,
-        })
-        toast('Menú diario creado', '🍳')
+    try {
+      if (!menuTitle.trim()) {
+        toast('Por favor, indica un nombre para el menú', '❌')
+        return
       }
-    } else {
-      const daysMap: any = {}
-      DAYS.forEach((day) => {
-        const dayData = weeklyFormDays[day]
-        daysMap[day] = {}
+
+      if (menuType === 'daily') {
+        const mealsMap: any = {}
         MEAL_TYPES.forEach((type) => {
-          const data = dayData[type]
-          if (data && data.name.trim()) {
-            const ings = data.ingredients
+          const data = dailyFormMeals[type]
+          if (data && data.name && data.name.trim()) {
+            const ings = (data.ingredients || '')
               .split(/,|\n/)
               .map((i) => i.trim())
               .filter(Boolean)
-            daysMap[day][type] = {
-              id: `w_${day}_${type}_${Date.now()}`,
+            mealsMap[type] = {
+              id: `m_${type}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
               name: data.name.trim(),
               type,
               ingredients: ings.length > 0 ? ings : undefined,
-              recipeInstructions: data.recipe.trim() || undefined,
+              recipeInstructions: data.recipe?.trim() || undefined,
             }
           }
         })
-      })
 
-      if (editingWeeklyId) {
-        updateWeeklyMenu({
-          id: editingWeeklyId,
-          groupId: '',
-          title: menuTitle.trim(),
-          startDate: menuStartDate,
-          endDate: menuEndDate,
-          days: daysMap,
-        })
-        toast('Menú semanal actualizado', '✅')
+        if (editingDailyId) {
+          updateDailyMenu({
+            id: editingDailyId,
+            groupId: '',
+            title: menuTitle.trim(),
+            date: menuDate || getTodayISO(),
+            meals: mealsMap,
+          })
+          toast('Menú diario actualizado', '✅')
+        } else {
+          addDailyMenu({
+            title: menuTitle.trim(),
+            date: menuDate || getTodayISO(),
+            meals: mealsMap,
+          })
+          toast('Menú diario creado', '🍳')
+        }
       } else {
-        addWeeklyMenu({
-          title: menuTitle.trim(),
-          startDate: menuStartDate,
-          endDate: menuEndDate,
-          days: daysMap,
+        const daysMap: any = {}
+        DAYS.forEach((day) => {
+          const dayData = weeklyFormDays[day]
+          daysMap[day] = {}
+          MEAL_TYPES.forEach((type) => {
+            const data = dayData ? dayData[type] : null
+            if (data && data.name && data.name.trim()) {
+              const ings = (data.ingredients || '')
+                .split(/,|\n/)
+                .map((i) => i.trim())
+                .filter(Boolean)
+              daysMap[day][type] = {
+                id: `w_${day}_${type}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+                name: data.name.trim(),
+                type,
+                ingredients: ings.length > 0 ? ings : undefined,
+                recipeInstructions: data.recipe?.trim() || undefined,
+              }
+            }
+          })
         })
-        toast('Menú semanal creado', '📅')
-      }
-    }
 
-    setIsModalOpen(false)
+        if (editingWeeklyId) {
+          updateWeeklyMenu({
+            id: editingWeeklyId,
+            groupId: '',
+            title: menuTitle.trim(),
+            startDate: menuStartDate || getTodayISO(),
+            endDate: menuEndDate || getSundayFromMonday(menuStartDate || getTodayISO()),
+            days: daysMap,
+          })
+          toast('Menú semanal actualizado', '✅')
+        } else {
+          addWeeklyMenu({
+            title: menuTitle.trim(),
+            startDate: menuStartDate || getTodayISO(),
+            endDate: menuEndDate || getSundayFromMonday(menuStartDate || getTodayISO()),
+            days: daysMap,
+          })
+          toast('Menú semanal creado', '📅')
+        }
+      }
+
+      setIsModalOpen(false)
+    } catch (err) {
+      console.error('Error saving meal menu in MealsSection:', err)
+      toast('Error al guardar el menú. Inténtalo de nuevo.', '❌')
+    }
   }
 
   // Transfer Ingredients to Shopping List

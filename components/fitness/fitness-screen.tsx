@@ -63,8 +63,8 @@ export function FitnessScreen() {
     setPRs(getAllPRs())
     setBodyMetrics(getAllBodyMetrics())
     setNutritionGoal(getNutritionGoal())
-    setMealLogs(getAllMealLogs(todayISO))
-  }, [todayISO])
+    setMealLogs(getAllMealLogs())
+  }, [])
 
   useEffect(() => {
     refreshData()
@@ -148,14 +148,22 @@ export function FitnessScreen() {
     setNutritionGoal(goal)
   }
 
-  function handleAddMealItem(mealType: MealType, item: MealItem) {
-    saveMealItem(todayISO, mealType, item)
-    refreshData()
+  function handleAddMealItem(mealType: MealType, item: MealItem, dayOfWeek?: any) {
+    try {
+      saveMealItem(todayISO, mealType, item, dayOfWeek)
+      refreshData()
+    } catch (err) {
+      console.error('Error in handleAddMealItem in fitness-screen:', err)
+    }
   }
 
-  function handleDeleteMealItem(mealType: MealType, itemId: string) {
-    deleteMealItem(todayISO, mealType, itemId)
-    refreshData()
+  function handleDeleteMealItem(mealType: MealType, itemId: string, dayOfWeek?: any) {
+    try {
+      deleteMealItem(todayISO, mealType, itemId, dayOfWeek)
+      refreshData()
+    } catch (err) {
+      console.error('Error in handleDeleteMealItem in fitness-screen:', err)
+    }
   }
 
   return (

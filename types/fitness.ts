@@ -204,10 +204,13 @@ export const mealTypeLabels: Record<string, { label: string; icon: string }> = {
   pre_post: { label: 'Pre / Post Entreno', icon: '⚡' },
 }
 
+export type DayOfWeek = 'lunes' | 'martes' | 'miercoles' | 'jueves' | 'viernes' | 'sabado' | 'domingo'
+
 export interface DailyMealLog {
   id: string
   groupId: string
   date: string
+  dayOfWeek?: DayOfWeek
   mealType: MealType
   items: MealItem[]
 }
