@@ -830,15 +830,26 @@ export function NutritionTab({
         })}
       </div>
 
-      {/* ── BOTÓN SUPERIOR PARA AÑADIR TOMA / COMIDA (ENTRE METAS Y COMIDAS) ── */}
-      <button
-        type="button"
-        onClick={handleOpenAddSection}
-        className="w-full py-2.5 bg-white hover:bg-slate-50 text-slate-900 border border-slate-300 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all shadow-sm text-xs sm:text-sm active:scale-[0.99] dark:bg-white/[0.04] dark:hover:bg-white/10 dark:text-white dark:border-white/10"
-      >
-        <Plus className="size-4 text-emerald-600 stroke-[2.5]" />
-        <span>Añadir Toma / Comida</span>
-      </button>
+      {/* ── BOTONES SUPERIORES PARA AÑADIR ALIMENTO O CREAR NUEVA TOMA ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        <button
+          type="button"
+          onClick={() => handleOpenAddFood(mealSections[0]?.id || 'desayuno', mealSections[0]?.name || 'Desayuno')}
+          className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-bold flex items-center justify-center gap-2 transition-all shadow-sm text-xs sm:text-sm active:scale-[0.99]"
+        >
+          <Plus className="size-4 stroke-[2.5]" />
+          <span>+ Añadir Alimento</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={handleOpenAddSection}
+          className="w-full py-2.5 bg-white hover:bg-slate-50 text-slate-900 border border-slate-300 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all shadow-sm text-xs sm:text-sm active:scale-[0.99] dark:bg-white/[0.04] dark:hover:bg-white/10 dark:text-white dark:border-white/10"
+        >
+          <Plus className="size-4 text-emerald-600 stroke-[2.5]" />
+          <span>+ Nueva Toma / Comida</span>
+        </button>
+      </div>
 
       {/* ── BLOQUES DE COMIDAS DIARIAS (PREDETERMINADAS + PERSONALIZADAS) ── */}
       <div className="space-y-3">
@@ -978,14 +989,36 @@ export function NutritionTab({
             <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-purple-500/15">
               <h3 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
                 <UtensilsCrossed className="size-4 text-emerald-600 dark:text-emerald-400" />
-                Añadir Alimento a {targetMealLabel}
+                Añadir Alimento
               </h3>
               <button
+                type="button"
                 onClick={() => setIsAddFoodModalOpen(false)}
                 className="rounded-full p-1 text-slate-400 hover:text-slate-700 dark:hover:text-white"
               >
                 <X className="size-5" />
               </button>
+            </div>
+
+            {/* Selector de Toma / Comida de Destino */}
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Toma de Destino</label>
+              <select
+                value={targetMealType}
+                onChange={(e) => {
+                  const sId = e.target.value
+                  setTargetMealType(sId)
+                  const found = mealSections.find((s) => s.id === sId)
+                  setTargetMealLabel(found ? found.name : sId)
+                }}
+                className="w-full rounded-2xl border border-slate-200 bg-slate-50 dark:border-purple-500/20 dark:bg-white/[0.04] py-2 px-3 text-xs font-semibold text-slate-900 dark:text-white outline-none focus:border-emerald-500 dark:focus:border-purple-500 cursor-pointer"
+              >
+                {mealSections.map((s) => (
+                  <option key={s.id} value={s.id} className="bg-white dark:bg-[#100e23] text-slate-900 dark:text-white">
+                    {s.icon} {s.name}
+                  </option>
+                ))}
+              </select>
             </div>
 
             {/* Presets Rápidos */}
@@ -1006,13 +1039,15 @@ export function NutritionTab({
             </div>
 
             {/* Formulario de alimento manual */}
-            <div className="space-y-3 text-xs pt-2 border-t border-slate-200 dark:border-purple-500/15">
+            <form onSubmit={(e) => { e.preventDefault(); handleSaveFood(); }} className="space-y-3 text-xs pt-2 border-t border-slate-200 dark:border-purple-500/15">
               <div className="space-y-1">
-                <label className="font-bold text-slate-700 dark:text-slate-300">Nombre del Alimento</label>
+                <label className="font-bold text-slate-700 dark:text-slate-300">Nombre del Alimento <span className="text-red-500">*</span></label>
                 <input
                   value={foodName}
                   onChange={(e) => setFoodName(e.target.value)}
                   placeholder="Ej: Pechuga de pollo, Avena, Yogur..."
+                  autoFocus
+                  required
                   className="w-full rounded-2xl border border-slate-200 bg-slate-50 dark:border-purple-500/20 dark:bg-white/[0.04] py-2.5 px-3 font-semibold text-slate-900 dark:text-white outline-none focus:border-emerald-500 dark:focus:border-purple-500"
                 />
               </div>
@@ -1036,6 +1071,7 @@ export function NutritionTab({
                   <input
                     type="number"
                     min="0"
+                    step="0.1"
                     value={foodProtein}
                     onChange={(e) => setFoodProtein(e.target.value)}
                     placeholder="0"
@@ -1048,6 +1084,7 @@ export function NutritionTab({
                   <input
                     type="number"
                     min="0"
+                    step="0.1"
                     value={foodCarbs}
                     onChange={(e) => setFoodCarbs(e.target.value)}
                     placeholder="0"
@@ -1060,6 +1097,7 @@ export function NutritionTab({
                   <input
                     type="number"
                     min="0"
+                    step="0.1"
                     value={foodFats}
                     onChange={(e) => setFoodFats(e.target.value)}
                     placeholder="0"
@@ -1088,14 +1126,13 @@ export function NutritionTab({
                   Cancelar
                 </button>
                 <button
-                  type="button"
-                  onClick={handleSaveFood}
+                  type="submit"
                   className="rounded-2xl bg-emerald-600 hover:bg-emerald-700 px-5 py-2.5 text-xs font-bold text-white shadow-soft transition-transform active:scale-95"
                 >
                   Añadir al Plato
                 </button>
               </div>
-            </div>
+            </form>
           </div>
         </div>
       )}

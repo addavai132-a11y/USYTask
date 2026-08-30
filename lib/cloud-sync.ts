@@ -51,6 +51,13 @@ export interface CloudBackupPayload {
   challenges: any[]
   rewards: any[]
   memories: any[]
+  fitnessRoutines?: any[]
+  fitnessSessions?: any[]
+  fitnessPrs?: any[]
+  fitnessBodyMetrics?: any[]
+  fitnessNutritionGoal?: any
+  fitnessMealLogs?: any[]
+  fitnessCustomExercises?: any[]
 }
 
 const LAST_AUTH_USER_KEY = 'usytask_last_auth_user_id'
@@ -91,6 +98,16 @@ const STORAGE_KEYS = {
 
 let syncTimeout: NodeJS.Timeout | null = null
 
+function getLocalItem<T>(key: string, defaultVal: T): T {
+  if (typeof window === 'undefined') return defaultVal
+  try {
+    const raw = localStorage.getItem(key)
+    return raw ? JSON.parse(raw) : defaultVal
+  } catch {
+    return defaultVal
+  }
+}
+
 /**
  * Packs all current local data into a single cloud backup payload.
  */
@@ -119,6 +136,13 @@ export function buildCloudPayload(userId: string): CloudBackupPayload {
     challenges: getAllChallenges(),
     rewards: getAllRewards(),
     memories: getAllMemories(),
+    fitnessRoutines: getLocalItem(STORAGE_KEYS.fitnessRoutines, []),
+    fitnessSessions: getLocalItem(STORAGE_KEYS.fitnessSessions, []),
+    fitnessPrs: getLocalItem(STORAGE_KEYS.fitnessPrs, []),
+    fitnessBodyMetrics: getLocalItem(STORAGE_KEYS.fitnessBodyMetrics, []),
+    fitnessNutritionGoal: getLocalItem(STORAGE_KEYS.fitnessNutritionGoal, null),
+    fitnessMealLogs: getLocalItem(STORAGE_KEYS.fitnessMealLogs, []),
+    fitnessCustomExercises: getLocalItem(STORAGE_KEYS.fitnessCustomExercises, []),
   }
 }
 
@@ -188,6 +212,27 @@ export function hydrateLocalFromCloud(payload: CloudBackupPayload): boolean {
     }
     if (payload.memories) {
       localStorage.setItem(STORAGE_KEYS.memories, JSON.stringify(payload.memories))
+    }
+    if (payload.fitnessRoutines && payload.fitnessRoutines.length > 0) {
+      localStorage.setItem(STORAGE_KEYS.fitnessRoutines, JSON.stringify(payload.fitnessRoutines))
+    }
+    if (payload.fitnessSessions && payload.fitnessSessions.length > 0) {
+      localStorage.setItem(STORAGE_KEYS.fitnessSessions, JSON.stringify(payload.fitnessSessions))
+    }
+    if (payload.fitnessPrs && payload.fitnessPrs.length > 0) {
+      localStorage.setItem(STORAGE_KEYS.fitnessPrs, JSON.stringify(payload.fitnessPrs))
+    }
+    if (payload.fitnessBodyMetrics && payload.fitnessBodyMetrics.length > 0) {
+      localStorage.setItem(STORAGE_KEYS.fitnessBodyMetrics, JSON.stringify(payload.fitnessBodyMetrics))
+    }
+    if (payload.fitnessNutritionGoal) {
+      localStorage.setItem(STORAGE_KEYS.fitnessNutritionGoal, JSON.stringify(payload.fitnessNutritionGoal))
+    }
+    if (payload.fitnessMealLogs && payload.fitnessMealLogs.length > 0) {
+      localStorage.setItem(STORAGE_KEYS.fitnessMealLogs, JSON.stringify(payload.fitnessMealLogs))
+    }
+    if (payload.fitnessCustomExercises && payload.fitnessCustomExercises.length > 0) {
+      localStorage.setItem(STORAGE_KEYS.fitnessCustomExercises, JSON.stringify(payload.fitnessCustomExercises))
     }
 
     return true

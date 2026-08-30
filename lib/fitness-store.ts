@@ -13,6 +13,7 @@ import type {
 } from '@/types/fitness'
 import { calculate1RM } from '@/types/fitness'
 import { getTodayISO } from '@/lib/date-utils'
+import { scheduleCloudSync } from './cloud-sync'
 
 export const ROUTINES_KEY = 'usytask_fitness_routines'
 export const SESSIONS_KEY = 'usytask_fitness_sessions'
@@ -63,6 +64,7 @@ function saveArray<T>(key: string, data: T[]): void {
   if (typeof window === 'undefined') return
   try {
     localStorage.setItem(key, JSON.stringify(data))
+    scheduleCloudSync()
   } catch (err) {
     console.error('Error saving fitness data to localStorage', err)
   }
@@ -465,6 +467,7 @@ export function saveNutritionGoal(goal: NutritionGoal): void {
   if (typeof window === 'undefined') return
   try {
     localStorage.setItem(NUTRITION_GOAL_KEY, JSON.stringify(goal))
+    scheduleCloudSync()
   } catch (err) {
     console.error('Error saving nutrition goal', err)
   }
@@ -493,9 +496,22 @@ export function saveMealItem(
       return
     }
     const all = loadArray<DailyMealLog>(MEAL_LOGS_KEY, INITIAL_MEAL_LOGS)
-    let mealLog = all.find(
-      (m) => (m.date === dateISO || (dayOfWeek && m.dayOfWeek === dayOfWeek)) && m.mealType === mealType
-    )
+    let mealLog = all.find((m) => {
+      if (m.mealType !== mealType) return false
+      if (dayOfWeek) {
+        return m.dayOfWeek === dayOfWeek
+      }
+      return m.date === dateISO
+    })
+
+    const sanitizedItem = {
+      ...item,
+      calories: Math.max(0, Math.round(Number(item.calories) || 0)),
+      protein: Math.max(0, Math.round((Number(item.protein) || 0) * 10) / 10),
+      carbs: Math.max(0, Math.round((Number(item.carbs) || 0) * 10) / 10),
+      fats: Math.max(0, Math.round((Number(item.fats) || 0) * 10) / 10),
+    }
+
     if (!mealLog) {
       mealLog = {
         id: `meal_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
@@ -503,15 +519,7 @@ export function saveMealItem(
         date: dateISO,
         dayOfWeek: dayOfWeek as any,
         mealType: mealType || 'desayuno',
-        items: [
-          {
-            ...item,
-            calories: Number(item.calories) || 0,
-            protein: Number(item.protein) || 0,
-            carbs: Number(item.carbs) || 0,
-            fats: Number(item.fats) || 0,
-          },
-        ],
+        items: [sanitizedItem],
       }
       all.push(mealLog)
     } else {
@@ -521,13 +529,7 @@ export function saveMealItem(
       if (dayOfWeek && !mealLog.dayOfWeek) {
         mealLog.dayOfWeek = dayOfWeek as any
       }
-      mealLog.items.push({
-        ...item,
-        calories: Number(item.calories) || 0,
-        protein: Number(item.protein) || 0,
-        carbs: Number(item.carbs) || 0,
-        fats: Number(item.fats) || 0,
-      })
+      mealLog.items.push(sanitizedItem)
     }
     saveArray(MEAL_LOGS_KEY, all)
   } catch (err) {
@@ -543,9 +545,13 @@ export function deleteMealItem(
 ): void {
   try {
     const all = loadArray<DailyMealLog>(MEAL_LOGS_KEY, INITIAL_MEAL_LOGS)
-    const mealLog = all.find(
-      (m) => (m.date === dateISO || (dayOfWeek && m.dayOfWeek === dayOfWeek)) && m.mealType === mealType
-    )
+    const mealLog = all.find((m) => {
+      if (m.mealType !== mealType) return false
+      if (dayOfWeek) {
+        return m.dayOfWeek === dayOfWeek
+      }
+      return m.date === dateISO
+    })
     if (mealLog && Array.isArray(mealLog.items)) {
       mealLog.items = mealLog.items.filter((i) => i.id !== itemId)
       saveArray(MEAL_LOGS_KEY, all)
