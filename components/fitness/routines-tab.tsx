@@ -541,9 +541,10 @@ export function RoutinesTab({
                                 type="number"
                                 step="5"
                                 min="0"
-                                value={ex.restSeconds ?? 90}
+                                placeholder="90"
+                                value={ex.restSeconds ?? ''}
                                 onChange={(e) => {
-                                  const val = parseInt(e.target.value, 10) || 0
+                                  const val = e.target.value === '' ? undefined : (parseInt(e.target.value, 10) || 0)
                                   setSelectedExercises((prev) =>
                                     prev.map((item, i) => (i === idx ? { ...item, restSeconds: val } : item))
                                   )

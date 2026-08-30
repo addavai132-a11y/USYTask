@@ -51,14 +51,14 @@ export function RewardsTab() {
   // Creation/Edit form state
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
-  const [pointCost, setPointCost] = useState<number>(200)
+  const [pointCost, setPointCost] = useState<string>('200')
   const [icon, setIcon] = useState('🎁')
   const [stock, setStock] = useState<string>('')
 
   const handleOpenClaim = (r: FamilyReward) => {
     setClaimingReward(r)
     // Select first member who can afford or current member
-    const affordableMember = members.find((m) => Number(m.points || 0) >= Number(r.pointCost))
+    const affordableMember = members.find((m) => Number(m.points || 0) >= Number(r.pointCost || 0))
     setSelectedMemberId(currentMember?.id || affordableMember?.id || members[0]?.id || '')
   }
 
@@ -70,7 +70,7 @@ export function RewardsTab() {
       return
     }
 
-    const member = getMemberById(selectedMemberId)
+    const member = getMemberById(selectedMemberId) || members.find((m) => m.id === selectedMemberId)
     if (!member) {
       toast('Integrante no encontrado', '❌')
       return
@@ -105,7 +105,7 @@ export function RewardsTab() {
     setEditingRewardId(null)
     setTitle('')
     setDescription('')
-    setPointCost(200)
+    setPointCost('200')
     setIcon('🎁')
     setStock('')
     setIsModalOpen(true)
@@ -115,7 +115,7 @@ export function RewardsTab() {
     setEditingRewardId(reward.id)
     setTitle(reward.title)
     setDescription(reward.description || '')
-    setPointCost(reward.pointCost || 200)
+    setPointCost(reward.pointCost !== undefined ? reward.pointCost.toString() : '200')
     setIcon(reward.icon || '🎁')
     setStock(reward.stock !== undefined ? reward.stock.toString() : '')
     setIsModalOpen(true)
@@ -128,8 +128,8 @@ export function RewardsTab() {
         return
       }
 
-      const cost = Math.max(10, Number(pointCost) || 10)
-      const parsedStock = stock.trim() ? parseInt(stock, 10) : undefined
+      const cost = Math.max(1, parseInt(pointCost, 10) || 10)
+      const parsedStock = stock.trim() ? Math.max(1, parseInt(stock, 10)) : undefined
 
       if (editingRewardId) {
         const existing = familyRewards.find((r) => r.id === editingRewardId)
@@ -586,23 +586,24 @@ export function RewardsTab() {
             />
           </div>
 
-          {/* Coste y Stock */}
+          {/* Coste y Cantidad disponible */}
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1">
               <label className="font-bold text-slate-700 dark:text-slate-300">Coste en puntos</label>
               <input
                 type="number"
-                min={10}
+                min={1}
                 step={10}
                 value={pointCost}
-                onChange={(e) => setPointCost(Math.max(10, parseInt(e.target.value, 10) || 10))}
+                onChange={(e) => setPointCost(e.target.value)}
+                placeholder="200"
                 className="w-full rounded-xl border border-slate-200 bg-white py-2 px-3 text-xs font-medium text-slate-900 outline-none focus:border-emerald-500 font-mono dark:border-white/10 dark:bg-white/[0.04] dark:text-white"
               />
             </div>
 
             <div className="flex flex-col gap-1">
               <label className="font-bold text-slate-700 dark:text-slate-300">
-                Stock (vacío = ilimitado)
+                Cantidad disponible
               </label>
               <input
                 type="number"

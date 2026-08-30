@@ -1551,31 +1551,40 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const handleClaimFamilyReward = (rewardId: string, memberId: string) => {
     if (!activeGroup) return { success: false, error: 'Sin grupo activo' }
-    const res = claimRewardStore(rewardId, memberId, activeGroup.id)
-    if (res.success && res.reward) {
-      const claimingMember = getMembersByGroup(activeGroup.id).find((m) => m.id === memberId)
-      addActivity({
-        id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `act_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-        groupId: activeGroup.id,
-        type: 'task_completed',
-        title: `Recompensa canjeada: ${res.reward.title}`,
-        details: `-${res.reward.pointCost} pts`,
-        memberId,
-        timestamp: new Date().toISOString(),
-      })
-      addNotification({
-        id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `notif_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-        groupId: activeGroup.id,
-        type: 'task',
-        title: 'Recompensa canjeada',
-        body: `${claimingMember?.name || 'Un miembro'} canjeó "${res.reward.title}"`,
-        timestamp: new Date().toISOString(),
-        colorVar: 'var(--purple-500)',
-      })
+    try {
+      const res = claimRewardStore(rewardId, memberId, activeGroup.id)
+      if (res.success && res.reward) {
+        const claimingMember = getMembersByGroup(activeGroup.id).find((m) => m.id === memberId)
+        try {
+          addActivity({
+            id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `act_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+            groupId: activeGroup.id,
+            type: 'reward_claimed',
+            title: `Recompensa canjeada: ${res.reward.title}`,
+            details: `-${res.reward.pointCost} pts`,
+            memberId,
+            timestamp: new Date().toISOString(),
+          })
+          addNotification({
+            id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `notif_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+            groupId: activeGroup.id,
+            type: 'reward',
+            title: 'Recompensa canjeada',
+            body: `${claimingMember?.name || 'Un miembro'} canjeó "${res.reward.title}"`,
+            timestamp: new Date().toISOString(),
+            colorVar: 'var(--purple-500)',
+          })
+        } catch (actErr) {
+          console.warn('Error recording activity for claimed reward:', actErr)
+        }
+      }
+      refreshData()
+      bump()
+      return res
+    } catch (err) {
+      console.error('Error in handleClaimFamilyReward in app-context:', err)
+      return { success: false, error: 'Error al procesar el canje de recompensa' }
     }
-    refreshData()
-    bump()
-    return res
   }
 
   const handleAddFamilyMemory = (data: Omit<FamilyMemory, 'id' | 'groupId'>) => {

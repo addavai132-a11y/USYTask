@@ -673,13 +673,13 @@ export function LiveWorkoutTab({
                         <input
                           type="number"
                           step="0.5"
-                          value={set.weightKg ?? ''}
+                          value={set.weightKg === 0 ? '' : (set.weightKg ?? '')}
                           onChange={(e) =>
                             handleUpdateSet(
                               exIdx,
                               setIdx,
                               'weightKg',
-                              e.target.value === '' ? 0 : parseFloat(e.target.value)
+                              e.target.value === '' ? ('' as any) : parseFloat(e.target.value)
                             )
                           }
                           placeholder="Kg"
@@ -696,13 +696,13 @@ export function LiveWorkoutTab({
                       <div className="col-span-2">
                         <input
                           type="number"
-                          value={set.reps ?? ''}
+                          value={set.reps === 0 ? '' : (set.reps ?? '')}
                           onChange={(e) =>
                             handleUpdateSet(
                               exIdx,
                               setIdx,
                               'reps',
-                              e.target.value === '' ? 0 : parseInt(e.target.value, 10)
+                              e.target.value === '' ? ('' as any) : parseInt(e.target.value, 10)
                             )
                           }
                           placeholder="Reps"
@@ -721,13 +721,14 @@ export function LiveWorkoutTab({
                           type="number"
                           step="5"
                           min="0"
-                          value={set.restSeconds ?? exerciseSession.targetRestSeconds ?? 90}
+                          placeholder={String(exerciseSession.targetRestSeconds || 90)}
+                          value={set.restSeconds ?? ''}
                           onChange={(e) =>
                             handleUpdateSet(
                               exIdx,
                               setIdx,
                               'restSeconds',
-                              e.target.value === '' ? 0 : parseInt(e.target.value, 10)
+                              e.target.value === '' ? ('' as any) : parseInt(e.target.value, 10)
                             )
                           }
                           className={cn(

@@ -55,7 +55,7 @@ export function MembersTab() {
   }, [groupName])
 
   // Points adjust form state
-  const [pointsDelta, setPointsDelta] = useState<number>(50)
+  const [pointsDelta, setPointsDelta] = useState<string>('50')
   const [pointsReason, setPointsReason] = useState<string>('')
   const [isSubtract, setIsSubtract] = useState<boolean>(false)
 
@@ -66,14 +66,19 @@ export function MembersTab() {
 
   const handleOpenAdjustPoints = (m: Member) => {
     setPointsAdjustMember(m)
-    setPointsDelta(50)
+    setPointsDelta('50')
     setIsSubtract(false)
     setPointsReason('')
   }
 
   const handleSaveAdjustPoints = () => {
     if (!pointsAdjustMember) return
-    const delta = isSubtract ? -Math.abs(pointsDelta) : Math.abs(pointsDelta)
+    const parsed = parseInt(pointsDelta, 10) || 0
+    if (parsed <= 0) {
+      toast('Introduce una cantidad válida de puntos', '⚠️')
+      return
+    }
+    const delta = isSubtract ? -Math.abs(parsed) : Math.abs(parsed)
     adjustMemberPoints(pointsAdjustMember.id, delta, pointsReason.trim() || 'Ajuste manual')
     toast(
       `${delta >= 0 ? '+' : ''}${delta} pts para ${pointsAdjustMember.name}`,
@@ -313,10 +318,10 @@ export function MembersTab() {
                   <button
                     key={amt}
                     type="button"
-                    onClick={() => setPointsDelta(amt)}
+                    onClick={() => setPointsDelta(amt.toString())}
                     className={cn(
                       'flex-1 rounded-xl py-2 text-xs font-bold transition-all border',
-                      pointsDelta === amt
+                      pointsDelta === amt.toString()
                         ? 'border-emerald-500/50 bg-emerald-500/20 text-emerald-200'
                         : 'border-white/10 bg-white/[0.02] text-slate-400 hover:bg-white/[0.06] hover:text-white'
                     )}
@@ -329,9 +334,9 @@ export function MembersTab() {
                 type="number"
                 min={1}
                 max={5000}
-                value={pointsDelta || ''}
-                onChange={(e) => setPointsDelta(Number(e.target.value))}
-                className="mt-1 w-full rounded-xl border border-white/10 bg-white/[0.04] py-2.5 px-3 text-sm font-bold text-white outline-none focus:border-emerald-500"
+                value={pointsDelta}
+                onChange={(e) => setPointsDelta(e.target.value)}
+                className="mt-1 w-full rounded-xl border border-white/10 bg-white/[0.04] py-2.5 px-3 text-sm font-bold text-white outline-none focus:border-emerald-500 font-mono"
                 placeholder="Cantidad personalizada"
               />
             </div>

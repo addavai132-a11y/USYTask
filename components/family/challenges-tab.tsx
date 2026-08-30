@@ -34,8 +34,8 @@ export function ChallengesTab() {
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [category, setCategory] = useState<ChallengeCategory>('hábitos')
-  const [targetDays, setTargetDays] = useState<number>(7)
-  const [rewardPoints, setRewardPoints] = useState<number>(100)
+  const [targetDays, setTargetDays] = useState<string>('7')
+  const [rewardPoints, setRewardPoints] = useState<string>('150')
   const [assignedMemberIds, setAssignedMemberIds] = useState<string[]>([])
 
   const today = getTodayISO()
@@ -48,8 +48,8 @@ export function ChallengesTab() {
     setTitle('')
     setDescription('')
     setCategory('hábitos')
-    setTargetDays(7)
-    setRewardPoints(150)
+    setTargetDays('7')
+    setRewardPoints('150')
     setAssignedMemberIds(members.map((m) => m.id))
     setIsCreating(true)
   }
@@ -308,8 +308,9 @@ export function ChallengesTab() {
                 min={1}
                 max={365}
                 value={targetDays}
-                onChange={(e) => setTargetDays(Math.max(1, parseInt(e.target.value, 10) || 1))}
-                className="w-full rounded-xl border border-white/10 bg-white/[0.04] py-2 px-3 text-xs font-medium text-white outline-none focus:border-emerald-500"
+                onChange={(e) => setTargetDays(e.target.value)}
+                placeholder="7"
+                className="w-full rounded-xl border border-white/10 bg-white/[0.04] py-2 px-3 text-xs font-medium text-white outline-none focus:border-emerald-500 font-mono"
               />
             </div>
 
@@ -317,11 +318,12 @@ export function ChallengesTab() {
               <label className="font-bold text-slate-400">Puntos de recompensa</label>
               <input
                 type="number"
-                min={10}
+                min={1}
                 step={10}
                 value={rewardPoints}
-                onChange={(e) => setRewardPoints(Math.max(10, parseInt(e.target.value, 10) || 10))}
-                className="w-full rounded-xl border border-white/10 bg-white/[0.04] py-2 px-3 text-xs font-medium text-white outline-none focus:border-emerald-500"
+                onChange={(e) => setRewardPoints(e.target.value)}
+                placeholder="150"
+                className="w-full rounded-xl border border-white/10 bg-white/[0.04] py-2 px-3 text-xs font-medium text-white outline-none focus:border-emerald-500 font-mono"
               />
             </div>
           </div>

@@ -1247,7 +1247,7 @@ export function NutritionTab({
                         <input
                           type="number"
                           value={calcAge}
-                          onChange={(e) => setCalcAge(Number(e.target.value))}
+                          onChange={(e) => setCalcAge(e.target.value)}
                           className="w-full rounded-xl border border-slate-200 bg-white py-1.5 px-3 text-slate-900 dark:border-white/10 dark:bg-white/5 dark:text-white font-mono font-bold text-center outline-none focus:border-emerald-500"
                         />
                       </div>
@@ -1257,7 +1257,7 @@ export function NutritionTab({
                         <input
                           type="number"
                           value={calcHeight}
-                          onChange={(e) => setCalcHeight(Number(e.target.value))}
+                          onChange={(e) => setCalcHeight(e.target.value)}
                           className="w-full rounded-xl border border-slate-200 bg-white py-1.5 px-3 text-slate-900 dark:border-white/10 dark:bg-white/5 dark:text-white font-mono font-bold text-center outline-none focus:border-emerald-500"
                         />
                       </div>
@@ -1269,7 +1269,7 @@ export function NutritionTab({
                             type="number"
                             step="0.1"
                             value={calcWeight}
-                            onChange={(e) => setCalcWeight(Number(e.target.value))}
+                            onChange={(e) => setCalcWeight(e.target.value)}
                             className="w-full rounded-xl border border-slate-200 bg-white py-1.5 px-3 text-slate-900 dark:border-white/10 dark:bg-white/5 dark:text-white font-mono font-bold text-center outline-none focus:border-emerald-500"
                           />
                         </div>

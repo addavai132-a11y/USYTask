@@ -184,7 +184,13 @@ export function claimReward(
 
     // Check member points with fallback
     const allMembers = loadArray<Member>(MEMBERS_KEY)
-    let mIdx = allMembers.findIndex((m) => m.id === memberId)
+    let mIdx = allMembers.findIndex((m) => m.id === memberId || (m.id && m.id.trim() === memberId.trim()))
+    
+    if (mIdx < 0) {
+      // Fallback search by groupId if single owner
+      mIdx = allMembers.findIndex((m) => m.groupId === groupId && m.isOwner)
+    }
+
     if (mIdx < 0) {
       console.error('claimReward: Integrante no encontrado', { memberId, groupId, allMembers })
       return { success: false, error: 'Integrante no encontrado en el sistema' }
@@ -211,7 +217,7 @@ export function claimReward(
     const updatedClaimedBy = Array.isArray(reward.claimedBy) ? [...reward.claimedBy] : []
     const claimRecord = {
       id: `claim_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-      memberId,
+      memberId: member.id,
       date: new Date().toISOString(),
       rewardTitle: reward.title,
       pointCost: cost,
