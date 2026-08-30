@@ -56,6 +56,10 @@ export function RewardsTab() {
   const [stock, setStock] = useState<string>('')
 
   const handleOpenClaim = (r: FamilyReward) => {
+    if (r.stock !== undefined && r.stock !== null && Number(r.stock) <= 0) {
+      toast('Esta recompensa ya no tiene unidades disponibles (agotada)', '⚠️')
+      return
+    }
     setClaimingReward(r)
     // Select first member who can afford or current member
     const affordableMember = members.find((m) => Number(m.points || 0) >= Number(r.pointCost || 0))
@@ -64,6 +68,12 @@ export function RewardsTab() {
 
   const handleConfirmClaim = async () => {
     if (isClaiming || !claimingReward) return
+
+    if (claimingReward.stock !== undefined && claimingReward.stock !== null && Number(claimingReward.stock) <= 0) {
+      toast('Esta recompensa ya no tiene unidades disponibles (agotada)', '⚠️')
+      setClaimingReward(null)
+      return
+    }
 
     if (!selectedMemberId) {
       toast('Debes seleccionar un integrante para canjear el premio', '⚠️')
@@ -178,6 +188,11 @@ export function RewardsTab() {
     })
   }
 
+  // Filter only active available rewards (unlimited or stock > 0)
+  const availableRewards = familyRewards.filter(
+    (r) => r.stock === undefined || r.stock === null || Number(r.stock) > 0
+  )
+
   // Flatten all claims for history view
   const allClaims = familyRewards
     .flatMap((r) =>
@@ -215,7 +230,7 @@ export function RewardsTab() {
                   : 'text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white'
               )}
             >
-              Catálogo ({familyRewards.length})
+              Catálogo ({availableRewards.length})
             </button>
             <button
               type="button"
@@ -246,24 +261,22 @@ export function RewardsTab() {
       {/* ── TAB 1: CATÁLOGO DE RECOMPENSAS ── */}
       {activeTab === 'catalogo' && (
         <>
-          {familyRewards.length === 0 ? (
+          {availableRewards.length === 0 ? (
             <EmptyState
               emoji="🎁"
-              title="Sin recompensas en el catálogo familiar."
-              action="+ Añadir primera recompensa"
+              title="Sin recompensas disponibles en la tienda."
+              description="Todas las recompensas con unidades limitadas han sido canjeadas o aún no has creado ninguna."
+              action="+ Añadir recompensa"
               onAction={handleOpenCreateModal}
             />
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {familyRewards.map((r) => {
-                const hasStock = r.stock === undefined || r.stock > 0
+              {availableRewards.map((r) => {
+                const hasStock = r.stock === undefined || r.stock === null || r.stock > 0
                 return (
                   <Card
                     key={r.id}
-                    className={cn(
-                      'p-4 bg-white border border-slate-200 hover:border-emerald-500/40 dark:bg-[#121026]/85 dark:border-purple-500/20 dark:hover:border-purple-500/40 transition-all rounded-2xl flex flex-col justify-between gap-3 shadow-sm',
-                      !hasStock && 'opacity-60'
-                    )}
+                    className="p-4 bg-white border border-slate-200 hover:border-emerald-500/40 dark:bg-[#121026]/85 dark:border-purple-500/20 dark:hover:border-purple-500/40 transition-all rounded-2xl flex flex-col justify-between gap-3 shadow-sm"
                   >
                     <div>
                       {/* Top: Icon, Cost & Actions */}
@@ -310,12 +323,8 @@ export function RewardsTab() {
                     {/* Bottom Row: Stock & Canjear Button */}
                     <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-white/5 text-xs">
                       <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-                        {r.stock !== undefined ? (
-                          r.stock > 0 ? (
-                            `${r.stock} disponibles`
-                          ) : (
-                            <span className="text-rose-500 font-bold">Agotado</span>
-                          )
+                        {r.stock !== undefined && r.stock !== null ? (
+                          `${r.stock} disponibles`
                         ) : (
                           'Ilimitado'
                         )}
@@ -324,12 +333,7 @@ export function RewardsTab() {
                       <button
                         onClick={() => handleOpenClaim(r)}
                         disabled={!hasStock}
-                        className={cn(
-                          'rounded-xl px-4 py-1.5 text-xs font-bold transition-all active:scale-95',
-                          hasStock
-                            ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm dark:bg-purple-600 dark:hover:bg-purple-500'
-                            : 'bg-slate-100 text-slate-400 border border-slate-200 dark:bg-white/[0.04] dark:text-slate-500 dark:border-white/5 cursor-not-allowed'
-                        )}
+                        className="rounded-xl px-4 py-1.5 text-xs font-bold transition-all active:scale-95 bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm dark:bg-purple-600 dark:hover:bg-purple-500"
                       >
                         Canjear
                       </button>

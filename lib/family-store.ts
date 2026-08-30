@@ -178,7 +178,7 @@ export function claimReward(
     const reward = allRewards[rIdx]
     const cost = Math.max(0, Number(reward.pointCost) || 0)
 
-    if (reward.stock !== undefined && Number(reward.stock) <= 0) {
+    if (reward.stock !== undefined && reward.stock !== null && Number(reward.stock) <= 0) {
       return { success: false, error: 'Esta recompensa ya no tiene unidades disponibles (agotada)' }
     }
 
