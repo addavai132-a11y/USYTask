@@ -37,15 +37,29 @@ function getInitialDayOfWeek(): DayOfWeek {
   return map[dayIdx] || 'lunes'
 }
 
-const COMMON_FOOD_PRESETS: { name: string; calories: number; protein: number; carbs: number; fats: number; quantity: string }[] = [
-  { name: 'Pechuga de Pollo', calories: 165, protein: 31, carbs: 0, fats: 3.6, quantity: '100g' },
-  { name: 'Arroz Blanco / Jazmín', calories: 130, protein: 2.7, carbs: 28, fats: 0.3, quantity: '100g cocido' },
-  { name: 'Huevos Enteros (x2)', calories: 140, protein: 12, carbs: 1, fats: 10, quantity: '2 unidades' },
-  { name: 'Copos de Avena Integral', calories: 375, protein: 13, carbs: 60, fats: 7, quantity: '100g' },
-  { name: 'Salmón Fresco', calories: 208, protein: 20, carbs: 0, fats: 13, quantity: '100g' },
-  { name: 'Proteína Whey Isolate', calories: 110, protein: 25, carbs: 1, fats: 0.5, quantity: '1 cacito (30g)' },
-  { name: 'Plátano Mediano', calories: 95, protein: 1.2, carbs: 23, fats: 0.3, quantity: '1 unidad' },
-  { name: 'Nueces / Frutos Secos', calories: 185, protein: 4.3, carbs: 3.9, fats: 18.5, quantity: '30g' },
+interface FoodPreset {
+  name: string
+  calories100g: number
+  protein100g: number
+  carbs100g: number
+  fats100g: number
+  defaultGrams: number
+  icon?: string
+}
+
+const COMMON_FOOD_PRESETS: FoodPreset[] = [
+  { name: 'Pechuga de Pollo', calories100g: 165, protein100g: 31, carbs100g: 0, fats100g: 3.6, defaultGrams: 150, icon: '🍗' },
+  { name: 'Arroz Blanco (cocido)', calories100g: 130, protein100g: 2.7, carbs100g: 28, fats100g: 0.3, defaultGrams: 150, icon: '🍚' },
+  { name: 'Huevos Enteros (x2 ~100g)', calories100g: 143, protein100g: 12.6, carbs100g: 0.7, fats100g: 9.5, defaultGrams: 100, icon: '🍳' },
+  { name: 'Copos de Avena', calories100g: 375, protein100g: 13, carbs100g: 60, fats100g: 7, defaultGrams: 50, icon: '🥣' },
+  { name: 'Salmón Fresco', calories100g: 208, protein100g: 20, carbs100g: 0, fats100g: 13, defaultGrams: 150, icon: '🐟' },
+  { name: 'Proteína Whey Isolate', calories100g: 370, protein100g: 83, carbs100g: 3.3, fats100g: 1.7, defaultGrams: 30, icon: '🥛' },
+  { name: 'Plátano', calories100g: 89, protein100g: 1.1, carbs100g: 22.8, fats100g: 0.3, defaultGrams: 120, icon: '🍌' },
+  { name: 'Nueces / Frutos Secos', calories100g: 607, protein100g: 20, carbs100g: 12, fats100g: 54, defaultGrams: 30, icon: '🥜' },
+  { name: 'Aceite de Oliva Virgen', calories100g: 884, protein100g: 0, carbs100g: 0, fats100g: 100, defaultGrams: 15, icon: '🫒' },
+  { name: 'Yogur Griego Natural', calories100g: 59, protein100g: 10, carbs100g: 3.6, fats100g: 0.4, defaultGrams: 125, icon: '🍦' },
+  { name: 'Pan Integral', calories100g: 250, protein100g: 9, carbs100g: 45, fats100g: 3, defaultGrams: 60, icon: '🍞' },
+  { name: 'Aguacate', calories100g: 160, protein100g: 2, carbs100g: 8.5, fats100g: 14.7, defaultGrams: 80, icon: '🥑' },
 ]
 
 const SECTION_SUGGESTIONS = [
@@ -247,11 +261,11 @@ export function NutritionTab({
   const [targetMealType, setTargetMealType] = useState<MealType>('almuerzo')
   const [targetMealLabel, setTargetMealLabel] = useState('Almuerzo')
   const [foodName, setFoodName] = useState('')
-  const [foodQuantity, setFoodQuantity] = useState('') // alias: foodServing in JSX
-  const [foodCalories, setFoodCalories] = useState('') // kept as string for controlled input
-  const [foodProtein, setFoodProtein] = useState('')
-  const [foodCarbs, setFoodCarbs] = useState('')
-  const [foodFats, setFoodFats] = useState('')
+  const [foodGrams, setFoodGrams] = useState('100')
+  const [foodCalories100g, setFoodCalories100g] = useState('')
+  const [foodProtein100g, setFoodProtein100g] = useState('')
+  const [foodCarbs100g, setFoodCarbs100g] = useState('')
+  const [foodFats100g, setFoodFats100g] = useState('')
 
   // ── MODAL SETTINGS (INTELLIGENT CALCULATOR & GOALS) STATE ──
   const [isGoalModalOpen, setIsGoalModalOpen] = useState(false)
@@ -492,21 +506,21 @@ export function NutritionTab({
     setTargetMealType(mealType)
     setTargetMealLabel(mealLabel)
     setFoodName('')
-    setFoodQuantity('')
-    setFoodCalories('')
-    setFoodProtein('')
-    setFoodCarbs('')
-    setFoodFats('')
+    setFoodGrams('100')
+    setFoodCalories100g('')
+    setFoodProtein100g('')
+    setFoodCarbs100g('')
+    setFoodFats100g('')
     setIsAddFoodModalOpen(true)
   }
 
-  function handleSelectPreset(preset: typeof COMMON_FOOD_PRESETS[0]) {
+  function handleSelectPreset(preset: FoodPreset) {
     setFoodName(preset.name)
-    setFoodQuantity(preset.quantity)
-    setFoodCalories(preset.calories.toString())
-    setFoodProtein(preset.protein.toString())
-    setFoodCarbs(preset.carbs.toString())
-    setFoodFats(preset.fats.toString())
+    setFoodGrams(preset.defaultGrams.toString())
+    setFoodCalories100g(preset.calories100g.toString())
+    setFoodProtein100g(preset.protein100g.toString())
+    setFoodCarbs100g(preset.carbs100g.toString())
+    setFoodFats100g(preset.fats100g.toString())
   }
 
   function handleSaveFood() {
@@ -516,24 +530,37 @@ export function NutritionTab({
         toast('Escribe el nombre del alimento u opción', '❌')
         return
       }
-      const cals = parseFloat(String(foodCalories)) || 0
-      const p = parseFloat(String(foodProtein)) || 0
-      const c = parseFloat(String(foodCarbs)) || 0
-      const f = parseFloat(String(foodFats)) || 0
+
+      const grams = Math.max(1, parseFloat(foodGrams) || 100)
+      const baseCals = parseFloat(String(foodCalories100g)) || 0
+      const baseP = parseFloat(String(foodProtein100g)) || 0
+      const baseC = parseFloat(String(foodCarbs100g)) || 0
+      const baseF = parseFloat(String(foodFats100g)) || 0
+
+      // Exact Formula: (ValorPor100g * gramosIntroducidos) / 100
+      const portionCals = Math.max(0, Math.round((baseCals * grams) / 100))
+      const portionProtein = Math.max(0, Math.round(((baseP * grams) / 100) * 10) / 10)
+      const portionCarbs = Math.max(0, Math.round(((baseC * grams) / 100) * 10) / 10)
+      const portionFats = Math.max(0, Math.round(((baseF * grams) / 100) * 10) / 10)
 
       const item: MealItem = {
         id: `item_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
         name: trimmedName,
-        calories: Math.max(0, Math.round(cals)),
-        protein: Math.max(0, Math.round(p * 10) / 10),
-        carbs: Math.max(0, Math.round(c * 10) / 10),
-        fats: Math.max(0, Math.round(f * 10) / 10),
-        quantity: (foodQuantity || '').trim() || undefined,
+        calories: portionCals,
+        protein: portionProtein,
+        carbs: portionCarbs,
+        fats: portionFats,
+        quantity: `${grams}g`,
+        grams,
+        calories100g: baseCals,
+        protein100g: baseP,
+        carbs100g: baseC,
+        fats100g: baseF,
       }
 
       onAddMealItem(targetMealType, item, selectedDay)
       const dayLabel = DAYS_OF_WEEK.find((d) => d.id === selectedDay)?.label || selectedDay
-      toast(`🥗 "${item.name}" añadido a ${targetMealLabel} (${dayLabel})`, '✅')
+      toast(`🥗 "${item.name}" (${grams}g · ${portionCals} kcal) añadido a ${targetMealLabel} (${dayLabel})`, '✅')
       setIsAddFoodModalOpen(false)
     } catch (err) {
       console.error('Error in handleSaveFood:', err)
@@ -977,165 +1004,246 @@ export function NutritionTab({
                   ))}
                 </div>
               )}
+
+              {/* Totales Dinámicos por Toma */}
+              {items.length > 0 && (
+                <div className="pt-2.5 mt-2 border-t border-slate-200/80 dark:border-purple-500/15 bg-slate-50/80 dark:bg-white/[0.02] p-2.5 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <span className="text-xs font-black text-slate-900 dark:text-white flex items-center gap-1.5">
+                    <span>Totales {section.name}:</span>
+                    <span className="text-[10px] text-slate-400 font-normal">({items.length} {items.length === 1 ? 'alimento' : 'alimentos'})</span>
+                  </span>
+                  <div className="flex flex-wrap items-center gap-1.5 font-mono text-xs font-bold">
+                    <span className="px-2.5 py-1 rounded-xl bg-emerald-100 text-emerald-900 dark:bg-emerald-500/20 dark:text-emerald-300">
+                      🔥 {mealCalories} kcal
+                    </span>
+                    <span className="px-2 py-0.5 rounded-lg bg-rose-100 text-rose-900 dark:bg-rose-500/20 dark:text-rose-300 text-[11px]">
+                      P: {mealProtein}g
+                    </span>
+                    <span className="px-2 py-0.5 rounded-lg bg-cyan-100 text-cyan-900 dark:bg-cyan-500/20 dark:text-cyan-300 text-[11px]">
+                      C: {mealCarbs}g
+                    </span>
+                    <span className="px-2 py-0.5 rounded-lg bg-amber-100 text-amber-900 dark:bg-amber-500/20 dark:text-amber-300 text-[11px]">
+                      G: {mealFats}g
+                    </span>
+                  </div>
+                </div>
+              )}
             </Card>
           )
         })}
       </div>
 
-      {/* ── MODAL AÑADIR ALIMENTO CON PRESETS ── */}
-      {isAddFoodModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-150 space-y-4 max-h-[90vh] overflow-y-auto no-scrollbar dark:border-purple-500/30 dark:bg-[#100e23]">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-purple-500/15">
-              <h3 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
-                <UtensilsCrossed className="size-4 text-emerald-600 dark:text-emerald-400" />
-                Añadir Alimento
-              </h3>
-              <button
-                type="button"
-                onClick={() => setIsAddFoodModalOpen(false)}
-                className="rounded-full p-1 text-slate-400 hover:text-slate-700 dark:hover:text-white"
-              >
-                <X className="size-5" />
-              </button>
-            </div>
+      {/* ── MODAL AÑADIR ALIMENTO CON PRESETS Y CÁLCULO POR GRAMOS ── */}
+      {isAddFoodModalOpen && (() => {
+        const parsedGrams = Math.max(0, parseFloat(foodGrams) || 0)
+        const calcPortionCalories = parsedGrams > 0 ? Math.round(((parseFloat(foodCalories100g) || 0) * parsedGrams) / 100) : 0
+        const calcPortionProtein = parsedGrams > 0 ? Math.round((((parseFloat(foodProtein100g) || 0) * parsedGrams) / 100) * 10) / 10 : 0
+        const calcPortionCarbs = parsedGrams > 0 ? Math.round((((parseFloat(foodCarbs100g) || 0) * parsedGrams) / 100) * 10) / 10 : 0
+        const calcPortionFats = parsedGrams > 0 ? Math.round((((parseFloat(foodFats100g) || 0) * parsedGrams) / 100) * 10) / 10 : 0
 
-            {/* Selector de Toma / Comida de Destino */}
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Toma de Destino</label>
-              <select
-                value={targetMealType}
-                onChange={(e) => {
-                  const sId = e.target.value
-                  setTargetMealType(sId)
-                  const found = mealSections.find((s) => s.id === sId)
-                  setTargetMealLabel(found ? found.name : sId)
-                }}
-                className="w-full rounded-2xl border border-slate-200 bg-slate-50 dark:border-purple-500/20 dark:bg-white/[0.04] py-2 px-3 text-xs font-semibold text-slate-900 dark:text-white outline-none focus:border-emerald-500 dark:focus:border-purple-500 cursor-pointer"
-              >
-                {mealSections.map((s) => (
-                  <option key={s.id} value={s.id} className="bg-white dark:bg-[#100e23] text-slate-900 dark:text-white">
-                    {s.icon} {s.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Presets Rápidos */}
-            <div className="space-y-1.5">
-              <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Atajos rápidos:</span>
-              <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto no-scrollbar">
-                {COMMON_FOOD_PRESETS.map((p) => (
-                  <button
-                    key={p.name}
-                    type="button"
-                    onClick={() => handleSelectPreset(p)}
-                    className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-emerald-50 border border-slate-200 text-[11px] font-bold text-slate-800 hover:text-emerald-900 transition-colors dark:bg-white/[0.04] dark:hover:bg-emerald-600/30 dark:border-white/10 dark:text-slate-200 dark:hover:text-white"
-                  >
-                    {p.name}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Formulario de alimento manual */}
-            <form onSubmit={(e) => { e.preventDefault(); handleSaveFood(); }} className="space-y-3 text-xs pt-2 border-t border-slate-200 dark:border-purple-500/15">
-              <div className="space-y-1">
-                <label className="font-bold text-slate-700 dark:text-slate-300">Nombre del Alimento <span className="text-red-500">*</span></label>
-                <input
-                  value={foodName}
-                  onChange={(e) => setFoodName(e.target.value)}
-                  placeholder="Ej: Pechuga de pollo, Avena, Yogur..."
-                  autoFocus
-                  required
-                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 dark:border-purple-500/20 dark:bg-white/[0.04] py-2.5 px-3 font-semibold text-slate-900 dark:text-white outline-none focus:border-emerald-500 dark:focus:border-purple-500"
-                />
-              </div>
-
-              {/* Macros Grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                <div className="space-y-1">
-                  <label className="font-bold text-slate-700 dark:text-slate-300">Calorías (kcal)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={foodCalories}
-                    onChange={(e) => setFoodCalories(e.target.value)}
-                    placeholder="0"
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50 dark:border-purple-500/20 dark:bg-white/[0.04] py-2 px-2 text-center font-mono font-bold text-slate-900 dark:text-white outline-none focus:border-emerald-500"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="font-bold text-rose-600 dark:text-rose-400">Proteína (g)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.1"
-                    value={foodProtein}
-                    onChange={(e) => setFoodProtein(e.target.value)}
-                    placeholder="0"
-                    className="w-full rounded-xl border border-rose-200 bg-rose-50/50 dark:border-rose-500/20 dark:bg-rose-950/20 py-2 px-2 text-center font-mono font-bold text-rose-700 dark:text-rose-300 outline-none focus:border-rose-500"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="font-bold text-cyan-600 dark:text-cyan-400">Carbos (g)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.1"
-                    value={foodCarbs}
-                    onChange={(e) => setFoodCarbs(e.target.value)}
-                    placeholder="0"
-                    className="w-full rounded-xl border border-cyan-200 bg-cyan-50/50 dark:border-cyan-500/20 dark:bg-cyan-950/20 py-2 px-2 text-center font-mono font-bold text-cyan-700 dark:text-cyan-300 outline-none focus:border-cyan-500"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="font-bold text-amber-600 dark:text-amber-400">Grasas (g)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.1"
-                    value={foodFats}
-                    onChange={(e) => setFoodFats(e.target.value)}
-                    placeholder="0"
-                    className="w-full rounded-xl border border-amber-200 bg-amber-50/50 dark:border-amber-500/20 dark:bg-amber-950/20 py-2 px-2 text-center font-mono font-bold text-amber-700 dark:text-amber-300 outline-none focus:border-amber-500"
-                  />
-                </div>
-              </div>
-
-              {/* Cantidad / Porción */}
-              <div className="space-y-1">
-                <label className="font-bold text-slate-700 dark:text-slate-300">Cantidad / Porción (opcional)</label>
-                <input
-                  value={foodQuantity}
-                  onChange={(e) => setFoodQuantity(e.target.value)}
-                  placeholder="Ej: 150g, 1 taza, 2 huevos..."
-                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 dark:border-purple-500/20 dark:bg-white/[0.04] py-2 px-3 text-slate-900 dark:text-white outline-none focus:border-emerald-500"
-                />
-              </div>
-
-              <div className="pt-2 border-t border-slate-200 dark:border-purple-500/15 flex gap-2 justify-end">
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4 animate-fade-in">
+            <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-150 space-y-4 max-h-[90vh] overflow-y-auto no-scrollbar dark:border-purple-500/30 dark:bg-[#100e23]">
+              <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-purple-500/15">
+                <h3 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
+                  <UtensilsCrossed className="size-4 text-emerald-600 dark:text-emerald-400" />
+                  Añadir Alimento con Cálculo por Gramos
+                </h3>
                 <button
                   type="button"
                   onClick={() => setIsAddFoodModalOpen(false)}
-                  className="rounded-2xl px-4 py-2.5 text-xs font-bold text-slate-500 hover:bg-slate-100 transition-colors dark:text-slate-400 dark:hover:bg-white/10"
+                  className="rounded-full p-1 text-slate-400 hover:text-slate-700 dark:hover:text-white"
                 >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="rounded-2xl bg-emerald-600 hover:bg-emerald-700 px-5 py-2.5 text-xs font-bold text-white shadow-soft transition-transform active:scale-95"
-                >
-                  Añadir al Plato
+                  <X className="size-5" />
                 </button>
               </div>
-            </form>
+
+              {/* Selector de Toma / Comida de Destino */}
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Toma de Destino</label>
+                <select
+                  value={targetMealType}
+                  onChange={(e) => {
+                    const sId = e.target.value
+                    setTargetMealType(sId)
+                    const found = mealSections.find((s) => s.id === sId)
+                    setTargetMealLabel(found ? found.name : sId)
+                  }}
+                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 dark:border-purple-500/20 dark:bg-white/[0.04] py-2 px-3 text-xs font-semibold text-slate-900 dark:text-white outline-none focus:border-emerald-500 dark:focus:border-purple-500 cursor-pointer"
+                >
+                  {mealSections.map((s) => (
+                    <option key={s.id} value={s.id} className="bg-white dark:bg-[#100e23] text-slate-900 dark:text-white">
+                      {s.icon} {s.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Presets Rápidos */}
+              <div className="space-y-1.5">
+                <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Atajos rápidos (valores base por 100g):</span>
+                <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto no-scrollbar">
+                  {COMMON_FOOD_PRESETS.map((p) => (
+                    <button
+                      key={p.name}
+                      type="button"
+                      onClick={() => handleSelectPreset(p)}
+                      className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-emerald-50 border border-slate-200 text-[11px] font-bold text-slate-800 hover:text-emerald-900 transition-colors dark:bg-white/[0.04] dark:hover:bg-emerald-600/30 dark:border-white/10 dark:text-slate-200 dark:hover:text-white flex items-center gap-1"
+                    >
+                      {p.icon && <span>{p.icon}</span>}
+                      <span>{p.name}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Formulario de alimento manual */}
+              <form onSubmit={(e) => { e.preventDefault(); handleSaveFood(); }} className="space-y-3.5 text-xs pt-2 border-t border-slate-200 dark:border-purple-500/15">
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-700 dark:text-slate-300">Nombre del Alimento <span className="text-red-500">*</span></label>
+                  <input
+                    value={foodName}
+                    onChange={(e) => setFoodName(e.target.value)}
+                    placeholder="Ej: Pechuga de pollo a la plancha, Avena..."
+                    autoFocus
+                    required
+                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 dark:border-purple-500/20 dark:bg-white/[0.04] py-2.5 px-3 font-semibold text-slate-900 dark:text-white outline-none focus:border-emerald-500 dark:focus:border-purple-500"
+                  />
+                </div>
+
+                {/* Gramos a consumir */}
+                <div className="space-y-1.5 bg-slate-50 dark:bg-white/[0.02] p-3 rounded-2xl border border-slate-200 dark:border-white/5">
+                  <div className="flex items-center justify-between">
+                    <label className="font-extrabold text-slate-900 dark:text-white flex items-center gap-1">
+                      <span>⚖️ Gramos a consumir (g)</span>
+                    </label>
+                    <span className="text-[11px] font-mono font-bold text-emerald-600 dark:text-purple-400">{parsedGrams}g</span>
+                  </div>
+                  <input
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={foodGrams}
+                    onChange={(e) => setFoodGrams(e.target.value)}
+                    placeholder="100"
+                    className="w-full rounded-xl border border-slate-200 bg-white dark:border-purple-500/20 dark:bg-white/[0.06] py-2 px-3 text-center font-mono font-extrabold text-sm text-slate-900 dark:text-white outline-none focus:border-emerald-500"
+                  />
+                  {/* Chips de acceso rápido para gramos */}
+                  <div className="flex flex-wrap gap-1 pt-1">
+                    {['50', '80', '100', '150', '200', '250', '300'].map((g) => (
+                      <button
+                        key={g}
+                        type="button"
+                        onClick={() => setFoodGrams(g)}
+                        className={cn(
+                          'px-2 py-0.5 rounded-lg text-[10px] font-mono font-bold border transition-colors',
+                          foodGrams === g
+                            ? 'bg-emerald-600 text-white border-emerald-600 dark:bg-purple-600 dark:border-purple-600'
+                            : 'bg-white dark:bg-white/[0.04] text-slate-600 dark:text-slate-300 border-slate-200 dark:border-white/10 hover:border-emerald-500'
+                        )}
+                      >
+                        {g}g
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Valores Nutricionales Base por cada 100g */}
+                <div className="space-y-1.5">
+                  <span className="font-bold text-slate-700 dark:text-slate-300 block">
+                    Valores Nutricionales (Base por cada 100g)
+                  </span>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400">Kcal / 100g</label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={foodCalories100g}
+                        onChange={(e) => setFoodCalories100g(e.target.value)}
+                        placeholder="0"
+                        className="w-full rounded-xl border border-slate-200 bg-slate-50 dark:border-purple-500/20 dark:bg-white/[0.04] py-2 px-2 text-center font-mono font-bold text-slate-900 dark:text-white outline-none focus:border-emerald-500"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-bold text-rose-600 dark:text-rose-400">Prot / 100g</label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.1"
+                        value={foodProtein100g}
+                        onChange={(e) => setFoodProtein100g(e.target.value)}
+                        placeholder="0"
+                        className="w-full rounded-xl border border-rose-200 bg-rose-50/50 dark:border-rose-500/20 dark:bg-rose-950/20 py-2 px-2 text-center font-mono font-bold text-rose-700 dark:text-rose-300 outline-none focus:border-rose-500"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-bold text-cyan-600 dark:text-cyan-400">Carb / 100g</label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.1"
+                        value={foodCarbs100g}
+                        onChange={(e) => setFoodCarbs100g(e.target.value)}
+                        placeholder="0"
+                        className="w-full rounded-xl border border-cyan-200 bg-cyan-50/50 dark:border-cyan-500/20 dark:bg-cyan-950/20 py-2 px-2 text-center font-mono font-bold text-cyan-700 dark:text-cyan-300 outline-none focus:border-cyan-500"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-bold text-amber-600 dark:text-amber-400">Grasas / 100g</label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.1"
+                        value={foodFats100g}
+                        onChange={(e) => setFoodFats100g(e.target.value)}
+                        placeholder="0"
+                        className="w-full rounded-xl border border-amber-200 bg-amber-50/50 dark:border-amber-500/20 dark:bg-amber-950/20 py-2 px-2 text-center font-mono font-bold text-amber-700 dark:text-amber-300 outline-none focus:border-amber-500"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Banner de Cálculo Automático en Tiempo Real */}
+                <div className="p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-500/30 flex flex-col gap-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                      Total a registrar para <span className="text-emerald-700 dark:text-emerald-300 font-black">{parsedGrams}g</span>:
+                    </span>
+                    <span className="text-xs font-mono font-black text-emerald-800 dark:text-emerald-300">
+                      🔥 {calcPortionCalories} kcal
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-[11px] font-mono font-bold pt-1 border-t border-emerald-200/60 dark:border-emerald-500/20">
+                    <span className="text-rose-700 dark:text-rose-300">🥩 P: {calcPortionProtein}g</span>
+                    <span className="text-cyan-700 dark:text-cyan-300">🍚 C: {calcPortionCarbs}g</span>
+                    <span className="text-amber-700 dark:text-amber-300">🥑 G: {calcPortionFats}g</span>
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t border-slate-200 dark:border-purple-500/15 flex gap-2 justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setIsAddFoodModalOpen(false)}
+                    className="rounded-2xl px-4 py-2.5 text-xs font-bold text-slate-500 hover:bg-slate-100 transition-colors dark:text-slate-400 dark:hover:bg-white/10"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="rounded-2xl bg-emerald-600 hover:bg-emerald-700 px-5 py-2.5 text-xs font-bold text-white shadow-soft transition-transform active:scale-95"
+                  >
+                    Añadir al Plato ({parsedGrams}g)
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
-        </div>
-      )}
+        )
+      })()}
 
       {/* ── MODAL AJUSTAR METAS (CALCULADORA METABÓLICA INTELIGENTE & MANUAL) ── */}
       {isGoalModalOpen && (

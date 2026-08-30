@@ -177,6 +177,11 @@ export interface MealItem {
   carbs: number
   fats: number
   quantity?: string
+  grams?: number
+  calories100g?: number
+  protein100g?: number
+  carbs100g?: number
+  fats100g?: number
 }
 
 export type MealType = 'desayuno' | 'almuerzo' | 'merienda' | 'cena' | 'pre_post' | string
