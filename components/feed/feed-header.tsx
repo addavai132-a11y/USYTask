@@ -57,9 +57,15 @@ export function FeedHeader() {
             className="relative flex size-10 sm:size-11 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 shadow-sm transition-all active:scale-90 dark:border-purple-500/20 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] dark:text-slate-300 dark:hover:text-white"
           >
             <Bell className="size-5" />
-            {notifications.length > 0 && (
-              <span className="absolute right-2.5 top-2.5 size-2 rounded-full border-2 border-white dark:border-[#100e23] bg-orange-500" />
-            )}
+            {notifications.some((n) => !n.read) ? (
+              <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-black text-white shadow-xs">
+                {notifications.filter((n) => !n.read).length > 9
+                  ? '9+'
+                  : notifications.filter((n) => !n.read).length}
+              </span>
+            ) : notifications.length > 0 ? (
+              <span className="absolute right-2.5 top-2.5 size-2 rounded-full border-2 border-white dark:border-[#100e23] bg-slate-400" />
+            ) : null}
           </button>
         </div>
       </div>

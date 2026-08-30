@@ -230,12 +230,38 @@ export function getNotificationsByGroup(groupId: string): AppNotification[] {
 export function addNotification(notification: AppNotification): void {
   const all = getAllNotifications()
   // Add to beginning
-  all.unshift(notification)
-  // Keep last 50
-  if (all.length > 50) {
-    all.length = 50
+  all.unshift({
+    ...notification,
+    read: notification.read !== undefined ? notification.read : false,
+  })
+  // Keep last 60
+  if (all.length > 60) {
+    all.length = 60
   }
   saveArray(NOTIFICATIONS_KEY, all)
+}
+
+export function markNotificationAsRead(notificationId: string): void {
+  const all = getAllNotifications()
+  const idx = all.findIndex((n) => n.id === notificationId)
+  if (idx >= 0) {
+    all[idx].read = true
+    saveArray(NOTIFICATIONS_KEY, all)
+  }
+}
+
+export function markAllNotificationsAsReadByGroup(groupId: string): void {
+  const all = getAllNotifications()
+  let changed = false
+  all.forEach((n) => {
+    if (n.groupId === groupId && !n.read) {
+      n.read = true
+      changed = true
+    }
+  })
+  if (changed) {
+    saveArray(NOTIFICATIONS_KEY, all)
+  }
 }
 
 export function deleteNotification(notificationId: string): void {

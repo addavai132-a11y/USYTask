@@ -221,10 +221,20 @@ export type AddTab = 'tarea' | 'evento' | 'recordatorio' | 'miembro'
 export interface AppNotification {
   id: string
   groupId: string
-  type: 'task' | 'event' | 'reminder' | 'system'
+  recipientMemberId?: string
+  type: 'task' | 'event' | 'reminder' | 'finance' | 'reward' | 'system'
   title: string
   body: string
   timestamp: string
+  read?: boolean
+  actionUrl?: string
+  data?: {
+    entityId?: string
+    entityType?: string
+    tab?: string
+    subTab?: string
+    [key: string]: any
+  }
   colorVar?: string
 }
 

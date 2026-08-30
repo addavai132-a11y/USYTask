@@ -36,6 +36,8 @@ import {
   deleteReminder as deleteReminderStore,
   addActivity as addActivityStore,
   addNotification as addNotificationStore,
+  markNotificationAsRead as markNotificationAsReadStore,
+  markAllNotificationsAsReadByGroup as markAllNotificationsAsReadByGroupStore,
   deleteNotification as deleteNotificationStore,
   clearNotificationsByGroup as clearNotificationsByGroupStore,
   getTasksByGroup,
@@ -124,6 +126,7 @@ import {
   notifyReminderDue,
   notifyTaskDue,
 } from '@/lib/notification-triggers'
+import { checkProximityAndRecurringAlerts } from '@/lib/notification-dispatcher'
 
 export type Tab = 'inicio' | 'organizar' | 'hogar' | 'fitness' | 'familia' | 'perfil'
 export type AddTab = 'tarea' | 'evento' | 'recordatorio' | 'miembro'
@@ -197,6 +200,8 @@ interface AppState {
   addMember: (name: string, colorIdx: number) => void
   getMemberById: (memberId: string) => Member | null
   dismissNotification: (id: string) => void
+  markNotificationAsRead: (id: string) => void
+  markAllNotificationsAsRead: () => void
   clearNotifications: () => void
   addShoppingList: (name: string) => void
   updateShoppingList: (listId: string, name: string) => void
@@ -406,10 +411,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setDailyMenus(getDailyMenusByGroup(active.id))
       setWeeklyMenus(getWeeklyMenusByGroup(active.id))
       processMonthlyRecurringItems(active.id, selectedMonthISO)
+      checkProximityAndRecurringAlerts(active.id, activeMembers)
       setIncomes(getIncomesByGroup(active.id))
       setExpenses(getExpensesByGroup(active.id))
       setBills(getBillsByGroup(active.id))
       setBudgets(getBudgetsByGroup(active.id))
+      setNotifications(getNotificationsByGroup(active.id))
       setInitialPiggyBankBalance(getPiggyBankBalance(active.id))
 
       const THIRTY_MINS = 30 * 60 * 1000
@@ -705,6 +712,41 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         timestamp: new Date().toISOString(),
       })
 
+      // Notificación al integrante asignado si es diferente del creador
+      const creatorName = actingMember.name || 'Alguien'
+      const assignedIds = task.assignedMemberIds || (task.assignedToMemberId ? [task.assignedToMemberId] : [])
+      const targetMemberIds = assignedIds.filter((id) => id !== actingMember.id)
+
+      if (targetMemberIds.length > 0) {
+        addNotificationStore({
+          id: `notif_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+          groupId: activeGroup.id,
+          recipientMemberId: targetMemberIds[0],
+          type: 'task',
+          title: 'Nueva tarea asignada',
+          body: `${creatorName} te ha asignado la tarea: "${task.title}"`,
+          timestamp: new Date().toISOString(),
+          read: false,
+          actionUrl: '/app?tab=organizar',
+          data: { taskId: task.id, tab: 'organizar', subTab: 'tareas' },
+          colorVar: 'var(--primary)',
+        })
+
+        if (typeof window !== 'undefined') {
+          fetch('/api/push/send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              groupId: activeGroup.id,
+              title: 'Nueva tarea asignada',
+              body: `${creatorName} te ha asignado la tarea: "${task.title}"`,
+              url: '/app?tab=organizar',
+              data: { type: 'organizacion_events', taskId: task.id },
+            }),
+          }).catch((err) => console.warn('Push dispatch error:', err))
+        }
+      }
+
       notifyTaskDue({
         taskTitle: task.title,
       }).catch(() => {})
@@ -800,15 +842,38 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         timestamp: new Date().toISOString(),
       })
 
-      addNotification({
-        id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `notif_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-        groupId: activeGroup.id,
-        type: 'event',
-        title: 'Nuevo evento programado',
-        body: `${actingMember.name} añadió "${event.title}"`,
-        timestamp: new Date().toISOString(),
-        colorVar: 'var(--purple-500)',
-      })
+      // Notificación en tiempo real a integrantes asignados
+      const creatorName = actingMember.name || 'Alguien'
+      const targetEventMemberIds = (assignedMemberIds || []).filter((id) => id !== actingMember.id)
+      if (targetEventMemberIds.length > 0) {
+        addNotificationStore({
+          id: `notif_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+          groupId: activeGroup.id,
+          recipientMemberId: targetEventMemberIds[0],
+          type: 'event',
+          title: 'Nuevo evento asignado',
+          body: `${creatorName} te ha asignado el evento: "${event.title}" (${date}${time ? ' ' + time : ''})`,
+          timestamp: new Date().toISOString(),
+          read: false,
+          actionUrl: '/app?tab=organizar',
+          data: { eventId: event.id, tab: 'organizar', subTab: 'calendario' },
+          colorVar: 'var(--purple-500)',
+        })
+
+        if (typeof window !== 'undefined') {
+          fetch('/api/push/send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              groupId: activeGroup.id,
+              title: 'Nuevo evento asignado',
+              body: `${creatorName} te ha asignado el evento: "${event.title}"`,
+              url: '/app?tab=organizar',
+              data: { type: 'organizacion_events', eventId: event.id },
+            }),
+          }).catch((err) => console.warn('Push error:', err))
+        }
+      }
 
       if (event.time) {
         notifyEventReminder({
@@ -862,15 +927,38 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         timestamp: new Date().toISOString(),
       })
 
-      addNotification({
-        id: `notif_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-        groupId: activeGroup.id,
-        type: 'reminder',
-        title: 'Nuevo recordatorio',
-        body: `${actingMember.name} añadió "${reminder.title}"`,
-        timestamp: new Date().toISOString(),
-        colorVar: 'var(--rose-500)',
-      })
+      // Notificación en tiempo real para recordatorios asignados
+      const creatorName = actingMember.name || 'Alguien'
+      const targetReminderMemberIds = (assignedMemberIds || []).filter((id) => id !== actingMember.id)
+      if (targetReminderMemberIds.length > 0) {
+        addNotificationStore({
+          id: `notif_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+          groupId: activeGroup.id,
+          recipientMemberId: targetReminderMemberIds[0],
+          type: 'reminder',
+          title: 'Nuevo recordatorio asignado',
+          body: `${creatorName} te ha asignado un recordatorio: "${reminder.title}"`,
+          timestamp: new Date().toISOString(),
+          read: false,
+          actionUrl: '/app?tab=organizar',
+          data: { reminderId: reminder.id, tab: 'organizar', subTab: 'recordatorios' },
+          colorVar: 'var(--rose-500)',
+        })
+
+        if (typeof window !== 'undefined') {
+          fetch('/api/push/send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              groupId: activeGroup.id,
+              title: 'Nuevo recordatorio asignado',
+              body: `${creatorName} te ha asignado un recordatorio: "${reminder.title}"`,
+              url: '/app?tab=organizar',
+              data: { type: 'organizacion_events', reminderId: reminder.id },
+            }),
+          }).catch((err) => console.warn('Push error:', err))
+        }
+      }
 
       notifyReminderDue({
         reminderTitle: reminder.title,
@@ -901,10 +989,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       .toUpperCase()
       .slice(0, 2)
     const member: Member = {
-      id: `member_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+      id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `mem_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
       name,
-      role: 'adult',
-      initials: initials || name.charAt(0).toUpperCase(),
+      initials,
+      color: color.name,
       colorVar: color.var,
       avatarColor: color.value,
       points: 0,
@@ -923,6 +1011,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const dismissNotification = (id: string) => {
     deleteNotificationStore(id)
+    refreshData()
+  }
+
+  const markNotificationAsRead = (id: string) => {
+    markNotificationAsReadStore(id)
+    refreshData()
+  }
+
+  const markAllNotificationsAsRead = () => {
+    if (!activeGroup) return
+    markAllNotificationsAsReadByGroupStore(activeGroup.id)
     refreshData()
   }
 
@@ -1663,6 +1762,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         addMember: handleAddMember,
         getMemberById: handleGetMemberById,
         dismissNotification,
+        markNotificationAsRead,
+        markAllNotificationsAsRead,
         clearNotifications,
         addShoppingList: handleAddShoppingList,
         updateShoppingList: handleUpdateShoppingList,
