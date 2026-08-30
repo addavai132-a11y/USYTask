@@ -243,13 +243,12 @@ export function NutritionTab({
     toast('Orden de comidas actualizado', '↕️')
   }
 
-  // ── MODAL ADD FOOD STATE ──
   const [isAddFoodModalOpen, setIsAddFoodModalOpen] = useState(false)
   const [targetMealType, setTargetMealType] = useState<MealType>('almuerzo')
   const [targetMealLabel, setTargetMealLabel] = useState('Almuerzo')
   const [foodName, setFoodName] = useState('')
-  const [foodQuantity, setFoodQuantity] = useState('')
-  const [foodCalories, setFoodCalories] = useState('')
+  const [foodQuantity, setFoodQuantity] = useState('') // alias: foodServing in JSX
+  const [foodCalories, setFoodCalories] = useState('') // kept as string for controlled input
   const [foodProtein, setFoodProtein] = useState('')
   const [foodCarbs, setFoodCarbs] = useState('')
   const [foodFats, setFoodFats] = useState('')
@@ -512,23 +511,24 @@ export function NutritionTab({
 
   function handleSaveFood() {
     try {
-      if (!foodName.trim()) {
+      const trimmedName = (foodName || '').trim()
+      if (!trimmedName) {
         toast('Escribe el nombre del alimento u opción', '❌')
         return
       }
-      const cals = parseFloat(foodCalories) || 0
-      const p = parseFloat(foodProtein) || 0
-      const c = parseFloat(foodCarbs) || 0
-      const f = parseFloat(foodFats) || 0
+      const cals = parseFloat(String(foodCalories)) || 0
+      const p = parseFloat(String(foodProtein)) || 0
+      const c = parseFloat(String(foodCarbs)) || 0
+      const f = parseFloat(String(foodFats)) || 0
 
       const item: MealItem = {
         id: `item_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-        name: foodName.trim(),
-        calories: Math.max(0, cals),
-        protein: Math.max(0, p),
-        carbs: Math.max(0, c),
-        fats: Math.max(0, f),
-        quantity: foodQuantity.trim() || undefined,
+        name: trimmedName,
+        calories: Math.max(0, Math.round(cals)),
+        protein: Math.max(0, Math.round(p * 10) / 10),
+        carbs: Math.max(0, Math.round(c * 10) / 10),
+        fats: Math.max(0, Math.round(f * 10) / 10),
+        quantity: (foodQuantity || '').trim() || undefined,
       }
 
       onAddMealItem(targetMealType, item, selectedDay)
@@ -1017,14 +1017,15 @@ export function NutritionTab({
                 />
               </div>
 
-              {/* Grid de Macros por porción */}
+              {/* Macros Grid */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 <div className="space-y-1">
                   <label className="font-bold text-slate-700 dark:text-slate-300">Calorías (kcal)</label>
                   <input
                     type="number"
-                    value={foodCalories || ''}
-                    onChange={(e) => setFoodCalories(Number(e.target.value))}
+                    min="0"
+                    value={foodCalories}
+                    onChange={(e) => setFoodCalories(e.target.value)}
                     placeholder="0"
                     className="w-full rounded-xl border border-slate-200 bg-slate-50 dark:border-purple-500/20 dark:bg-white/[0.04] py-2 px-2 text-center font-mono font-bold text-slate-900 dark:text-white outline-none focus:border-emerald-500"
                   />
@@ -1034,8 +1035,9 @@ export function NutritionTab({
                   <label className="font-bold text-rose-600 dark:text-rose-400">Proteína (g)</label>
                   <input
                     type="number"
-                    value={foodProtein || ''}
-                    onChange={(e) => setFoodProtein(Number(e.target.value))}
+                    min="0"
+                    value={foodProtein}
+                    onChange={(e) => setFoodProtein(e.target.value)}
                     placeholder="0"
                     className="w-full rounded-xl border border-rose-200 bg-rose-50/50 dark:border-rose-500/20 dark:bg-rose-950/20 py-2 px-2 text-center font-mono font-bold text-rose-700 dark:text-rose-300 outline-none focus:border-rose-500"
                   />
@@ -1045,8 +1047,9 @@ export function NutritionTab({
                   <label className="font-bold text-cyan-600 dark:text-cyan-400">Carbos (g)</label>
                   <input
                     type="number"
-                    value={foodCarbs || ''}
-                    onChange={(e) => setFoodCarbs(Number(e.target.value))}
+                    min="0"
+                    value={foodCarbs}
+                    onChange={(e) => setFoodCarbs(e.target.value)}
                     placeholder="0"
                     className="w-full rounded-xl border border-cyan-200 bg-cyan-50/50 dark:border-cyan-500/20 dark:bg-cyan-950/20 py-2 px-2 text-center font-mono font-bold text-cyan-700 dark:text-cyan-300 outline-none focus:border-cyan-500"
                   />
@@ -1056,20 +1059,21 @@ export function NutritionTab({
                   <label className="font-bold text-amber-600 dark:text-amber-400">Grasas (g)</label>
                   <input
                     type="number"
-                    value={foodFats || ''}
-                    onChange={(e) => setFoodFats(Number(e.target.value))}
+                    min="0"
+                    value={foodFats}
+                    onChange={(e) => setFoodFats(e.target.value)}
                     placeholder="0"
                     className="w-full rounded-xl border border-amber-200 bg-amber-50/50 dark:border-amber-500/20 dark:bg-amber-950/20 py-2 px-2 text-center font-mono font-bold text-amber-700 dark:text-amber-300 outline-none focus:border-amber-500"
                   />
                 </div>
               </div>
 
-              {/* Gramos / Porción */}
+              {/* Cantidad / Porción */}
               <div className="space-y-1">
                 <label className="font-bold text-slate-700 dark:text-slate-300">Cantidad / Porción (opcional)</label>
                 <input
-                  value={foodServing}
-                  onChange={(e) => setFoodServing(e.target.value)}
+                  value={foodQuantity}
+                  onChange={(e) => setFoodQuantity(e.target.value)}
                   placeholder="Ej: 150g, 1 taza, 2 huevos..."
                   className="w-full rounded-2xl border border-slate-200 bg-slate-50 dark:border-purple-500/20 dark:bg-white/[0.04] py-2 px-3 text-slate-900 dark:text-white outline-none focus:border-emerald-500"
                 />
