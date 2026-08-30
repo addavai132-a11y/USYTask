@@ -39,6 +39,52 @@ function getInitialDayOfWeek(): DayOfWeek {
   return map[dayIdx] || 'lunes'
 }
 
+/**
+ * Retorna el peso o rango cronológico de una toma a lo largo del día
+ * 1. Desayuno (10)
+ * 2. Media mañana / 2º Desayuno (20)
+ * 3. Almuerzo / Comida (30)
+ * 4. Merienda (40)
+ * 5. Pre / Post Entreno / Merienda 2 (50)
+ * 6. Cena (60)
+ * 7. Recena / Noche (70)
+ * 8. Otras tomas personalizadas (80+)
+ */
+export function getMealChronologicalRank(section: MealSection, index: number = 99): number {
+  const id = (section.id || '').toLowerCase()
+  const name = (section.name || '').toLowerCase()
+
+  // 1. Desayuno
+  if (id === 'desayuno' || (name.includes('desayuno') && !name.includes('2') && !name.includes('segundo')) || name.includes('breakfast')) {
+    return 10
+  }
+  // 2. Media mañana / 2º Desayuno / Snack 1 / Brunch
+  if (name.includes('segundo desayuno') || name.includes('2º desayuno') || name.includes('2° desayuno') || name.includes('2 desayuno') || name.includes('media mañana') || id.includes('manana') || name.includes('snack mañana') || name.includes('snack media mañana') || name.includes('brunch')) {
+    return 20
+  }
+  // 3. Almuerzo / Comida / Lunch
+  if (id === 'almuerzo' || id === 'comida' || name.includes('almuerzo') || name.includes('comida') || name.includes('lunch')) {
+    return 30
+  }
+  // 4. Merienda / Merienda 1 / Snack tarde
+  if (id === 'merienda' || (name.includes('merienda') && !name.includes('2') && !name.includes('segunda')) || name.includes('snack tarde') || name.includes('merienda 1') || name.includes('1ª merienda')) {
+    return 40
+  }
+  // 5. Pre / Post Entreno / Merienda 2 / Snack
+  if (name.includes('merienda 2') || name.includes('segunda merienda') || name.includes('2ª merienda') || name.includes('2º merienda') || id === 'pre_post' || name.includes('pre') || name.includes('post') || name.includes('entreno')) {
+    return 50
+  }
+  // 6. Cena / Dinner
+  if (id === 'cena' || name.includes('cena') || name.includes('dinner')) {
+    return 60
+  }
+  // 7. Recena / Antes de dormir / Snack noche
+  if (name.includes('recena') || name.includes('dormir') || name.includes('noche') || name.includes('snack noche')) {
+    return 70
+  }
+  return 80 + index
+}
+
 interface FoodPreset {
   name: string
   calories100g: number
@@ -169,7 +215,6 @@ export function NutritionTab({
     return counts
   }, [mealLogs])
 
-  // ── SECCIONES DE COMIDAS PERSONALIZADAS Y DINÁMICAS ──
   const [mealSections, setMealSections] = useState<MealSection[]>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('fitness_custom_meal_sections')
@@ -190,7 +235,17 @@ export function NutritionTab({
     }
   }
 
-  // ── MODAL NUEVA/EDITAR TOMA STATE ──
+  const sortedMealSections = useMemo(() => {
+    return [...mealSections].sort((a, b) => {
+      const rankA = getMealChronologicalRank(a, mealSections.indexOf(a))
+      const rankB = getMealChronologicalRank(b, mealSections.indexOf(b))
+      if (rankA !== rankB) {
+        return rankA - rankB
+      }
+      return a.name.localeCompare(b.name)
+    })
+  }, [mealSections])
+
   const [isSectionModalOpen, setIsSectionModalOpen] = useState(false)
   const [editingSectionId, setEditingSectionId] = useState<string | null>(null)
   const [sectionName, setSectionName] = useState('')
@@ -221,9 +276,9 @@ export function NutritionTab({
         s.id === editingSectionId ? { ...s, name: sectionName.trim(), icon: sectionIcon } : s
       )
       saveSections(updated)
-      toast(`Toma "${sectionName.trim()}" actualizada`, '✏️')
+      toast(`Toma "${sectionName.trim()}" actualizada`, '✨')
     } else {
-      const newId = `custom_meal_${Date.now()}`
+      const newId = `meal_${Date.now()}`
       const newSection: MealSection = {
         id: newId,
         name: sectionName.trim(),
@@ -237,13 +292,26 @@ export function NutritionTab({
     setIsSectionModalOpen(false)
   }
 
+  function handleDeleteFoodItem(section: MealSection, item: MealItem) {
+    confirmDelete({
+      title: '¿Eliminar alimento?',
+      itemName: item.name,
+      description: `Se eliminará "${item.name}" (${item.calories} kcal) de la toma de ${section.name}.`,
+      confirmText: 'Eliminar Alimento',
+      onConfirm: () => {
+        onDeleteMealItem(section.id, item.id, selectedDay)
+        toast(`"${item.name}" eliminado`, '🗑️')
+      },
+    })
+  }
+
   function handleClearMeal(section: MealSection) {
     const dayLabel = DAYS_OF_WEEK.find((d) => d.id === selectedDay)?.label || selectedDay
     confirmDelete({
       title: `¿Vaciar ${section.name}?`,
       itemName: `${section.name} (${dayLabel})`,
       description: `Se eliminarán todos los alimentos registrados en ${section.name} para el ${dayLabel}.`,
-      confirmText: 'Vaciar Toma',
+      confirmText: 'Vaciar Alimentos',
       onConfirm: () => {
         onClearMealSection?.(section.id, selectedDay)
         toast(`Alimentos de "${section.name}" eliminados (${dayLabel})`, '🗑️')
@@ -255,7 +323,7 @@ export function NutritionTab({
     confirmDelete({
       title: '¿Eliminar toma de comida?',
       itemName: section.name,
-      description: 'Se eliminará esta sección de tus comidas habituales y todos sus alimentos registrados.',
+      description: `Se eliminará la categoría "${section.name}" de tus comidas habituales y todos sus alimentos registrados para todos los días.`,
       confirmText: 'Eliminar Toma',
       onConfirm: () => {
         const updated = mealSections.filter((s) => s.id !== section.id)
@@ -880,11 +948,11 @@ export function NutritionTab({
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         <button
           type="button"
-          onClick={() => handleOpenAddFood(mealSections[0]?.id || 'desayuno', mealSections[0]?.name || 'Desayuno')}
+          onClick={() => handleOpenAddFood(sortedMealSections[0]?.id || 'desayuno', sortedMealSections[0]?.name || 'Desayuno')}
           className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-bold flex items-center justify-center gap-2 transition-all shadow-sm text-xs sm:text-sm active:scale-[0.99]"
         >
           <Plus className="size-4 stroke-[2.5]" />
-          <span>+ Añadir Alimento</span>
+          <span>Añadir Alimento</span>
         </button>
 
         <button
@@ -893,13 +961,13 @@ export function NutritionTab({
           className="w-full py-2.5 bg-white hover:bg-slate-50 text-slate-900 border border-slate-300 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all shadow-sm text-xs sm:text-sm active:scale-[0.99] dark:bg-white/[0.04] dark:hover:bg-white/10 dark:text-white dark:border-white/10"
         >
           <Plus className="size-4 text-emerald-600 stroke-[2.5]" />
-          <span>+ Nueva Toma / Comida</span>
+          <span>Nueva Toma / Comida</span>
         </button>
       </div>
 
-      {/* ── BLOQUES DE COMIDAS DIARIAS (PREDETERMINADAS + PERSONALIZADAS) ── */}
+      {/* ── BLOQUES DE COMIDAS DIARIAS (ORDENADAS CRONOLÓGICAMENTE) ── */}
       <div className="space-y-3">
-        {mealSections.map((section, idx) => {
+        {sortedMealSections.map((section, idx) => {
           const log = currentDayLogs.find((l) => l.mealType === section.id)
           const items = Array.isArray(log?.items) ? log.items : []
 
@@ -939,7 +1007,7 @@ export function NutritionTab({
                     </button>
                     <button
                       type="button"
-                      disabled={idx === mealSections.length - 1}
+                      disabled={idx === sortedMealSections.length - 1}
                       onClick={() => handleMoveSection(idx, 'down')}
                       className="p-1 text-slate-500 hover:text-slate-900 disabled:opacity-20 disabled:hover:text-slate-400 transition-colors dark:text-slate-400 dark:hover:text-white"
                       title="Mover abajo"
@@ -979,29 +1047,15 @@ export function NutritionTab({
                     <Edit2 className="size-3.5" />
                   </button>
 
-                  {/* Vaciar Alimentos de la Toma para este Día */}
-                  {items.length > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => handleClearMeal(section)}
-                      className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors dark:hover:text-rose-400 dark:hover:bg-rose-500/10"
-                      title={`Vaciar alimentos de ${section.name}`}
-                    >
-                      <Trash2 className="size-3.5" />
-                    </button>
-                  )}
-
-                  {/* Eliminar Sección Creada por el Usuario */}
-                  {!section.isDefault && items.length === 0 && (
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteSection(section)}
-                      className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors dark:hover:text-rose-400 dark:hover:bg-rose-500/10"
-                      title={`Eliminar sección ${section.name}`}
-                    >
-                      <Trash2 className="size-3.5" />
-                    </button>
-                  )}
+                  {/* Eliminar Toma / Categoría Entera (Siempre disponible para cualquier toma) */}
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteSection(section)}
+                    className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors dark:hover:text-rose-400 dark:hover:bg-rose-500/10"
+                    title={`Eliminar categoría "${section.name}"`}
+                  >
+                    <Trash2 className="size-3.5" />
+                  </button>
                 </div>
               </div>
 
@@ -1025,12 +1079,9 @@ export function NutritionTab({
 
                       <button
                         type="button"
-                        onClick={() => {
-                          onDeleteMealItem(section.id, item.id, selectedDay)
-                          toast(`"${item.name}" eliminado`, '🗑️')
-                        }}
+                        onClick={() => handleDeleteFoodItem(section, item)}
                         className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-lg transition-colors dark:hover:text-rose-400"
-                        title="Eliminar alimento"
+                        title={`Eliminar "${item.name}"`}
                       >
                         <Trash2 className="size-3.5" />
                       </button>
@@ -1105,7 +1156,7 @@ export function NutritionTab({
                   }}
                   className="w-full rounded-2xl border border-slate-200 bg-slate-50 dark:border-purple-500/20 dark:bg-white/[0.04] py-2 px-3 text-xs font-semibold text-slate-900 dark:text-white outline-none focus:border-emerald-500 dark:focus:border-purple-500 cursor-pointer"
                 >
-                  {mealSections.map((s) => (
+                  {sortedMealSections.map((s) => (
                     <option key={s.id} value={s.id} className="bg-white dark:bg-[#100e23] text-slate-900 dark:text-white">
                       {s.icon} {s.name}
                     </option>
