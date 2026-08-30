@@ -82,6 +82,10 @@ import {
   updateBill as updateBillStore,
   deleteBill as deleteBillStore,
   toggleBillStatus as toggleBillStatusStore,
+  cancelBillSubscription as cancelBillSubscriptionStore,
+  reactivateBillSubscription as reactivateBillSubscriptionStore,
+  pauseBillSubscription as pauseBillSubscriptionStore,
+  processMonthlyRecurringItems,
   saveBudget as saveBudgetStore,
   deleteBudget as deleteBudgetStore,
   getPiggyBankBalance,
@@ -239,6 +243,9 @@ interface AppState {
   updateBill: (bill: BillSubscription) => void
   deleteBill: (id: string) => void
   toggleBillStatus: (id: string) => void
+  cancelBillSubscription: (id: string) => void
+  reactivateBillSubscription: (id: string) => void
+  pauseBillSubscription: (id: string) => void
   saveBudget: (category: string, monthlyLimit: number) => void
   deleteBudget: (id: string) => void
 
@@ -398,6 +405,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setEventPolls(getEventPollsByGroup(active.id))
       setDailyMenus(getDailyMenusByGroup(active.id))
       setWeeklyMenus(getWeeklyMenusByGroup(active.id))
+      processMonthlyRecurringItems(active.id, selectedMonthISO)
       setIncomes(getIncomesByGroup(active.id))
       setExpenses(getExpensesByGroup(active.id))
       setBills(getBillsByGroup(active.id))
@@ -1262,6 +1270,27 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     bump()
   }
 
+  const handleCancelBillSubscription = (id: string) => {
+    if (!activeGroup) return
+    cancelBillSubscriptionStore(id, activeGroup.id)
+    refreshData()
+    bump()
+  }
+
+  const handleReactivateBillSubscription = (id: string) => {
+    if (!activeGroup) return
+    reactivateBillSubscriptionStore(id, activeGroup.id)
+    refreshData()
+    bump()
+  }
+
+  const handlePauseBillSubscription = (id: string) => {
+    if (!activeGroup) return
+    pauseBillSubscriptionStore(id, activeGroup.id)
+    refreshData()
+    bump()
+  }
+
   const handleSaveBudget = (category: string, monthlyLimit: number) => {
     if (!activeGroup) return
     saveBudgetStore(activeGroup.id, category, monthlyLimit)
@@ -1598,6 +1627,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         updateBill: handleUpdateBill,
         deleteBill: handleDeleteBill,
         toggleBillStatus: handleToggleBillStatus,
+        cancelBillSubscription: handleCancelBillSubscription,
+        reactivateBillSubscription: handleReactivateBillSubscription,
+        pauseBillSubscription: handlePauseBillSubscription,
         saveBudget: handleSaveBudget,
         deleteBudget: handleDeleteBudget,
         selectedMonthISO,

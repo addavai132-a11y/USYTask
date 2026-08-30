@@ -39,6 +39,7 @@ export function ExpensesSection() {
   const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([])
   const [date, setDate] = useState(getTodayISO())
   const [isRecurring, setIsRecurring] = useState(false)
+  const [billingDay, setBillingDay] = useState('1')
 
   // Filtering
   const filtered = expenses.filter((exp) => {
@@ -66,6 +67,7 @@ export function ExpensesSection() {
     setSelectedMemberIds([])
     setDate(getTodayISO())
     setIsRecurring(false)
+    setBillingDay(new Date().getDate().toString())
     setIsModalOpen(true)
   }
 
@@ -78,6 +80,7 @@ export function ExpensesSection() {
     setSelectedMemberIds(getExpenseMemberIds(exp))
     setDate(exp.date || getTodayISO())
     setIsRecurring(exp.isRecurring)
+    setBillingDay((exp.billingDay || (exp.date ? parseInt(exp.date.split('-')[2] || '1', 10) : 1)).toString())
     setIsModalOpen(true)
   }
 
@@ -99,6 +102,7 @@ export function ExpensesSection() {
 
     const memberIds = selectedMemberIds
     const customCat = category === 'otros' && customCategoryInput.trim() ? customCategoryInput.trim() : undefined
+    const parsedBillingDay = isRecurring ? Math.min(31, Math.max(1, parseInt(billingDay, 10) || 1)) : undefined
 
     if (editingId) {
       updateExpense({
@@ -112,6 +116,7 @@ export function ExpensesSection() {
         paidByMemberId: memberIds[0] || '',
         paidByMemberIds: memberIds,
         isRecurring,
+        billingDay: parsedBillingDay,
       })
       toast('Gasto actualizado', '✅')
     } else {
@@ -124,6 +129,7 @@ export function ExpensesSection() {
         paidByMemberId: memberIds[0] || '',
         paidByMemberIds: memberIds,
         isRecurring,
+        billingDay: parsedBillingDay,
       })
       toast('Gasto registrado', '✅')
     }
@@ -211,9 +217,16 @@ export function ExpensesSection() {
                     <h4 className="text-sm font-bold text-slate-900 dark:text-white tracking-tight leading-snug">
                       {exp.title}
                     </h4>
-                    <span className="inline-block mt-1 px-2 py-0.5 rounded bg-slate-100 dark:bg-white/[0.04] border border-slate-200 dark:border-white/5 text-[10px] font-semibold capitalize text-slate-600 dark:text-slate-400">
-                      {displayCat} {exp.isRecurring && '· Fijo'}
-                    </span>
+                    <div className="flex flex-wrap items-center gap-1 mt-1">
+                      <span className="px-2 py-0.5 rounded bg-slate-100 dark:bg-white/[0.04] border border-slate-200 dark:border-white/5 text-[10px] font-semibold capitalize text-slate-600 dark:text-slate-400">
+                        {displayCat}
+                      </span>
+                      {exp.isRecurring && (
+                        <span className="px-2 py-0.5 rounded bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 text-[10px] font-bold text-amber-700 dark:text-amber-300">
+                          🔄 Fijo mensual {exp.billingDay ? `(Día ${exp.billingDay})` : ''}
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   <div className="flex items-center gap-1">
@@ -260,7 +273,7 @@ export function ExpensesSection() {
                       {exp.date ? new Date(exp.date).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }) : 'Mes actual'}
                     </span>
                   </div>
-                  <span className="text-sm font-bold text-slate-900 dark:text-white tabular-nums">
+                  <span className="text-sm font-extrabold text-slate-900 dark:text-white tabular-nums">
                     {formatCurrency(exp.amount)}
                   </span>
                 </div>
@@ -357,6 +370,26 @@ export function ExpensesSection() {
                   </label>
                 </div>
               </div>
+
+              {isRecurring && (
+                <div className="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 flex items-center justify-between gap-2">
+                  <div>
+                    <span className="font-bold text-amber-800 dark:text-amber-300 text-xs">Día de cobro/pago del mes</span>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400">Generación recurrente cada mes</p>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs text-slate-500">Día</span>
+                    <input
+                      type="number"
+                      min={1}
+                      max={31}
+                      value={billingDay}
+                      onChange={(e) => setBillingDay(e.target.value)}
+                      className="w-14 rounded-lg border border-amber-300 dark:border-amber-500/40 bg-white dark:bg-black/40 py-1 px-2 font-mono font-bold text-center text-xs text-slate-900 dark:text-white outline-none"
+                    />
+                  </div>
+                </div>
+              )}
 
               <div>
                 <MemberMultiSelect

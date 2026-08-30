@@ -9,10 +9,14 @@ export interface Income {
   title: string // ej. "Nómina Dav"
   amount: number
   frequency: IncomeFrequency
+  billingDay?: number // 1-31 (Día de cobro del mes)
+  isRecurring?: boolean
+  status?: 'active' | 'cancelled'
   category: IncomeCategory
   customCategory?: string
   date: string // ISO YYYY-MM-DD
   createdAt?: string
+  updatedAt?: string
 }
 
 export type ExpenseCategory = 'alimentación' | 'vivienda' | 'transporte' | 'ocio' | 'salud' | 'educación' | 'hogar' | 'otros'
@@ -62,26 +66,38 @@ export interface Expense {
   paidByMemberId: string // principal
   paidByMemberIds?: string[] // selección múltiple de miembros pagadores/asociados
   isRecurring: boolean
+  billingDay?: number // 1-31 (Día de pago del mes)
+  status?: 'active' | 'cancelled'
+  subscriptionId?: string // Vinculado a la suscripción padre si se autogeneró
   consumption?: ConsumptionData
   createdAt?: string
+  updatedAt?: string
 }
 
 export type BillingCycle = 'mensual' | 'anual'
 export type BillStatus = 'pendiente' | 'pagado'
+export type SubscriptionStatus = 'activa' | 'cancelada' | 'pausada'
 
 export interface BillSubscription {
   id: string
   groupId: string
-  name: string // ej. "Luz / Endesa", "Internet", "Netflix"
+  name: string // ej. "Luz / Endesa", "Internet", "Netflix", "Alquiler"
   amount: number
   billingCycle: BillingCycle
-  dueDay: number // 1-31
+  dueDay: number // 1-31 (Día de cobro/pago del mes)
   autopay: boolean
   status: BillStatus
+  subscriptionStatus?: SubscriptionStatus // 'activa' | 'cancelada' | 'pausada'
+  isActive?: boolean // default true
   category?: ExpenseCategory
   customCategory?: string
   lastPaidDate?: string
+  lastGeneratedMonth?: string // YYYY-MM
+  paidByMemberId?: string
+  paidByMemberIds?: string[]
   consumption?: ConsumptionData
+  createdAt?: string
+  updatedAt?: string
 }
 
 export interface Budget {

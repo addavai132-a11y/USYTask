@@ -39,7 +39,7 @@ export function HomeScreen() {
             { id: 'resumen', label: 'Resumen' },
             { id: 'ingresos', label: 'Ingresos / Nóminas' },
             { id: 'gastos', label: 'Gastos' },
-            { id: 'facturas', label: 'Facturas' },
+            { id: 'facturas', label: 'Facturas / Suscripciones' },
             { id: 'presupuestos', label: 'Presupuestos' },
           ]}
         />

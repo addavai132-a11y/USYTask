@@ -648,22 +648,35 @@ export function getBillsByGroup(groupId: string): BillSubscription[] {
 
 export function addBill(bill: BillSubscription): void {
   const all = getAllBills()
-  all.unshift(bill)
+  all.unshift({
+    ...bill,
+    subscriptionStatus: bill.subscriptionStatus || 'activa',
+    isActive: bill.isActive !== undefined ? bill.isActive : true,
+    amount: Number(bill.amount) || 0,
+    dueDay: Number(bill.dueDay) || 1,
+    createdAt: new Date().toISOString(),
+  })
   saveArray(BILLS_KEY, all)
 }
 
 export function updateBill(bill: BillSubscription): void {
   const all = getAllBills()
-  const idx = all.findIndex((b) => b.id === bill.id && b.groupId === bill.groupId)
+  const idx = all.findIndex((b) => b.id === bill.id)
   if (idx >= 0) {
-    all[idx] = bill
+    all[idx] = {
+      ...all[idx],
+      ...bill,
+      amount: Number(bill.amount) || 0,
+      dueDay: Number(bill.dueDay) || 1,
+      updatedAt: new Date().toISOString(),
+    }
     saveArray(BILLS_KEY, all)
   }
 }
 
 export function toggleBillStatus(id: string, groupId: string): void {
   const all = getAllBills()
-  const idx = all.findIndex((b) => b.id === id && b.groupId === groupId)
+  const idx = all.findIndex((b) => b.id === id && (b.groupId === groupId || !groupId))
   if (idx >= 0) {
     all[idx].status = all[idx].status === 'pagado' ? 'pendiente' : 'pagado'
     if (all[idx].status === 'pagado') {
@@ -673,9 +686,157 @@ export function toggleBillStatus(id: string, groupId: string): void {
   }
 }
 
+export function cancelBillSubscription(id: string, groupId: string): void {
+  const all = getAllBills()
+  const idx = all.findIndex((b) => b.id === id && (b.groupId === groupId || !groupId))
+  if (idx >= 0) {
+    all[idx] = {
+      ...all[idx],
+      subscriptionStatus: 'cancelada',
+      isActive: false,
+      updatedAt: new Date().toISOString(),
+    }
+    saveArray(BILLS_KEY, all)
+  }
+}
+
+export function reactivateBillSubscription(id: string, groupId: string): void {
+  const all = getAllBills()
+  const idx = all.findIndex((b) => b.id === id && (b.groupId === groupId || !groupId))
+  if (idx >= 0) {
+    all[idx] = {
+      ...all[idx],
+      subscriptionStatus: 'activa',
+      isActive: true,
+      updatedAt: new Date().toISOString(),
+    }
+    saveArray(BILLS_KEY, all)
+  }
+}
+
+export function pauseBillSubscription(id: string, groupId: string): void {
+  const all = getAllBills()
+  const idx = all.findIndex((b) => b.id === id && (b.groupId === groupId || !groupId))
+  if (idx >= 0) {
+    all[idx] = {
+      ...all[idx],
+      subscriptionStatus: 'pausada',
+      isActive: false,
+      updatedAt: new Date().toISOString(),
+    }
+    saveArray(BILLS_KEY, all)
+  }
+}
+
 export function deleteBill(id: string, groupId: string): void {
   const all = getAllBills()
-  saveArray(BILLS_KEY, all.filter((b) => !(b.id === id && b.groupId === groupId)))
+  saveArray(BILLS_KEY, all.filter((b) => !(b.id === id && (b.groupId === groupId || !groupId))))
+}
+
+/**
+ * Generates monthly records for active recurring subscriptions and incomes for the given month (YYYY-MM).
+ * Avoids any duplicate entry.
+ */
+export function processMonthlyRecurringItems(groupId: string, monthISO: string): void {
+  if (!groupId || !monthISO || monthISO.length < 7) return
+  const yearMonth = monthISO.slice(0, 7)
+  const [yearStr, monthStr] = yearMonth.split('-')
+  const year = parseInt(yearStr, 10)
+  const month = parseInt(monthStr, 10)
+  if (isNaN(year) || isNaN(month)) return
+
+  const daysInMonth = new Date(year, month, 0).getDate()
+
+  // 1. Process active BillSubscriptions (recurring expenses / subscriptions)
+  const allBills = getBillsByGroup(groupId)
+  const allExpenses = getAllExpenses()
+  let expensesUpdated = false
+
+  allBills.forEach((bill) => {
+    // Only process if active
+    if (bill.subscriptionStatus === 'cancelada' || bill.subscriptionStatus === 'pausada' || bill.isActive === false) {
+      return
+    }
+
+    // Check if expense already exists for this subscription in this month
+    const exists = allExpenses.some(
+      (e) =>
+        e.groupId === groupId &&
+        (e.subscriptionId === bill.id || (e.title.toLowerCase() === bill.name.toLowerCase() && e.isRecurring)) &&
+        e.date.startsWith(yearMonth)
+    )
+
+    if (!exists) {
+      const dayNum = Math.min(daysInMonth, Math.max(1, Number(bill.dueDay) || 1))
+      const dateStr = `${yearMonth}-${dayNum.toString().padStart(2, '0')}`
+      const newExpense: Expense = {
+        id: `exp_sub_${bill.id}_${yearMonth}`,
+        groupId,
+        title: bill.name,
+        amount: Number(bill.amount) || 0,
+        category: bill.category || 'hogar',
+        customCategory: bill.customCategory,
+        date: dateStr,
+        paidByMemberId: bill.paidByMemberId || '',
+        paidByMemberIds: bill.paidByMemberIds || (bill.paidByMemberId ? [bill.paidByMemberId] : []),
+        isRecurring: true,
+        billingDay: dayNum,
+        subscriptionId: bill.id,
+        createdAt: new Date().toISOString(),
+      }
+      allExpenses.push(newExpense)
+      expensesUpdated = true
+    }
+  })
+
+  if (expensesUpdated) {
+    saveArray(EXPENSES_KEY, allExpenses)
+  }
+
+  // 2. Process active recurring Incomes
+  const allIncomes = getAllIncomes()
+  let incomesUpdated = false
+  const templateIncomes = allIncomes.filter(
+    (inc) => inc.groupId === groupId && inc.frequency === 'mensual' && inc.status !== 'cancelled'
+  )
+
+  // Find unique recurring income templates by title & member
+  const processedKeys = new Set<string>()
+  templateIncomes.forEach((inc) => {
+    const templateKey = `${inc.title.toLowerCase()}_${inc.memberId}`
+    if (processedKeys.has(templateKey)) return
+    processedKeys.add(templateKey)
+
+    const existsInMonth = allIncomes.some(
+      (i) => i.groupId === groupId && i.title.toLowerCase() === inc.title.toLowerCase() && i.date.startsWith(yearMonth)
+    )
+
+    if (!existsInMonth) {
+      const dayNum = Math.min(daysInMonth, Math.max(1, Number(inc.billingDay) || 1))
+      const dateStr = `${yearMonth}-${dayNum.toString().padStart(2, '0')}`
+      const newIncome: Income = {
+        id: `inc_rec_${inc.id}_${yearMonth}`,
+        groupId,
+        memberId: inc.memberId,
+        memberIds: inc.memberIds,
+        title: inc.title,
+        amount: Number(inc.amount) || 0,
+        frequency: 'mensual',
+        billingDay: dayNum,
+        isRecurring: true,
+        category: inc.category,
+        customCategory: inc.customCategory,
+        date: dateStr,
+        createdAt: new Date().toISOString(),
+      }
+      allIncomes.push(newIncome)
+      incomesUpdated = true
+    }
+  })
+
+  if (incomesUpdated) {
+    saveArray(INCOMES_KEY, allIncomes)
+  }
 }
 
 // Budgets

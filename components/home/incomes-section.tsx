@@ -30,6 +30,7 @@ export function IncomesSection() {
   const [amount, setAmount] = useState('')
   const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([])
   const [frequency, setFrequency] = useState<IncomeFrequency>('mensual')
+  const [billingDay, setBillingDay] = useState('1')
   const [category, setCategory] = useState<IncomeCategory>('nómina')
   const [customCategoryInput, setCustomCategoryInput] = useState('')
   const [date, setDate] = useState(getTodayISO())
@@ -46,6 +47,7 @@ export function IncomesSection() {
     setAmount('')
     setSelectedMemberIds([])
     setFrequency('mensual')
+    setBillingDay(new Date().getDate().toString())
     setCategory('nómina')
     setCustomCategoryInput('')
     setDate(getTodayISO())
@@ -58,6 +60,7 @@ export function IncomesSection() {
     setAmount(inc.amount.toString())
     setSelectedMemberIds(getIncomeMemberIds(inc))
     setFrequency(inc.frequency)
+    setBillingDay((inc.billingDay || (inc.date ? parseInt(inc.date.split('-')[2] || '1', 10) : 1)).toString())
     setCategory(inc.category)
     setCustomCategoryInput(inc.customCategory || '')
     setDate(inc.date || getTodayISO())
@@ -82,6 +85,7 @@ export function IncomesSection() {
 
     const memberIds = selectedMemberIds
     const customCat = category === 'otros' && customCategoryInput.trim() ? customCategoryInput.trim() : undefined
+    const parsedBillingDay = frequency === 'mensual' ? Math.min(31, Math.max(1, parseInt(billingDay, 10) || 1)) : undefined
 
     if (editingId) {
       updateIncome({
@@ -92,6 +96,8 @@ export function IncomesSection() {
         memberId: memberIds[0] || '',
         memberIds,
         frequency,
+        billingDay: parsedBillingDay,
+        isRecurring: frequency === 'mensual',
         category,
         customCategory: customCat,
         date,
@@ -104,6 +110,8 @@ export function IncomesSection() {
         memberId: memberIds[0] || '',
         memberIds,
         frequency,
+        billingDay: parsedBillingDay,
+        isRecurring: frequency === 'mensual',
         category,
         customCategory: customCat,
         date,
@@ -175,9 +183,14 @@ export function IncomesSection() {
                         <h4 className="text-sm font-bold text-slate-900 dark:text-white tracking-tight leading-snug">
                           {inc.title}
                         </h4>
-                        <span className="inline-block mt-1 px-2 py-0.5 rounded bg-slate-100 dark:bg-white/[0.04] border border-slate-200 dark:border-white/5 text-[10px] font-semibold capitalize text-slate-600 dark:text-slate-400">
-                          {displayCat} · {inc.frequency}
-                        </span>
+                        <div className="flex flex-wrap items-center gap-1 mt-1">
+                          <span className="px-2 py-0.5 rounded bg-slate-100 dark:bg-white/[0.04] border border-slate-200 dark:border-white/5 text-[10px] font-semibold capitalize text-slate-600 dark:text-slate-400">
+                            {displayCat}
+                          </span>
+                          <span className="px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 text-[10px] font-bold text-emerald-700 dark:text-emerald-300">
+                            {inc.frequency === 'mensual' ? `🔄 Mensual (Día ${inc.billingDay || 1})` : inc.frequency}
+                          </span>
+                        </div>
                       </div>
 
                       <div className="flex items-center gap-1">
@@ -224,8 +237,8 @@ export function IncomesSection() {
                           {memberList.map((m) => m!.name).join(', ') || 'General'}
                         </span>
                       </div>
-                      <span className="text-sm font-bold text-slate-900 dark:text-white tabular-nums">
-                        {formatCurrency(inc.amount)}
+                      <span className="text-sm font-extrabold text-emerald-600 dark:text-emerald-400 tabular-nums">
+                        +{formatCurrency(inc.amount)}
                       </span>
                     </div>
                   </Card>
@@ -236,15 +249,20 @@ export function IncomesSection() {
         </>
       )}
 
-      {/* ── MODAL CREADOR / EDITOR ── */}
+      {/* ── MODAL: AÑADIR / EDITAR INGRESO ── */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 dark:bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="w-full max-w-md rounded-2xl border border-slate-200 dark:border-purple-500/20 bg-white dark:bg-[#0e0d1d] p-5 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between">
-              <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                {editingId ? 'Editar Ingreso' : 'Registrar Ingreso / Nómina'}
-              </h3>
-              <button onClick={() => setIsModalOpen(false)} className="rounded-full p-1 text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10">
+          <div className="w-full max-w-sm rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#121026] p-5 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-white/10">
+              <div className="flex items-center gap-2 text-slate-900 dark:text-white">
+                <Wallet className="size-4 text-emerald-600 dark:text-purple-400" />
+                <h3 className="text-sm font-bold">{editingId ? 'Editar Ingreso / Nómina' : 'Nuevo Ingreso / Nómina'}</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(false)}
+                className="p-1 rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-white"
+              >
                 <X className="size-4" />
               </button>
             </div>
@@ -256,7 +274,7 @@ export function IncomesSection() {
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Ej: Nómina Adrian, Extra freelance..."
+                  placeholder="Ej: Nómina Dav, Extra freelance..."
                   className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-white/[0.04] py-2 px-3 text-xs font-medium text-slate-900 dark:text-white outline-none focus:border-emerald-500 dark:focus:border-purple-500"
                 />
               </div>
@@ -280,13 +298,33 @@ export function IncomesSection() {
                     value={frequency}
                     onChange={(val) => setFrequency(val)}
                     options={[
-                      { value: 'mensual', label: 'Mensual' },
+                      { value: 'mensual', label: 'Mensual (Fijo)' },
                       { value: 'quincenal', label: 'Quincenal' },
                       { value: 'puntual', label: 'Puntual' },
                     ]}
                   />
                 </div>
               </div>
+
+              {frequency === 'mensual' && (
+                <div className="p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 flex items-center justify-between gap-2">
+                  <div>
+                    <span className="font-bold text-emerald-800 dark:text-emerald-300 text-xs">Día de cobro del mes</span>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400">Generación recurrente cada mes</p>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs text-slate-500">Día</span>
+                    <input
+                      type="number"
+                      min={1}
+                      max={31}
+                      value={billingDay}
+                      onChange={(e) => setBillingDay(e.target.value)}
+                      className="w-14 rounded-lg border border-emerald-300 dark:border-emerald-500/40 bg-white dark:bg-black/40 py-1 px-2 font-mono font-bold text-center text-xs text-slate-900 dark:text-white outline-none"
+                    />
+                  </div>
+                </div>
+              )}
 
               <div className="grid grid-cols-2 gap-2">
                 <div className="flex flex-col gap-1">
@@ -304,7 +342,7 @@ export function IncomesSection() {
                 </div>
 
                 <div className="flex flex-col gap-1">
-                  <label className="font-semibold text-slate-500 dark:text-slate-400">Fecha de cobro</label>
+                  <label className="font-semibold text-slate-500 dark:text-slate-400">Fecha de registro</label>
                   <input
                     type="date"
                     value={date}
