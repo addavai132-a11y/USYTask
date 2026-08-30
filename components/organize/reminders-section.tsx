@@ -67,7 +67,7 @@ export function RemindersSection({
           className="flex items-center gap-1.5 rounded-xl bg-orange-600 hover:bg-orange-500 text-white px-3.5 py-1.5 text-xs font-bold shadow-sm transition-transform active:scale-95"
         >
           <Plus className="size-3.5 stroke-[2.5]" />
-          <span>+ Nuevo recordatorio</span>
+          <span>Nuevo recordatorio</span>
         </button>
       </div>
 

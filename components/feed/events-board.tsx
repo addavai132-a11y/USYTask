@@ -155,7 +155,7 @@ export function EventsBoard() {
           className="flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-3.5 py-2 transition-all active:scale-95 shadow-md shadow-emerald-950/20 border border-emerald-500/30 dark:bg-purple-600 dark:hover:bg-purple-500 dark:shadow-purple-950/40 dark:border-purple-400/20"
         >
           <Plus className="size-4 stroke-[2.5]" />
-          <span>+ Nuevo evento</span>
+          <span>Nuevo evento</span>
         </button>
       </div>
 
