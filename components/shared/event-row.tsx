@@ -44,14 +44,6 @@ export function EventRow({
               <span>{event.location}</span>
             </>
           )}
-          {(event.doBeforeDate || event.doBeforeTime) && (
-            <>
-              <span aria-hidden="true">·</span>
-              <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.2 rounded-md">
-                Antes de: {event.doBeforeDate || 'Hoy'}{event.doBeforeTime ? ` · ${event.doBeforeTime}` : ''}
-              </span>
-            </>
-          )}
         </div>
       </div>
 

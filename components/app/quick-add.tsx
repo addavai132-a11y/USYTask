@@ -74,8 +74,6 @@ export function QuickAdd() {
   const [eventTitle, setEventTitle] = useState('')
   const [eventDate, setEventDate] = useState('')
   const [eventTime, setEventTime] = useState('')
-  const [eventDoBeforeDate, setEventDoBeforeDate] = useState('')
-  const [eventDoBeforeTime, setEventDoBeforeTime] = useState('')
   const [eventLocation, setEventLocation] = useState('')
   const [eventCategory, setEventCategory] = useState<EventCategory | 'Otros'>('General')
   const [eventCustomCategory, setEventCustomCategory] = useState('')
@@ -85,8 +83,6 @@ export function QuickAdd() {
   const [reminderTitle, setReminderTitle] = useState('')
   const [reminderDate, setReminderDate] = useState('')
   const [reminderTime, setReminderTime] = useState('')
-  const [reminderDoBeforeDate, setReminderDoBeforeDate] = useState('')
-  const [reminderDoBeforeTime, setReminderDoBeforeTime] = useState('')
   const [reminderMembers, setReminderMembers] = useState<string[]>([])
 
   // Member form
@@ -104,8 +100,6 @@ export function QuickAdd() {
     setEventTitle('')
     setEventDate('')
     setEventTime('')
-    setEventDoBeforeDate('')
-    setEventDoBeforeTime('')
     setEventLocation('')
     setEventCategory('General')
     setEventCustomCategory('')
@@ -113,8 +107,6 @@ export function QuickAdd() {
     setReminderTitle('')
     setReminderDate('')
     setReminderTime('')
-    setReminderDoBeforeDate('')
-    setReminderDoBeforeTime('')
     setReminderMembers([])
     setMemberName('')
     setMemberColor(0)
@@ -185,11 +177,6 @@ export function QuickAdd() {
       return
     }
 
-    if (eventDoBeforeDate && isPastDateTime(eventDoBeforeDate, eventDoBeforeTime)) {
-      toast('El límite "Hacer antes de" no puede ser anterior a la fecha y hora actual', '⚠️')
-      return
-    }
-
     const finalCat = eventCategory === 'Otros' && eventCustomCategory.trim() ? (eventCustomCategory.trim() as EventCategory) : (eventCategory as EventCategory)
     addEvent(
       title,
@@ -197,9 +184,7 @@ export function QuickAdd() {
       eventTime || undefined,
       finalCat,
       eventMembers,
-      eventLocation || undefined,
-      eventDoBeforeDate || undefined,
-      eventDoBeforeTime || undefined
+      eventLocation || undefined
     )
     toast('Evento creado correctamente', '📅')
     resetForms()
@@ -225,18 +210,11 @@ export function QuickAdd() {
       return
     }
 
-    if (reminderDoBeforeDate && isPastDateTime(reminderDoBeforeDate, reminderDoBeforeTime)) {
-      toast('El límite "Hacer antes de" no puede ser anterior a la fecha y hora actual', '⚠️')
-      return
-    }
-
     addReminder(
       reminderTitle.trim(),
       reminderDate,
       reminderMembers,
-      reminderTime || undefined,
-      reminderDoBeforeDate || undefined,
-      reminderDoBeforeTime || undefined
+      reminderTime || undefined
     )
     toast('Recordatorio creado correctamente', '🔔')
     resetForms()
@@ -491,46 +469,6 @@ export function QuickAdd() {
             </div>
           </div>
 
-          {/* Opción opcional: Hacer antes de */}
-          <div className="flex flex-col gap-2 p-3 rounded-2xl bg-secondary/30 border border-border/60">
-            <div className="flex items-center justify-between">
-              <label className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                <Clock className="size-3.5 text-amber-500" />
-                <span>Hacer antes de / Preparativos límite (opcional)</span>
-              </label>
-              {(eventDoBeforeDate || eventDoBeforeTime) && (
-                <button
-                  type="button"
-                  onClick={() => { setEventDoBeforeDate(''); setEventDoBeforeTime(''); }}
-                  className="text-[10.5px] font-bold text-rose-500 hover:underline"
-                >
-                  Limpiar
-                </button>
-              )}
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <div className="flex flex-col gap-1">
-                <span className="text-[11px] text-muted-foreground font-medium">Fecha límite</span>
-                <input
-                  type="date"
-                  min={getTodayISO()}
-                  value={eventDoBeforeDate}
-                  onChange={(e) => setEventDoBeforeDate(e.target.value)}
-                  className={inputClass}
-                />
-              </div>
-              <div className="flex flex-col gap-1">
-                <span className="text-[11px] text-muted-foreground font-medium">Hora límite</span>
-                <input
-                  type="time"
-                  value={eventDoBeforeTime}
-                  onChange={(e) => setEventDoBeforeTime(e.target.value)}
-                  className={inputClass}
-                />
-              </div>
-            </div>
-          </div>
-
           <div className="flex flex-col gap-1">
             <label className={labelClass}>Ubicación (opcional)</label>
             <input
@@ -641,46 +579,6 @@ export function QuickAdd() {
                 onChange={(e) => setReminderTime(e.target.value)}
                 className={inputClass}
               />
-            </div>
-          </div>
-
-          {/* Opción opcional: Hacer antes de */}
-          <div className="flex flex-col gap-2 p-3 rounded-2xl bg-secondary/30 border border-border/60">
-            <div className="flex items-center justify-between">
-              <label className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                <Clock className="size-3.5 text-amber-500" />
-                <span>Hacer antes de (opcional)</span>
-              </label>
-              {(reminderDoBeforeDate || reminderDoBeforeTime) && (
-                <button
-                  type="button"
-                  onClick={() => { setReminderDoBeforeDate(''); setReminderDoBeforeTime(''); }}
-                  className="text-[10.5px] font-bold text-rose-500 hover:underline"
-                >
-                  Limpiar
-                </button>
-              )}
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <div className="flex flex-col gap-1">
-                <span className="text-[11px] text-muted-foreground font-medium">Fecha límite orientativa</span>
-                <input
-                  type="date"
-                  min={getTodayISO()}
-                  value={reminderDoBeforeDate}
-                  onChange={(e) => setReminderDoBeforeDate(e.target.value)}
-                  className={inputClass}
-                />
-              </div>
-              <div className="flex flex-col gap-1">
-                <span className="text-[11px] text-muted-foreground font-medium">Hora límite orientativa</span>
-                <input
-                  type="time"
-                  value={reminderDoBeforeTime}
-                  onChange={(e) => setReminderDoBeforeTime(e.target.value)}
-                  className={inputClass}
-                />
-              </div>
             </div>
           </div>
 

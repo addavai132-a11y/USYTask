@@ -155,12 +155,6 @@ export function RemindersSection({
                         <Calendar className="size-3" />
                         Vence: {r.dueDate}{r.time ? ` · ${r.time}` : ''}
                       </p>
-                      {(r.doBeforeDate || r.doBeforeTime) && (
-                        <span className="flex items-center gap-1 text-[10px] font-semibold text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded-full" title="Hacer antes de">
-                          <Clock className="size-2.5" />
-                          <span>Antes de: {r.doBeforeDate || 'Hoy'}{r.doBeforeTime ? ` · ${r.doBeforeTime}` : ''}</span>
-                        </span>
-                      )}
                       {assignedMembers.length > 0 ? (
                         <div className="flex items-center gap-1.5 bg-secondary/80 rounded-full pl-1.5 pr-2.5 py-0.5 text-[10px] font-bold text-foreground border border-border">
                           <div className="flex -space-x-1">

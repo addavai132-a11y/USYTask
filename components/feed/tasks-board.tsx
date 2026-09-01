@@ -117,8 +117,6 @@ export function TasksBoard() {
         type: 'reminder',
         dueDate: r.dueDate || today,
         dueTime: r.time,
-        doBeforeDate: r.doBeforeDate,
-        doBeforeTime: r.doBeforeTime,
         completed: false,
         assignedToMemberId: r.assignedMemberIds?.[0] || r.memberIds?.[0],
         isUrgent: r.dueDate === today || r.daysLeft === 0,

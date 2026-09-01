@@ -59,8 +59,6 @@ export interface CalendarEvent {
   time?: string
   endTime?: string
   date: string // ISO date string YYYY-MM-DD
-  doBeforeDate?: string // ISO date string YYYY-MM-DD
-  doBeforeTime?: string // HH:mm
   location?: string
   category: EventCategory
   assignedToMemberId?: string
@@ -156,8 +154,6 @@ export interface Reminder {
   title: string
   dueDate: string // ISO date string
   time?: string // Optional HH:mm
-  doBeforeDate?: string // ISO date string YYYY-MM-DD (Hacer antes de)
-  doBeforeTime?: string // HH:mm
   daysLeft: number
   groupId: string
   type?: 'itv' | 'documento' | 'medico' | 'factura' | 'otros'

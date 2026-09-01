@@ -197,11 +197,10 @@ interface AppState {
   addTask: (title: string, points: number, assignedToMemberId: string, section?: TaskSection, priority?: TaskPriority, dueDate?: string, dueTime?: string, assignedMemberIds?: string[], doBeforeDate?: string, doBeforeTime?: string) => void
   updateTask: (task: Task) => void
   toggleTask: (taskId: string) => { pointsAwarded: number; memberId: string | null }
-  deleteTask: (taskId: string) => void
-  addEvent: (title: string, date: string, time: string | undefined, category: EventCategory, assignedMemberIds: string[], location?: string, doBeforeDate?: string, doBeforeTime?: string) => void
+  addEvent: (title: string, date: string, time: string | undefined, category: EventCategory, assignedMemberIds: string[], location?: string) => void
   updateEvent: (event: CalendarEvent) => void
   deleteEvent: (eventId: string) => void
-  addReminder: (title: string, dueDate: string, assignedMemberIds?: string[], time?: string, doBeforeDate?: string, doBeforeTime?: string) => void
+  addReminder: (title: string, dueDate: string, assignedMemberIds?: string[], time?: string) => void
   updateReminder: (reminder: Reminder) => void
   deleteReminder: (reminderId: string) => void
   addMember: (name: string, colorIdx: number) => void
@@ -845,9 +844,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     time: string | undefined,
     category: EventCategory,
     assignedMemberIds: string[],
-    location?: string,
-    doBeforeDate?: string,
-    doBeforeTime?: string
+    location?: string
   ) => {
     if (!activeGroup) return
     const uniqueId = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `event_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
@@ -856,8 +853,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       title,
       time: time || undefined,
       date: date || getTodayISO(),
-      doBeforeDate: doBeforeDate || undefined,
-      doBeforeTime: doBeforeTime || undefined,
       category,
       assignedMemberIds,
       assignedToMemberId: assignedMemberIds[0] || '',
@@ -948,9 +943,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     title: string,
     dueDate: string,
     assignedMemberIds: string[] = [],
-    time?: string,
-    doBeforeDate?: string,
-    doBeforeTime?: string
+    time?: string
   ) => {
     if (!activeGroup) return
     const uniqueId = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `rem_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
@@ -959,8 +952,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       title,
       dueDate,
       time: time || undefined,
-      doBeforeDate: doBeforeDate || undefined,
-      doBeforeTime: doBeforeTime || undefined,
       daysLeft: 0, // will be computed on read
       groupId: activeGroup.id,
       assignedMemberIds,
