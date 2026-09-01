@@ -42,6 +42,7 @@ export interface FamilyChallenge {
   status: ChallengeStatus
   endDate?: string
   lastCheckedDate?: string // ISO date YYYY-MM-DD
+  checkInDates?: string[] // Array of ISO dates (YYYY-MM-DD) when checked in
   completedAt?: string // ISO timestamp when completed
   createdAt?: string
 }

@@ -84,6 +84,7 @@ export function addChallenge(challenge: FamilyChallenge): void {
   const all = getAllChallenges()
   all.unshift(challenge)
   saveArray(CHALLENGES_KEY, all)
+  scheduleCloudSync()
 }
 
 export function updateChallenge(challenge: FamilyChallenge): void {
@@ -92,46 +93,76 @@ export function updateChallenge(challenge: FamilyChallenge): void {
   if (idx >= 0) {
     all[idx] = challenge
     saveArray(CHALLENGES_KEY, all)
+    scheduleCloudSync()
   }
 }
 
 export function deleteChallenge(id: string, groupId: string): void {
   const all = getAllChallenges()
   saveArray(CHALLENGES_KEY, all.filter((c) => !(c.id === id && c.groupId === groupId)))
+  scheduleCloudSync()
 }
 
 export function adjustChallengeDays(
   id: string,
   groupId: string,
   delta: number
-): { challenge: FamilyChallenge | null; completedNow: boolean; pointsAwarded: number } {
+): { challenge: FamilyChallenge | null; completedNow: boolean; pointsAwarded: number; alreadyDoneToday?: boolean } {
   const all = getAllChallenges()
   const idx = all.findIndex((c) => c.id === id && c.groupId === groupId)
   if (idx < 0) return { challenge: null, completedNow: false, pointsAwarded: 0 }
 
   const chal = all[idx]
   const today = getTodayISO()
+  const isDoneToday = chal.lastCheckedDate === today || (Array.isArray(chal.checkInDates) && chal.checkInDates.includes(today))
+
+  // Validación de unicidad diaria: solo se permite sumar progreso una vez al día
+  if (delta > 0 && isDoneToday) {
+    return {
+      challenge: chal,
+      completedNow: false,
+      pointsAwarded: 0,
+      alreadyDoneToday: true,
+    }
+  }
 
   const currentStreak = chal.currentDays || 0
   const targetDays = chal.targetDays || 7
   const newDays = Math.max(0, Math.min(targetDays, currentStreak + delta))
   const isNowCompleted = newDays >= targetDays
 
+  const existingDates = Array.isArray(chal.checkInDates)
+    ? chal.checkInDates
+    : (chal.lastCheckedDate ? [chal.lastCheckedDate] : [])
+  let updatedDates = [...existingDates]
+
+  if (delta > 0) {
+    if (!updatedDates.includes(today)) {
+      updatedDates.push(today)
+    }
+  } else if (delta < 0) {
+    // Si se resta/deshace, quitamos la fecha de hoy si estaba marcada
+    updatedDates = updatedDates.filter((d) => d !== today)
+  }
+
   const updated: FamilyChallenge = {
     ...chal,
     currentDays: newDays,
     status: isNowCompleted ? 'completado' : 'en_progreso',
-    lastCheckedDate: today,
+    lastCheckedDate: delta > 0 ? today : (chal.lastCheckedDate === today ? (updatedDates[updatedDates.length - 1] || undefined) : chal.lastCheckedDate),
+    checkInDates: updatedDates,
     completedAt: isNowCompleted ? (chal.completedAt || new Date().toISOString()) : undefined,
   }
 
   all[idx] = updated
   saveArray(CHALLENGES_KEY, all)
+  scheduleCloudSync()
 
   return {
     challenge: updated,
     completedNow: isNowCompleted && chal.status !== 'completado',
     pointsAwarded: isNowCompleted && chal.status !== 'completado' ? chal.rewardPoints : 0,
+    alreadyDoneToday: false,
   }
 }
 

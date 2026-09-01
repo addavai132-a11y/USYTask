@@ -108,20 +108,26 @@ export function ChallengesTab() {
   }
 
   const handleCheckIn = (challenge: FamilyChallenge) => {
-    const result = checkInFamilyChallenge(challenge.id)
-    if (result.completedNow) {
-      toast(`¡Reto "${challenge.title}" completado! +${result.pointsAwarded} pts`, '🎉')
-    } else {
-      toast(`Día añadido al reto (${(challenge.currentDays || 0) + 1}/${challenge.targetDays})`, '✨')
-    }
+    handleAdjustDays(challenge, 1)
   }
 
   const handleAdjustDays = (challenge: FamilyChallenge, delta: number) => {
+    const isDoneToday = challenge.lastCheckedDate === today || (Array.isArray(challenge.checkInDates) && challenge.checkInDates.includes(today))
+    if (delta > 0 && isDoneToday) {
+      toast('Este reto ya ha sido completado en el día de hoy', '⚠️')
+      return
+    }
+
     const result = adjustFamilyChallengeDays(challenge.id, delta)
+    if (result.alreadyDoneToday) {
+      toast('Este reto ya ha sido completado en el día de hoy', '⚠️')
+      return
+    }
+
     if (result.completedNow) {
       toast(`¡Reto "${challenge.title}" completado! +${result.pointsAwarded} pts`, '🎉')
     } else if (delta > 0) {
-      toast(`+1 día añadido (${(challenge.currentDays || 0) + 1}/${challenge.targetDays})`, '✨')
+      toast(`Progreso de hoy registrado (+1 día: ${(challenge.currentDays || 0) + 1}/${challenge.targetDays})`, '✨')
     } else {
       toast(`Progreso ajustado (${Math.max(0, (challenge.currentDays || 0) - 1)}/${challenge.targetDays})`, '↩️')
     }
@@ -209,6 +215,7 @@ export function ChallengesTab() {
         <div className="flex flex-col gap-3">
           {displayedChallenges.map((c) => {
             const isCompleted = c.status === 'completado'
+            const isDoneToday = c.lastCheckedDate === today || (Array.isArray(c.checkInDates) && c.checkInDates.includes(today))
             const assignedMembers = c.assignedMemberIds.map((id) => getMemberById(id)).filter(Boolean)
 
             return (
@@ -291,11 +298,17 @@ export function ChallengesTab() {
                         <button
                           type="button"
                           onClick={() => handleAdjustDays(c, 1)}
-                          className="flex items-center gap-1 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 text-xs font-bold transition-all shadow-sm active:scale-95"
-                          title="Añadir 1 día"
+                          disabled={isDoneToday}
+                          className={cn(
+                            'flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition-all shadow-sm',
+                            isDoneToday
+                              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 cursor-not-allowed opacity-90'
+                              : 'bg-emerald-600 hover:bg-emerald-700 text-white active:scale-95'
+                          )}
+                          title={isDoneToday ? 'Ya has completado este reto hoy' : 'Añadir 1 día'}
                         >
                           <CheckCircle2 className="size-3.5" />
-                          <span>+1 Día</span>
+                          <span>{isDoneToday ? '¡Hecho hoy!' : '+1 Día'}</span>
                         </button>
                       </div>
                     ) : (

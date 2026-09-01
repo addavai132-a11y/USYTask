@@ -269,8 +269,8 @@ interface AppState {
   addFamilyChallenge: (challenge: Omit<FamilyChallenge, 'id' | 'groupId'>) => void
   updateFamilyChallenge: (challenge: FamilyChallenge) => void
   deleteFamilyChallenge: (id: string) => void
-  checkInFamilyChallenge: (id: string) => { completedNow: boolean; pointsAwarded: number }
-  adjustFamilyChallengeDays: (id: string, delta: number) => { completedNow: boolean; pointsAwarded: number }
+  checkInFamilyChallenge: (id: string) => { completedNow: boolean; pointsAwarded: number; alreadyDoneToday?: boolean }
+  adjustFamilyChallengeDays: (id: string, delta: number) => { completedNow: boolean; pointsAwarded: number; alreadyDoneToday?: boolean }
   addFamilyReward: (reward: Omit<FamilyReward, 'id' | 'groupId'>) => void
   updateFamilyReward: (reward: FamilyReward) => void
   deleteFamilyReward: (id: string) => void
@@ -1489,8 +1489,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }
 
   const handleAdjustFamilyChallengeDays = (id: string, delta: number) => {
-    if (!activeGroup) return { completedNow: false, pointsAwarded: 0 }
+    if (!activeGroup) return { completedNow: false, pointsAwarded: 0, alreadyDoneToday: false }
     const res = adjustChallengeDaysStore(id, activeGroup.id, delta)
+    if (res.alreadyDoneToday) {
+      return { completedNow: false, pointsAwarded: 0, alreadyDoneToday: true }
+    }
     if (res.completedNow && res.pointsAwarded > 0) {
       if (res.challenge?.assignedMemberIds && res.challenge.assignedMemberIds.length > 0) {
         res.challenge.assignedMemberIds.forEach((mId) => {
@@ -1515,7 +1518,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
     refreshData()
     bump()
-    return { completedNow: res.completedNow, pointsAwarded: res.pointsAwarded }
+    return { completedNow: res.completedNow, pointsAwarded: res.pointsAwarded, alreadyDoneToday: false }
   }
 
   const handleCheckInFamilyChallenge = (id: string) => {
