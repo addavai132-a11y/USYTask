@@ -29,7 +29,7 @@ export function EventRow({
             {categoryLabels[event.category] || event.category}
           </span>
         </div>
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5">
+        <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground mt-0.5">
           {memberList.length > 0 ? (
             <span className="font-medium text-foreground">
               {memberList.map((m) => m.name).join(', ')}
@@ -42,6 +42,14 @@ export function EventRow({
               <span aria-hidden="true">·</span>
               <MapPin className="size-3" />
               <span>{event.location}</span>
+            </>
+          )}
+          {(event.doBeforeDate || event.doBeforeTime) && (
+            <>
+              <span aria-hidden="true">·</span>
+              <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.2 rounded-md">
+                Antes de: {event.doBeforeDate || 'Hoy'}{event.doBeforeTime ? ` · ${event.doBeforeTime}` : ''}
+              </span>
             </>
           )}
         </div>

@@ -64,6 +64,12 @@ export function TaskRow({
               {task.dueTime && <span className="text-foreground/90 font-bold">· {task.dueTime}</span>}
             </div>
           )}
+          {(task.doBeforeDate || task.doBeforeTime) && (
+            <div className="flex items-center gap-1 text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded-md" title="Hacer antes de">
+              <Clock className="size-2.5 shrink-0" />
+              <span>Antes de: {task.doBeforeDate ? task.doBeforeDate : 'Hoy'}{task.doBeforeTime ? ` · ${task.doBeforeTime}` : ''}</span>
+            </div>
+          )}
           {creator && (
             <div className="inline-flex items-center gap-1 text-[10px] text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-white/5 px-2 py-0.5 rounded-full" title={`Creado por ${creator.name}`}>
               <span className="text-slate-400">Creado por:</span>

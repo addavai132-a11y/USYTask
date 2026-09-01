@@ -32,6 +32,8 @@ interface DisplayTaskItem {
   type: 'task' | 'reminder' | 'habit'
   dueDate?: string
   dueTime?: string
+  doBeforeDate?: string
+  doBeforeTime?: string
   completed: boolean
   assignedToMemberId?: string
   createdBy?: string
@@ -95,6 +97,8 @@ export function TasksBoard() {
         type: isHabit ? 'habit' : 'task',
         dueDate: t.dueDate || today,
         dueTime: t.dueTime,
+        doBeforeDate: t.doBeforeDate,
+        doBeforeTime: t.doBeforeTime,
         completed: t.completed,
         assignedToMemberId: t.assignedToMemberId,
         createdBy: t.createdBy,
@@ -113,6 +117,8 @@ export function TasksBoard() {
         type: 'reminder',
         dueDate: r.dueDate || today,
         dueTime: r.time,
+        doBeforeDate: r.doBeforeDate,
+        doBeforeTime: r.doBeforeTime,
         completed: false,
         assignedToMemberId: r.assignedMemberIds?.[0] || r.memberIds?.[0],
         isUrgent: r.dueDate === today || r.daysLeft === 0,
@@ -400,6 +406,13 @@ export function TasksBoard() {
 
                     <div className="flex flex-wrap items-center gap-2 mt-1">
                       {formatDeadlineBadge(item.dueDate, item.dueTime)}
+
+                      {(item.doBeforeDate || item.doBeforeTime) && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 text-[10px] font-bold text-amber-700 dark:text-amber-400" title="Hacer antes de">
+                          <Clock className="size-3" />
+                          <span>Antes de: {item.doBeforeDate || 'Hoy'}{item.doBeforeTime ? ` · ${item.doBeforeTime}` : ''}</span>
+                        </span>
+                      )}
 
                       {item.points && (
                         <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 flex items-center gap-0.5">

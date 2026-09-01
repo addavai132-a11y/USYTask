@@ -28,11 +28,14 @@ import {
   ensureOwnerMember,
   addMember as addMemberStore,
   addTask as addTaskStore,
+  updateTask as updateTaskStore,
   toggleTask as toggleTaskStore,
   deleteTask as deleteTaskStore,
   addEvent as addEventStore,
+  updateEvent as updateEventStore,
   deleteEvent as deleteEventStore,
   addReminder as addReminderStore,
+  updateReminder as updateReminderStore,
   deleteReminder as deleteReminderStore,
   addActivity as addActivityStore,
   addNotification as addNotificationStore,
@@ -190,12 +193,15 @@ interface AppState {
   // Data mutations
   addTaskCategory: (name: string, memberIds: string[]) => void
   deleteTaskCategory: (categoryId: string) => void
-  addTask: (title: string, points: number, assignedToMemberId: string, section?: TaskSection, priority?: TaskPriority, dueDate?: string, dueTime?: string, assignedMemberIds?: string[]) => void
+  addTask: (title: string, points: number, assignedToMemberId: string, section?: TaskSection, priority?: TaskPriority, dueDate?: string, dueTime?: string, assignedMemberIds?: string[], doBeforeDate?: string, doBeforeTime?: string) => void
+  updateTask: (task: Task) => void
   toggleTask: (taskId: string) => { pointsAwarded: number; memberId: string | null }
   deleteTask: (taskId: string) => void
-  addEvent: (title: string, date: string, time: string | undefined, category: EventCategory, assignedMemberIds: string[], location?: string) => void
+  addEvent: (title: string, date: string, time: string | undefined, category: EventCategory, assignedMemberIds: string[], location?: string, doBeforeDate?: string, doBeforeTime?: string) => void
+  updateEvent: (event: CalendarEvent) => void
   deleteEvent: (eventId: string) => void
-  addReminder: (title: string, dueDate: string, assignedMemberIds?: string[], time?: string) => void
+  addReminder: (title: string, dueDate: string, assignedMemberIds?: string[], time?: string, doBeforeDate?: string, doBeforeTime?: string) => void
+  updateReminder: (reminder: Reminder) => void
   deleteReminder: (reminderId: string) => void
   addMember: (name: string, colorIdx: number) => void
   getMemberById: (memberId: string) => Member | null
@@ -674,7 +680,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     priority: TaskPriority = 'medium',
     dueDate?: string,
     dueTime?: string,
-    assignedMemberIds?: string[]
+    assignedMemberIds?: string[],
+    doBeforeDate?: string,
+    doBeforeTime?: string
   ) => {
     if (!activeGroup) return
     const uniqueId = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `task_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
@@ -698,6 +706,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       priority,
       dueDate: dueDate || undefined,
       dueTime: dueTime || undefined,
+      doBeforeDate: doBeforeDate || undefined,
+      doBeforeTime: doBeforeTime || undefined,
       createdBy: currentMember?.id || actingMember.id,
     }
     addTaskStore(task)
@@ -803,6 +813,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return result
   }
 
+  const handleUpdateTask = (task: Task) => {
+    if (!activeGroup) return
+    updateTaskStore(task)
+    refreshData()
+    bump()
+  }
+
   const handleDeleteTask = (taskId: string) => {
     if (!activeGroup) return
     deleteTaskStore(taskId, activeGroup.id)
@@ -810,7 +827,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     bump()
   }
 
-  const handleAddEvent = (title: string, date: string, time: string | undefined, category: EventCategory, assignedMemberIds: string[], location?: string) => {
+  const handleAddEvent = (
+    title: string,
+    date: string,
+    time: string | undefined,
+    category: EventCategory,
+    assignedMemberIds: string[],
+    location?: string,
+    doBeforeDate?: string,
+    doBeforeTime?: string
+  ) => {
     if (!activeGroup) return
     const uniqueId = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `event_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
     const event: CalendarEvent = {
@@ -818,6 +844,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       title,
       time: time || undefined,
       date: date || getTodayISO(),
+      doBeforeDate: doBeforeDate || undefined,
+      doBeforeTime: doBeforeTime || undefined,
       category,
       assignedMemberIds,
       assignedToMemberId: assignedMemberIds[0] || '',
@@ -890,6 +918,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     bump()
   }
 
+  const handleUpdateEvent = (event: CalendarEvent) => {
+    if (!activeGroup) return
+    updateEventStore(event)
+    refreshData()
+    bump()
+  }
+
   const handleDeleteEvent = (eventId: string) => {
     if (!activeGroup) return
     deleteEventStore(eventId, activeGroup.id)
@@ -897,7 +932,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     bump()
   }
 
-  const handleAddReminder = (title: string, dueDate: string, assignedMemberIds: string[] = [], time?: string) => {
+  const handleAddReminder = (
+    title: string,
+    dueDate: string,
+    assignedMemberIds: string[] = [],
+    time?: string,
+    doBeforeDate?: string,
+    doBeforeTime?: string
+  ) => {
     if (!activeGroup) return
     const uniqueId = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `rem_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
     const reminder: Reminder = {
@@ -905,6 +947,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       title,
       dueDate,
       time: time || undefined,
+      doBeforeDate: doBeforeDate || undefined,
+      doBeforeTime: doBeforeTime || undefined,
       daysLeft: 0, // will be computed on read
       groupId: activeGroup.id,
       assignedMemberIds,
@@ -969,6 +1013,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       console.warn('Activity/Notification creation warning:', e)
     }
 
+    refreshData()
+    bump()
+  }
+
+  const handleUpdateReminder = (reminder: Reminder) => {
+    if (!activeGroup) return
+    updateReminderStore(reminder)
     refreshData()
     bump()
   }
@@ -1766,11 +1817,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         deleteEventPoll: handleDeleteEventPoll,
 
         addTask: handleAddTask,
+        updateTask: handleUpdateTask,
         toggleTask: handleToggleTask,
         deleteTask: handleDeleteTask,
         addEvent: handleAddEvent,
+        updateEvent: handleUpdateEvent,
         deleteEvent: handleDeleteEvent,
         addReminder: handleAddReminder,
+        updateReminder: handleUpdateReminder,
         deleteReminder: handleDeleteReminder,
         addMember: handleAddMember,
         getMemberById: handleGetMemberById,

@@ -140,6 +140,15 @@ export function toggleTask(taskId: string, groupId: string): { pointsAwarded: nu
   return { pointsAwarded: 0, memberId: null }
 }
 
+export function updateTask(task: Task): void {
+  const all = getAllTasks()
+  const idx = all.findIndex((t) => t.id === task.id && t.groupId === task.groupId)
+  if (idx >= 0) {
+    all[idx] = task
+    saveArray(TASKS_KEY, all)
+  }
+}
+
 export function deleteTask(taskId: string, groupId: string): void {
   const all = getAllTasks()
   const task = all.find((t) => t.id === taskId && t.groupId === groupId)
@@ -165,6 +174,15 @@ export function addEvent(event: CalendarEvent): void {
   saveArray(EVENTS_KEY, all)
 }
 
+export function updateEvent(event: CalendarEvent): void {
+  const all = getAllEvents()
+  const idx = all.findIndex((e) => e.id === event.id && e.groupId === event.groupId)
+  if (idx >= 0) {
+    all[idx] = event
+    saveArray(EVENTS_KEY, all)
+  }
+}
+
 export function deleteEvent(eventId: string, groupId: string): void {
   const all = getAllEvents()
   saveArray(EVENTS_KEY, all.filter((e) => !(e.id === eventId && e.groupId === groupId)))
@@ -187,6 +205,15 @@ export function addReminder(reminder: Reminder): void {
   const all = getAllReminders()
   all.push(reminder)
   saveArray(REMINDERS_KEY, all)
+}
+
+export function updateReminder(reminder: Reminder): void {
+  const all = getAllReminders()
+  const idx = all.findIndex((r) => r.id === reminder.id && r.groupId === reminder.groupId)
+  if (idx >= 0) {
+    all[idx] = reminder
+    saveArray(REMINDERS_KEY, all)
+  }
 }
 
 export function deleteReminder(reminderId: string, groupId: string): void {

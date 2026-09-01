@@ -10,7 +10,8 @@ import { MemberAvatar } from '@/components/ui/member-avatar'
 import { PillTabs } from '@/components/ui/pill-tabs'
 import { useApp } from '@/components/app/app-context'
 import { getEventMemberIds, type Member, type EventCategory, EVENT_CATEGORIES, categoryLabels, type EventPoll } from '@/types'
-import { getTodayISO } from '@/lib/date-utils'
+import { getTodayISO, isPastDateTime } from '@/lib/date-utils'
+import { useToast } from '@/components/ui/toast'
 import { cn } from '@/lib/utils'
 
 export function EventsSection({
@@ -32,6 +33,7 @@ export function EventsSection({
     voteEventPoll,
     deleteEventPoll,
   } = useApp()
+  const { toast } = useToast()
 
   const [sectionTab, setSectionTab] = useState<'todos' | 'eventos' | 'encuestas'>('todos')
 
@@ -92,6 +94,12 @@ export function EventsSection({
     const validOptions = pollOptions.filter((o) => o.title.trim() && o.date && o.time)
     if (validOptions.length < 2) {
       setShowPollErrors(true)
+      return
+    }
+
+    const pastOption = validOptions.find((o) => isPastDateTime(o.date, o.time))
+    if (pastOption) {
+      toast('Las alternativas de la encuesta no pueden tener fechas u horas pasadas', '⚠️')
       return
     }
 
@@ -453,6 +461,7 @@ export function EventsSection({
                               <label className="text-[10px] font-bold text-muted-foreground">Fecha</label>
                               <input
                                 type="date"
+                                min={getTodayISO()}
                                 value={opt.date}
                                 onChange={(e) => {
                                   const val = e.target.value
