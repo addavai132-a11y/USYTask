@@ -472,15 +472,34 @@ export function voteEventPoll(
   const poll = all[idx]
   if (poll.status === 'resolved') return { poll }
 
-  // Update votes: member votes for selected option
-  const updatedOptions = poll.options.map((opt) => ({
-    ...opt,
-    votes: opt.votes.filter((id) => id !== memberId),
-  }))
+  let updatedOptions: EventPollOption[]
 
-  const targetOptIdx = updatedOptions.findIndex((opt) => opt.id === optionId)
-  if (targetOptIdx >= 0) {
-    updatedOptions[targetOptIdx].votes.push(memberId)
+  if (poll.allowMultipleVotes) {
+    // Voto múltiple: conmuta el voto en la opción seleccionada
+    updatedOptions = poll.options.map((opt) => {
+      if (opt.id === optionId) {
+        const hasVoted = opt.votes.includes(memberId)
+        return {
+          ...opt,
+          votes: hasVoted ? opt.votes.filter((id) => id !== memberId) : [...opt.votes, memberId],
+        }
+      }
+      return opt
+    })
+  } else {
+    // Voto único: se retira de todas y se añade a la seleccionada (o se desmarca si pulsa la misma)
+    const isAlreadySelected = poll.options.find((o) => o.id === optionId)?.votes.includes(memberId)
+    updatedOptions = poll.options.map((opt) => ({
+      ...opt,
+      votes: opt.votes.filter((id) => id !== memberId),
+    }))
+
+    if (!isAlreadySelected) {
+      const targetOptIdx = updatedOptions.findIndex((opt) => opt.id === optionId)
+      if (targetOptIdx >= 0) {
+        updatedOptions[targetOptIdx].votes.push(memberId)
+      }
+    }
   }
 
   // Check unique voted members
@@ -490,27 +509,35 @@ export function voteEventPoll(
   let resolvedEvent: CalendarEvent | undefined = undefined
   let newStatus: 'active' | 'resolved' = 'active'
   let resolvedEventId: string | undefined = undefined
+  let winningOptionId: string | undefined = undefined
+  let resolvedAt: string | undefined = undefined
 
   const totalParticipants = poll.participantMemberIds.length
   if (totalParticipants > 0 && votedMembersSet.size >= totalParticipants) {
     newStatus = 'resolved'
+    resolvedAt = new Date().toISOString()
     const sortedOptions = [...updatedOptions].sort((a, b) => b.votes.length - a.votes.length)
     const winningOption = sortedOptions[0]
 
     if (winningOption) {
-      resolvedEvent = {
-        id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `event_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-        title: winningOption.title || poll.title,
-        date: winningOption.date,
-        time: winningOption.time,
-        category: poll.category,
-        location: poll.location,
-        assignedMemberIds: poll.participantMemberIds,
-        assignedToMemberId: poll.participantMemberIds[0] || '',
-        groupId: poll.groupId,
+      winningOptionId = winningOption.id
+
+      // Si es encuesta para definir evento oficial, se crea en el calendario
+      if (poll.pollType !== 'general') {
+        resolvedEvent = {
+          id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `event_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+          title: winningOption.title || poll.title,
+          date: winningOption.date || new Date().toISOString().split('T')[0],
+          time: winningOption.time,
+          category: poll.category,
+          location: poll.location,
+          assignedMemberIds: poll.participantMemberIds,
+          assignedToMemberId: poll.participantMemberIds[0] || '',
+          groupId: poll.groupId,
+        }
+        addEvent(resolvedEvent)
+        resolvedEventId = resolvedEvent.id
       }
-      addEvent(resolvedEvent)
-      resolvedEventId = resolvedEvent.id
     }
   }
 
@@ -518,7 +545,55 @@ export function voteEventPoll(
     ...poll,
     options: updatedOptions,
     status: newStatus,
+    resolvedEventId: resolvedEventId || poll.resolvedEventId,
+    winningOptionId: winningOptionId || poll.winningOptionId,
+    resolvedAt: resolvedAt || poll.resolvedAt,
+  }
+
+  all[idx] = updatedPoll
+  saveArray(EVENT_POLLS_KEY, all)
+
+  return { poll: updatedPoll, resolvedEvent }
+}
+
+export function closeEventPoll(
+  pollId: string,
+  groupId: string
+): { poll: EventPoll | null; resolvedEvent?: CalendarEvent } {
+  const all = getAllEventPolls()
+  const idx = all.findIndex((p) => p.id === pollId && p.groupId === groupId)
+  if (idx < 0) return { poll: null }
+
+  const poll = all[idx]
+  if (poll.status === 'resolved') return { poll }
+
+  const sortedOptions = [...poll.options].sort((a, b) => b.votes.length - a.votes.length)
+  const winningOption = sortedOptions[0]
+  let resolvedEvent: CalendarEvent | undefined = undefined
+  let resolvedEventId: string | undefined = undefined
+
+  if (winningOption && poll.pollType !== 'general') {
+    resolvedEvent = {
+      id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `event_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+      title: winningOption.title || poll.title,
+      date: winningOption.date || new Date().toISOString().split('T')[0],
+      time: winningOption.time,
+      category: poll.category,
+      location: poll.location,
+      assignedMemberIds: poll.participantMemberIds,
+      assignedToMemberId: poll.participantMemberIds[0] || '',
+      groupId: poll.groupId,
+    }
+    addEvent(resolvedEvent)
+    resolvedEventId = resolvedEvent.id
+  }
+
+  const updatedPoll: EventPoll = {
+    ...poll,
+    status: 'resolved',
+    winningOptionId: winningOption?.id,
     resolvedEventId,
+    resolvedAt: new Date().toISOString(),
   }
 
   all[idx] = updatedPoll

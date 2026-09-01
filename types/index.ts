@@ -68,25 +68,33 @@ export interface CalendarEvent {
   groupId: string
 }
 
+export type PollType = 'event' | 'general'
+
 export interface EventPollOption {
   id: string
-  title: string // Nombre del plan / actividad
-  date: string // ISO date string YYYY-MM-DD
-  time: string // HH:mm
+  title: string // Nombre del plan / actividad / opción
+  date?: string // ISO date string YYYY-MM-DD
+  time?: string // HH:mm
   votes: string[] // memberIds who voted for this option
 }
 
 export interface EventPoll {
   id: string
   title: string
+  description?: string
+  pollType?: PollType // 'event' (para definir evento oficial) | 'general' (otro tipo / general)
   location?: string
   category: EventCategory
   options: EventPollOption[]
   participantMemberIds: string[]
+  allowMultipleVotes?: boolean
+  closeDate?: string
   groupId: string
   createdBy: string
   status: 'active' | 'resolved'
   resolvedEventId?: string
+  winningOptionId?: string
+  resolvedAt?: string
   createdAt: string
 }
 

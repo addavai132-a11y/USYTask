@@ -64,6 +64,7 @@ import {
   getEventPollsByGroup,
   addEventPoll as addEventPollStore,
   voteEventPoll as voteEventPollStore,
+  closeEventPoll as closeEventPollStore,
   deleteEventPoll as deleteEventPollStore,
   getDailyMenusByGroup,
   getWeeklyMenusByGroup,
@@ -222,8 +223,19 @@ interface AppState {
 
   // Event Polls
   eventPolls: EventPoll[]
-  addEventPoll: (title: string, category: EventCategory, options: { title: string; date: string; time: string }[], participantMemberIds: string[], location?: string) => void
+  addEventPoll: (
+    title: string,
+    category: EventCategory,
+    options: { title: string; date?: string; time?: string }[],
+    participantMemberIds: string[],
+    location?: string,
+    description?: string,
+    pollType?: 'event' | 'general',
+    allowMultipleVotes?: boolean,
+    closeDate?: string
+  ) => void
   voteEventPoll: (pollId: string, optionId: string) => void
+  closeEventPoll: (pollId: string) => void
   deleteEventPoll: (pollId: string) => void
 
   // Daily & Weekly Menus
@@ -1150,29 +1162,37 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const handleAddEventPoll = (
     title: string,
     category: EventCategory,
-    options: { title: string; date: string; time: string }[],
+    options: { title: string; date?: string; time?: string }[],
     participantMemberIds: string[],
-    location?: string
+    location?: string,
+    description?: string,
+    pollType: 'event' | 'general' = 'event',
+    allowMultipleVotes: boolean = false,
+    closeDate?: string
   ) => {
     if (!activeGroup) return
     const actingMember = getMembersByGroup(activeGroup.id).find((m) => m.name === userName) || getMembersByGroup(activeGroup.id)[0]
     const uniqueId = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `poll_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
     
     const pollOptions = options.map((opt, i) => ({
-      id: `opt_${i}_${Date.now()}`,
+      id: `opt_${i}_${Date.now()}_${Math.random().toString(36).slice(2, 5)}`,
       title: opt.title,
-      date: opt.date,
-      time: opt.time,
+      date: opt.date || undefined,
+      time: opt.time || undefined,
       votes: [],
     }))
 
     const poll: EventPoll = {
       id: uniqueId,
       title,
+      description: description || undefined,
+      pollType,
       category,
       options: pollOptions,
       participantMemberIds,
-      location,
+      allowMultipleVotes,
+      closeDate: closeDate || undefined,
+      location: location || undefined,
       groupId: activeGroup.id,
       createdBy: actingMember ? actingMember.id : 'system',
       status: 'active',
@@ -1186,7 +1206,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       groupId: activeGroup.id,
       type: 'event_created',
       title: `Encuesta: ${poll.title}`,
-      details: `${options.length} fechas propuestas`,
+      details: pollType === 'event' ? `${options.length} alternativas de evento` : `${options.length} opciones para votar`,
       memberId: actingMember ? actingMember.id : 'system',
       timestamp: new Date().toISOString(),
     })
@@ -1198,6 +1218,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const handleVoteEventPoll = (pollId: string, optionId: string) => {
     if (!activeGroup || !currentMember) return
     voteEventPollStore(pollId, optionId, currentMember.id, activeGroup.id)
+    refreshData()
+    bump()
+  }
+
+  const handleCloseEventPoll = (pollId: string) => {
+    if (!activeGroup) return
+    closeEventPollStore(pollId, activeGroup.id)
     refreshData()
     bump()
   }
@@ -1814,6 +1841,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         deleteTaskCategory: handleDeleteTaskCategory,
         addEventPoll: handleAddEventPoll,
         voteEventPoll: handleVoteEventPoll,
+        closeEventPoll: handleCloseEventPoll,
         deleteEventPoll: handleDeleteEventPoll,
 
         addTask: handleAddTask,
