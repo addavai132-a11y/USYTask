@@ -69,18 +69,21 @@ function escapeRegex(str: string): string {
  */
 function purgeStaleTokenFragments(
   response: NextResponse,
-  incomingCookies: Array<{ name: string; value: string }>
+  incomingCookies: Array<{ name: string; value: string }>,
+  refreshedCookies: Set<string>
 ): void {
   try {
     incomingCookies.forEach(({ name }) => {
       if (name.match(/^sb-.+-auth-token\.[1-9]\d*$/)) {
-        response.cookies.set(name, '', {
-          path: '/',
-          maxAge: 0,
-          expires: new Date(0),
-          sameSite: 'lax',
-          secure: process.env.NODE_ENV === 'production',
-        })
+        if (!refreshedCookies.has(name)) {
+          response.cookies.set(name, '', {
+            path: '/',
+            maxAge: 0,
+            expires: new Date(0),
+            sameSite: 'lax',
+            secure: process.env.NODE_ENV === 'production',
+          })
+        }
       }
     })
   } catch {
@@ -172,6 +175,8 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
 
     // 5. Build the Supabase client with a mutable response object for cookies.
     let supabaseResponse = NextResponse.next({ request })
+    let sessionRefreshed = false
+    let refreshedCookies = new Set<string>()
 
     const supabase = createServerClient(supabaseUrl, supabaseKey, {
       cookies: {
@@ -184,9 +189,11 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
         },
         setAll(cookiesToSet) {
           try {
+            sessionRefreshed = true
             // Mutate request cookie bag (Node.js runtime — mutable)
             cookiesToSet?.forEach?.(({ name, value }) => {
               if (!name || typeof value !== 'string') return
+              refreshedCookies.add(name)
               try {
                 request.cookies.set(name, value)
               } catch {
@@ -223,7 +230,9 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
       (userResponse as { data?: { user?: { id?: string } | null } } | null)?.data?.user ?? null
 
     // 7. Purge stale auth-token fragments to keep Cookie headers slim (anti-494).
-    purgeStaleTokenFragments(supabaseResponse, incomingCookies)
+    if (sessionRefreshed) {
+      purgeStaleTokenFragments(supabaseResponse, incomingCookies, refreshedCookies)
+    }
 
     // 8. Redirect authenticated users away from public-only pages.
     if (user && (pathname === '/' || pathname === '/login' || pathname === '/register')) {
@@ -251,7 +260,9 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
       }
 
       // Also purge stale fragments on the redirect response
-      purgeStaleTokenFragments(redirectResponse, incomingCookies)
+      if (sessionRefreshed) {
+        purgeStaleTokenFragments(redirectResponse, incomingCookies, refreshedCookies)
+      }
 
       return redirectResponse
     }

@@ -58,7 +58,7 @@ export async function getActiveUserSession(): Promise<UserProfile | null> {
     .from('profiles')
     .select('*')
     .eq('id', user.id)
-    .single()
+    .maybeSingle()
 
   const meta = user.user_metadata || {}
   const profile = profileData || {}

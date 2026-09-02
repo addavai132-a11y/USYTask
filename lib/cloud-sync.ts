@@ -302,7 +302,7 @@ export async function syncFromSupabaseCloud(): Promise<{ success: boolean; resto
 
     isolateLocalDataForUser(user.id)
 
-    const { data: profile } = await supabase.from('profiles').select('usytask_cloud_backup').eq('id', user.id).single()
+    const { data: profile } = await supabase.from('profiles').select('usytask_cloud_backup').eq('id', user.id).maybeSingle()
     const cloudBackup = profile?.usytask_cloud_backup as CloudBackupPayload | undefined
 
     if (cloudBackup && cloudBackup.groups && cloudBackup.groups.length > 0) {
@@ -330,7 +330,7 @@ export async function getUserFamilyStatus(): Promise<{ hasFamily: boolean; group
     } = await supabase.auth.getUser()
 
     if (user) {
-      const { data: profile } = await supabase.from('profiles').select('usytask_cloud_backup').eq('id', user.id).single()
+      const { data: profile } = await supabase.from('profiles').select('usytask_cloud_backup').eq('id', user.id).maybeSingle()
       const cloudBackup = profile?.usytask_cloud_backup as CloudBackupPayload | undefined
       if (cloudBackup && cloudBackup.groups && cloudBackup.groups.length > 0) {
         return { hasFamily: true, groupsCount: cloudBackup.groups.length }

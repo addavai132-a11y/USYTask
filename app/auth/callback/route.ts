@@ -79,15 +79,18 @@ export async function GET(request: Request) {
         const [rawName] = pair.split('=')
         const cookieName = rawName?.trim()
         if (!cookieName) return
-        // Purgar fragmentos extra de auth-token (sufijo .1 o superior)
+        // Purgar fragmentos extra de auth-token (sufijo .1 o superior) solo si no acaban de ser emitidos
         if (cookieName.match(/^sb-.+-auth-token\.[1-9]\d*$/)) {
-          res.cookies.set(cookieName, '', {
-            path: '/',
-            maxAge: 0,
-            expires: new Date(0),
-            sameSite: 'lax',
-            secure: process.env.NODE_ENV === 'production',
-          })
+          const isBeingSet = pendingCookies.some(pc => pc.name === cookieName)
+          if (!isBeingSet) {
+            res.cookies.set(cookieName, '', {
+              path: '/',
+              maxAge: 0,
+              expires: new Date(0),
+              sameSite: 'lax',
+              secure: process.env.NODE_ENV === 'production',
+            })
+          }
         }
       })
     } catch {
@@ -148,7 +151,7 @@ export async function GET(request: Request) {
           .from('profiles')
           .select('*')
           .eq('id', user.id)
-          .single()
+          .maybeSingle()
 
         const metadata = user.user_metadata || {}
         const profileData = profile || {}

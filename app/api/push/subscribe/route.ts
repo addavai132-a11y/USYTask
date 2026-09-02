@@ -20,7 +20,7 @@ export async function GET() {
       .eq('user_id', user.id)
 
     const isSubscribed = (count || 0) > 0
-    const { data: profile } = await supabase.from('profiles').select('notifications_enabled').eq('id', user.id).single()
+    const { data: profile } = await supabase.from('profiles').select('notifications_enabled').eq('id', user.id).maybeSingle()
     const notificationsEnabled = profile?.notifications_enabled !== false && isSubscribed
 
     return NextResponse.json({
