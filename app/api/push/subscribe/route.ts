@@ -20,7 +20,8 @@ export async function GET() {
       .eq('user_id', user.id)
 
     const isSubscribed = (count || 0) > 0
-    const notificationsEnabled = user.user_metadata?.notifications_enabled !== false && isSubscribed
+    const { data: profile } = await supabase.from('profiles').select('notifications_enabled').eq('id', user.id).single()
+    const notificationsEnabled = profile?.notifications_enabled !== false && isSubscribed
 
     return NextResponse.json({
       isSubscribed,
@@ -114,12 +115,10 @@ export async function POST(req: Request) {
         }
       }
 
-      // 4. Actualizar notifications_enabled en user metadata
-      await supabase.auth.updateUser({
-        data: {
-          notifications_enabled: true,
-        },
-      }).catch(() => ({}))
+      // 4. Actualizar notifications_enabled en la tabla profiles
+      await supabase.from('profiles').update({
+        notifications_enabled: true,
+      }).eq('id', user.id).catch(() => ({}))
 
       return NextResponse.json({
         success: true,
@@ -179,12 +178,10 @@ export async function DELETE(req: Request) {
       )
     }
 
-    // Actualizar notifications_enabled a false en user metadata
-    await supabase.auth.updateUser({
-      data: {
-        notifications_enabled: false,
-      },
-    })
+    // Actualizar notifications_enabled a false en la tabla profiles
+    await supabase.from('profiles').update({
+      notifications_enabled: false,
+    }).eq('id', user.id)
 
     return NextResponse.json({
       success: true,

@@ -302,7 +302,8 @@ export async function syncFromSupabaseCloud(): Promise<{ success: boolean; resto
 
     isolateLocalDataForUser(user.id)
 
-    const cloudBackup = user.user_metadata?.usytask_cloud_backup as CloudBackupPayload | undefined
+    const { data: profile } = await supabase.from('profiles').select('usytask_cloud_backup').eq('id', user.id).single()
+    const cloudBackup = profile?.usytask_cloud_backup as CloudBackupPayload | undefined
 
     if (cloudBackup && cloudBackup.groups && cloudBackup.groups.length > 0) {
       // Hydrate local storage with the cloud backup strictly belonging to THIS user
@@ -329,7 +330,8 @@ export async function getUserFamilyStatus(): Promise<{ hasFamily: boolean; group
     } = await supabase.auth.getUser()
 
     if (user) {
-      const cloudBackup = user.user_metadata?.usytask_cloud_backup as CloudBackupPayload | undefined
+      const { data: profile } = await supabase.from('profiles').select('usytask_cloud_backup').eq('id', user.id).single()
+      const cloudBackup = profile?.usytask_cloud_backup as CloudBackupPayload | undefined
       if (cloudBackup && cloudBackup.groups && cloudBackup.groups.length > 0) {
         return { hasFamily: true, groupsCount: cloudBackup.groups.length }
       }
@@ -380,11 +382,9 @@ export async function syncToSupabaseCloud(): Promise<boolean> {
 
     const payload = buildCloudPayload(user.id)
 
-    const { error } = await supabase.auth.updateUser({
-      data: {
-        usytask_cloud_backup: payload,
-      },
-    })
+    const { error } = await supabase.from('profiles').update({
+      usytask_cloud_backup: payload as any
+    }).eq('id', user.id)
 
     if (error) {
       console.warn('Warning updating cloud backup in Supabase:', error.message)

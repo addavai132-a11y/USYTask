@@ -143,15 +143,24 @@ export async function GET(request: Request) {
 
       if (!error && data?.user) {
         const user = data.user
+        
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single()
+
         const metadata = user.user_metadata || {}
+        const profileData = profile || {}
 
-        const hasUsername = Boolean(metadata.username && String(metadata.username).trim().length > 0)
-        const hasDateOfBirth = Boolean(
-          metadata.date_of_birth || metadata.dateOfBirth || metadata.age
-        )
-        const isProfileCompleted = hasUsername && hasDateOfBirth
+        const username = profileData.username || metadata.username || ''
+        const dateOfBirth = profileData.date_of_birth || metadata.date_of_birth || metadata.dateOfBirth || metadata.age || null
 
-        const cloudBackup = metadata.usytask_cloud_backup
+        const hasUsername = Boolean(username && String(username).trim().length > 0)
+        const hasDateOfBirth = Boolean(dateOfBirth)
+        const isProfileCompleted = profileData.profile_completed || (hasUsername && hasDateOfBirth)
+
+        const cloudBackup = profileData.usytask_cloud_backup || metadata.usytask_cloud_backup
         const hasCloudGroups = Boolean(
           cloudBackup && Array.isArray(cloudBackup.groups) && cloudBackup.groups.length > 0
         )

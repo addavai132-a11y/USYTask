@@ -54,18 +54,27 @@ export async function getActiveUserSession(): Promise<UserProfile | null> {
       return getStoredSession()
     }
 
+  const { data: profileData } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', user.id)
+    .single()
+
   const meta = user.user_metadata || {}
-  const dateOfBirth = meta.date_of_birth || meta.dateOfBirth || null
-  const hasUsername = Boolean(meta.username && String(meta.username).trim().length > 0)
+  const profile = profileData || {}
+
+  const dateOfBirth = profile.date_of_birth || meta.date_of_birth || meta.dateOfBirth || null
+  const username = profile.username || meta.username || ''
+  const hasUsername = Boolean(username && String(username).trim().length > 0)
   const hasDateOfBirth = Boolean(dateOfBirth || meta.age)
-  const profileCompleted = Boolean(meta.profile_completed) || (hasUsername && hasDateOfBirth)
+  const profileCompleted = profile.profile_completed || Boolean(meta.profile_completed) || (hasUsername && hasDateOfBirth)
 
   const computedAge = calculateAge(dateOfBirth) ?? (meta.age ? Number(meta.age) : null)
 
-  const profile: UserProfile = {
+  const userProfile: UserProfile = {
     id: user.id,
     fullName: meta.full_name || meta.name || user.email?.split('@')[0] || 'Usuario',
-    username: meta.username || '',
+    username: username,
     dateOfBirth,
     age: computedAge,
     email: user.email || '',
@@ -75,8 +84,8 @@ export async function getActiveUserSession(): Promise<UserProfile | null> {
     createdAt: user.created_at || new Date().toISOString(),
   }
 
-    setStoredSession(profile)
-    return profile
+    setStoredSession(userProfile)
+    return userProfile
   } catch (err) {
     console.error('getActiveUserSession failed:', err)
     return getStoredSession()
@@ -92,34 +101,45 @@ export async function updateUserProfile(
 ): Promise<{ success: boolean; profile: UserProfile | null; error?: string }> {
   try {
     const supabase = createClient()
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
+    const { data: { user } } = await supabase.auth.getUser()
 
+    if (!user) {
+      return { success: false, profile: null, error: 'No user session found' }
+    }
+
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .upsert({
+        id: user.id,
+        username,
+        date_of_birth: dateOfBirth,
+        profile_completed: true
+      })
+
+    // Also update user_metadata for backward compatibility temporarily,
+    // but ONLY minimal fields, not the huge cloud backup.
     const { data, error } = await supabase.auth.updateUser({
       data: {
         username,
         date_of_birth: dateOfBirth,
-        dateOfBirth: dateOfBirth,
         profile_completed: true,
       },
     })
 
-    if (error) {
-      console.error('Error updating user profile in Supabase:', error)
-      return { success: false, profile: null, error: error.message }
+    if (error || profileError) {
+      console.error('Error updating user profile:', error || profileError)
+      return { success: false, profile: null, error: (error || profileError)?.message }
     }
 
-    const updatedUser = data.user || user
+    const updatedUser = data?.user || user
     const meta = updatedUser?.user_metadata || {}
-    const dob = meta.date_of_birth || meta.dateOfBirth || dateOfBirth
-    const computedAge = calculateAge(dob)
+    const computedAge = calculateAge(dateOfBirth)
 
     const profile: UserProfile = {
       id: updatedUser?.id || 'usr_local',
       fullName: meta.full_name || meta.name || updatedUser?.email?.split('@')[0] || 'Usuario',
-      username: meta.username || username,
-      dateOfBirth: dob,
+      username: username,
+      dateOfBirth: dateOfBirth,
       age: computedAge,
       email: updatedUser?.email || '',
       avatarUrl: meta.avatar_url || meta.picture || '',
