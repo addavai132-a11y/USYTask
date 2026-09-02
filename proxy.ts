@@ -1,5 +1,5 @@
 /**
- * proxy.ts — Next.js 16 (renamed from middleware.ts)
+ * proxy.ts — Next.js 16 (replaces middleware.ts)
  *
  * Runs in the Node.js runtime (default in Next.js 16).
  * Handles session-cookie refresh via @supabase/ssr so that auth tokens
@@ -12,14 +12,19 @@
  *   to avoid latency and cold-start failures on Vercel edge nodes.
  * - Redirects (logged-in user hits /login, /) forward auth cookies so the
  *   destination page immediately receives the refreshed session.
+ *
+ * Anti-494 cookie de-bloat:
+ * - @supabase/ssr fragments the JWT across multiple cookies
+ *   (sb-*-auth-token.0, .1, .2…). Setting a year-long maxAge on every
+ *   fragment causes Set-Cookie headers to balloon past Vercel's 8 KB limit.
+ * - Fix: use minimal cookie options (no custom maxAge/expires) and actively
+ *   purge stale fragments (.1+) from every response.
  */
 
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 // ── Constants ──────────────────────────────────────────────────────────────
-/** 1 year – keeps sessions persistent across browser restarts */
-const SESSION_MAX_AGE = 31_536_000
 
 /** Abort Supabase getUser() after this many ms to avoid Vercel function timeouts */
 const GET_USER_TIMEOUT_MS = 4_000
@@ -34,14 +39,52 @@ function isSafeInternalPath(path: string): boolean {
   return path.startsWith('/') && !path.startsWith('//') && !path.includes('\\')
 }
 
-function persistentCookieOptions(options?: Record<string, unknown>) {
-  const { expires: _expires, ...rest } = options || {}
+/**
+ * Minimal cookie options — deliberately omits maxAge/expires overrides.
+ *
+ * Supabase manages token lifetimes internally (access token ~1h, refresh
+ * token session-length). Overriding with 1 year caused cookies to accumulate
+ * across fragments and bloat request headers beyond Vercel's 8 KB limit.
+ */
+function minimalCookieOptions(options?: Record<string, unknown>) {
+  const { maxAge: _maxAge, expires: _expires, ...rest } = (options || {}) as Record<string, unknown>
   return {
     ...rest,
-    maxAge: SESSION_MAX_AGE,
     path: '/',
     sameSite: 'lax' as const,
     secure: process.env.NODE_ENV === 'production',
+  }
+}
+
+function escapeRegex(str: string): string {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+/**
+ * Purge stale auth-token fragments (.1, .2, .3…) from a response.
+ *
+ * When the JWT fits in a single cookie (sb-*-auth-token or .0), any
+ * leftover higher-numbered fragments from previous sessions inflate the
+ * Cookie header unnecessarily. Expire them so they are cleared client-side.
+ */
+function purgeStaleTokenFragments(
+  response: NextResponse,
+  incomingCookies: Array<{ name: string; value: string }>
+): void {
+  try {
+    incomingCookies.forEach(({ name }) => {
+      if (name.match(/^sb-.+-auth-token\.[1-9]\d*$/)) {
+        response.cookies.set(name, '', {
+          path: '/',
+          maxAge: 0,
+          expires: new Date(0),
+          sameSite: 'lax',
+          secure: process.env.NODE_ENV === 'production',
+        })
+      }
+    })
+  } catch {
+    // Non-fatal — purge is best-effort
   }
 }
 
@@ -131,12 +174,6 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     let supabaseResponse = NextResponse.next({ request })
 
     const supabase = createServerClient(supabaseUrl, supabaseKey, {
-      cookieOptions: {
-        maxAge: SESSION_MAX_AGE,
-        path: '/',
-        sameSite: 'lax',
-        secure: process.env.NODE_ENV === 'production',
-      },
       cookies: {
         getAll() {
           try {
@@ -160,13 +197,14 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
             // Build a fresh response with updated cookies
             supabaseResponse = NextResponse.next({ request })
 
+            // Apply minimal options — no year-long maxAge to avoid 494 bloat
             cookiesToSet?.forEach?.(({ name, value, options }) => {
               if (!name || typeof value !== 'string') return
               try {
                 supabaseResponse.cookies.set(
                   name,
                   value,
-                  persistentCookieOptions(options as Record<string, unknown>)
+                  minimalCookieOptions(options as Record<string, unknown>)
                 )
               } catch (err) {
                 console.error('[Proxy] Cookie set error:', name, err)
@@ -184,7 +222,10 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     const user =
       (userResponse as { data?: { user?: { id?: string } | null } } | null)?.data?.user ?? null
 
-    // 7. Redirect authenticated users away from public-only pages.
+    // 7. Purge stale auth-token fragments to keep Cookie headers slim (anti-494).
+    purgeStaleTokenFragments(supabaseResponse, incomingCookies)
+
+    // 8. Redirect authenticated users away from public-only pages.
     if (user && (pathname === '/' || pathname === '/login' || pathname === '/register')) {
       const nextParam = request.nextUrl?.searchParams?.get?.('next') ?? '/app'
       const nextTarget = isSafeInternalPath(nextParam) ? nextParam : '/app'
@@ -199,7 +240,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
             redirectResponse.cookies.set(
               cookie.name,
               cookie.value,
-              persistentCookieOptions()
+              minimalCookieOptions()
             )
           } catch {
             // Non-fatal
@@ -208,6 +249,9 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
       } catch (err) {
         console.error('[Proxy] Failed to copy cookies onto redirect:', err)
       }
+
+      // Also purge stale fragments on the redirect response
+      purgeStaleTokenFragments(redirectResponse, incomingCookies)
 
       return redirectResponse
     }
