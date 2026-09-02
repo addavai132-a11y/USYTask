@@ -4,14 +4,21 @@ import { NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
 
-const SESSION_MAX_AGE = 31536000
-
-function persistentCookieOptions(options?: Record<string, unknown>) {
-  const rest = { ...(options || {}) }
-  delete rest.expires
+/**
+ * Opciones mínimas de cookie para el callback de OAuth.
+ *
+ * Sin maxAge/expires personalizados: Supabase ya gestiona la duración del
+ * token internamente. Forzar 1 año hacía que cada Set-Cookie pesara más y
+ * que los fragmentos sb-*-auth-token acumularan datos en cabeceras → 494.
+ *
+ * sameSite:'lax' + path:'/' son los mínimos requeridos para iOS PWA.
+ */
+function minimalCookieOptions(options?: Record<string, unknown>) {
+  // Extraemos solo lo que Supabase pasa (httpOnly, sameSite, secure…)
+  // y sobreescribimos con valores seguros y livianos.
+  const { maxAge: _maxAge, expires: _expires, ...rest } = (options || {}) as Record<string, unknown>
   return {
     ...rest,
-    maxAge: SESSION_MAX_AGE,
     path: '/',
     sameSite: 'lax' as const,
     secure: process.env.NODE_ENV === 'production',
@@ -34,22 +41,59 @@ export async function GET(request: Request) {
     ? `${forwardedProto}://${forwardedHost}`
     : requestUrl.origin
 
+  // Cookies pendientes para el redirect (solo las que Supabase emite)
   const pendingCookies: Array<{
     name: string
     value: string
     options?: Record<string, unknown>
   }> = []
 
+  /**
+   * Construye la response de redirect y adjunta las cookies de sesión.
+   * También purga cualquier fragmento extra (sb-*-auth-token.1, .2…)
+   * para mantener las cabeceras por debajo del límite de Vercel.
+   */
   const redirectWithCookies = (path: string) => {
     const res = NextResponse.redirect(new URL(path, baseUrl))
+
+    // 1. Escribir las cookies nuevas de sesión
+    const writtenBases = new Set<string>()
     pendingCookies.forEach(({ name, value, options }) => {
       if (!name || typeof value !== 'string') return
       try {
-        res.cookies.set(name, value, persistentCookieOptions(options))
+        res.cookies.set(name, value, minimalCookieOptions(options))
+        // Registrar la base del cookie (sin sufijo numérico) para luego purgar extras
+        const base = name.replace(/\.\d+$/, '')
+        writtenBases.add(base)
       } catch (err) {
         console.error('[auth/callback] Failed setting cookie on redirect', name, err)
       }
     })
+
+    // 2. Purgar fragmentos obsoletos de peticiones anteriores
+    //    (sb-*-auth-token.1, .2, .3…) que ya no son necesarios.
+    try {
+      const incoming = new URL(request.url)
+      const cookieHeader = request.headers.get('cookie') || ''
+      cookieHeader.split(';').forEach((pair) => {
+        const [rawName] = pair.split('=')
+        const cookieName = rawName?.trim()
+        if (!cookieName) return
+        // Purgar fragmentos extra de auth-token (sufijo .1 o superior)
+        if (cookieName.match(/^sb-.+-auth-token\.[1-9]\d*$/)) {
+          res.cookies.set(cookieName, '', {
+            path: '/',
+            maxAge: 0,
+            expires: new Date(0),
+            sameSite: 'lax',
+            secure: process.env.NODE_ENV === 'production',
+          })
+        }
+      })
+    } catch {
+      // Ignorar errores de purga — no afectan al flujo de auth
+    }
+
     return res
   }
 
@@ -69,12 +113,6 @@ export async function GET(request: Request) {
       }
 
       const supabase = createServerClient(supabaseUrl, supabaseKey, {
-        cookieOptions: {
-          maxAge: SESSION_MAX_AGE,
-          path: '/',
-          sameSite: 'lax',
-          secure: process.env.NODE_ENV === 'production',
-        },
         cookies: {
           getAll() {
             try {
@@ -92,7 +130,7 @@ export async function GET(request: Request) {
                 options: options as Record<string, unknown>,
               })
               try {
-                cookieStore.set(name, value, persistentCookieOptions(options as Record<string, unknown>))
+                cookieStore.set(name, value, minimalCookieOptions(options as Record<string, unknown>))
               } catch {
                 // Cookie mutations can fail depending on Next response type
               }
