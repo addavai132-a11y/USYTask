@@ -1,7 +1,7 @@
 // USYTask — Data store: CRUD for tasks, events, reminders, members (per group)
 // All data is scoped by groupId and persisted in localStorage.
 
-import type { Task, CalendarEvent, Reminder, Member, Activity, TaskCategory, EventPoll, EventPollOption, DailyMenu, WeeklyMenu, Income, Expense, BillSubscription, Budget, PiggyBankConfig, AppNotification } from '@/types'
+import type { Task, CalendarEvent, Reminder, Member, Activity, TaskCategory, EventPoll, EventPollOption, DailyMenu, WeeklyMenu, Income, Expense, BillSubscription, Budget, PiggyBankConfig, AppNotification, ShoppingReceipt, ShoppingReceiptItem } from '@/types'
 import { daysUntil } from './date-utils'
 import { scheduleCloudSync } from './cloud-sync'
 
@@ -392,6 +392,87 @@ export function toggleShoppingItem(itemId: string, groupId: string): void {
 export function deleteShoppingItem(itemId: string, groupId: string): void {
   const all = getAllShoppingItems()
   saveArray(SHOPPING_ITEMS_KEY, all.filter((i) => !(i.id === itemId && i.groupId === groupId)))
+}
+
+// ---------- Shopping Receipts / Historial de Tickets ----------
+
+const SHOPPING_RECEIPTS_KEY = 'usytask_shopping_receipts'
+
+export function getAllShoppingReceipts(): ShoppingReceipt[] {
+  return loadArray<ShoppingReceipt>(SHOPPING_RECEIPTS_KEY)
+}
+
+export function getShoppingReceiptsByGroup(groupId: string): ShoppingReceipt[] {
+  return getAllShoppingReceipts()
+    .filter((r) => r.groupId === groupId)
+    .sort((a, b) => new Date(b.closedAt).getTime() - new Date(a.closedAt).getTime())
+}
+
+export function deleteShoppingReceipt(receiptId: string, groupId: string): void {
+  const all = getAllShoppingReceipts()
+  saveArray(SHOPPING_RECEIPTS_KEY, all.filter((r) => !(r.id === receiptId && r.groupId === groupId)))
+}
+
+/**
+ * Cierra la lista de la compra:
+ * 1. Genera un registro histórico tipo "ticket de la compra" con todos los productos de la lista (calculando el total gastado).
+ * 2. Desmarca todos los productos para que la lista quede vacía/limpia y lista para reutilizarse en futuras compras sin eliminarla.
+ */
+export function closeShoppingListAndCreateReceipt(listId: string, groupId: string): ShoppingReceipt | null {
+  const lists = getAllShoppingLists()
+  const list = lists.find((l) => l.id === listId && l.groupId === groupId)
+  if (!list) return null
+
+  const allItems = getAllShoppingItems()
+  const listItems = allItems.filter((i) => i.listId === listId && i.groupId === groupId)
+  if (listItems.length === 0) return null
+
+  // Calcular precio total del ticket
+  let totalPrice = 0
+  let hasPrices = false
+  const receiptItems: ShoppingReceiptItem[] = listItems.map((it) => {
+    const itemTotal = typeof it.price === 'number' ? it.price : (parseFloat(String(it.price)) || undefined)
+    if (itemTotal && itemTotal > 0) {
+      totalPrice += itemTotal
+      hasPrices = true
+    }
+    return {
+      id: it.id,
+      name: it.name,
+      quantity: it.quantity,
+      price: itemTotal,
+      unitPrice: it.unitPrice,
+      aisle: it.aisle,
+      supermarket: it.supermarket,
+    }
+  })
+
+  const receipt: ShoppingReceipt = {
+    id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `receipt_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+    groupId,
+    listId: list.id,
+    listName: list.name,
+    closedAt: new Date().toISOString(),
+    totalItems: listItems.length,
+    totalPrice: hasPrices ? Math.round(totalPrice * 100) / 100 : undefined,
+    items: receiptItems,
+  }
+
+  // Guardar ticket en historial
+  const receipts = getAllShoppingReceipts()
+  receipts.push(receipt)
+  saveArray(SHOPPING_RECEIPTS_KEY, receipts)
+
+  // En la lista activa, desmarcar todos los productos (completed = false) para que quede reutilizable
+  for (let i = 0; i < allItems.length; i++) {
+    if (allItems[i].listId === listId && allItems[i].groupId === groupId) {
+      allItems[i].completed = false
+    }
+  }
+  saveArray(SHOPPING_ITEMS_KEY, allItems)
+
+  scheduleCloudSync()
+  return receipt
 }
 
 // ---------- Task Categories ----------

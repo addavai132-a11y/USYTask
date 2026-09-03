@@ -17,13 +17,13 @@ import { cn } from '@/lib/utils'
 
 export function BudgetsSection() {
   const { toast } = useToast()
-  const { budgets, expenses, saveBudget, deleteBudget, confirmDelete } = useApp()
+  const { budgets, expenses, selectedMonthISO, saveBudget, deleteBudget, confirmDelete } = useApp()
 
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState<ExpenseCategory>('alimentación')
   const [monthlyLimit, setMonthlyLimit] = useState('')
 
-  const currentMonthISO = new Date().toISOString().slice(0, 7)
+  const currentMonthISO = selectedMonthISO || new Date().toISOString().slice(0, 7)
 
   // Calculate spent per category
   const categorySpentMap: Record<string, number> = {}
@@ -160,6 +160,45 @@ export function BudgetsSection() {
                       </span>
                     )}
                   </div>
+
+                  {/* Detalle de notas/gastos para la categoría (ej. notas en Otros) */}
+                  {b.category === 'otros' && (
+                    (() => {
+                      const otrosExpenses = expenses.filter(
+                        (e) => e.category === 'otros' && (!e.date || e.date.startsWith(currentMonthISO))
+                      )
+                      if (otrosExpenses.length === 0) return null
+                      return (
+                        <div className="mt-2 pt-2 border-t border-slate-100 dark:border-white/5 space-y-1">
+                          <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
+                            Detalle ({otrosExpenses.length} {otrosExpenses.length === 1 ? 'gasto' : 'gastos'}):
+                          </span>
+                          <div className="max-h-24 overflow-y-auto space-y-1 pr-1">
+                            {otrosExpenses.map((exp) => (
+                              <div
+                                key={exp.id}
+                                className="flex items-center justify-between text-[11px] p-1 px-1.5 rounded-lg bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/5"
+                              >
+                                <div className="min-w-0 pr-2">
+                                  <span className="font-semibold text-slate-800 dark:text-slate-200 truncate block">
+                                    {exp.title}
+                                  </span>
+                                  {exp.customCategory && (
+                                    <span className="text-[10px] text-emerald-600 dark:text-purple-400 italic block truncate">
+                                      Nota: {exp.customCategory}
+                                    </span>
+                                  )}
+                                </div>
+                                <span className="font-bold text-slate-900 dark:text-white shrink-0 tabular-nums">
+                                  {formatCurrency(exp.amount)}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )
+                    })()
+                  )}
                 </div>
               </Card>
             )

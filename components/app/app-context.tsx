@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useEffect, useCallback } from 'rea
 import { ConfirmDeleteModal } from '@/components/ui/confirm-delete-modal'
 import { UsyTaskLogo } from '@/components/ui/usytask-logo'
 import { useToast } from '@/components/ui/toast'
-import type { Group, Task, CalendarEvent, Reminder, Member, GroupType, EventCategory, TaskSection, TaskPriority, Activity, AppNotification, TaskCategory, EventPoll, DailyMenu, WeeklyMenu, Income, Expense, BillSubscription, Budget } from '@/types'
+import type { Group, Task, CalendarEvent, Reminder, Member, GroupType, EventCategory, TaskSection, TaskPriority, Activity, AppNotification, TaskCategory, EventPoll, DailyMenu, WeeklyMenu, Income, Expense, BillSubscription, Budget, ShoppingReceipt } from '@/types'
 import { MEMBER_COLORS } from '@/types'
 
 export interface ConfirmDeleteOptions {
@@ -59,6 +59,9 @@ import {
   addShoppingItem as addShoppingItemStore,
   toggleShoppingItem as toggleShoppingItemStore,
   deleteShoppingItem as deleteShoppingItemStore,
+  getShoppingReceiptsByGroup,
+  deleteShoppingReceipt as deleteShoppingReceiptStore,
+  closeShoppingListAndCreateReceipt as closeShoppingListAndCreateReceiptStore,
   getTaskCategoriesByGroup,
   addTaskCategory as addTaskCategoryStore,
   deleteTaskCategory as deleteTaskCategoryStore,
@@ -188,6 +191,7 @@ interface AppState {
   // Shopping
   shoppingLists: ShoppingList[]
   shoppingItems: ShoppingItem[]
+  shoppingReceipts: ShoppingReceipt[]
 
   // Custom Task Categories
   taskCategories: TaskCategory[]
@@ -221,6 +225,8 @@ interface AppState {
   ) => void
   toggleShoppingItem: (itemId: string) => void
   deleteShoppingItem: (itemId: string) => void
+  closeShoppingList: (listId: string) => ShoppingReceipt | null
+  deleteShoppingReceipt: (receiptId: string) => void
 
   // Event Polls
   eventPolls: EventPoll[]
@@ -392,6 +398,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [archivedReminders, setArchivedReminders] = useState<Reminder[]>([])
   const [shoppingLists, setShoppingLists] = useState<ShoppingList[]>([])
   const [shoppingItems, setShoppingItems] = useState<ShoppingItem[]>([])
+  const [shoppingReceipts, setShoppingReceipts] = useState<ShoppingReceipt[]>([])
   const [taskCategories, setTaskCategories] = useState<TaskCategory[]>([])
   const [eventPolls, setEventPolls] = useState<EventPoll[]>([])
   const [dailyMenus, setDailyMenus] = useState<DailyMenu[]>([])
@@ -425,6 +432,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setActivities(getActivitiesByGroup(active.id))
       setShoppingLists(getShoppingListsByGroup(active.id))
       setShoppingItems(getShoppingItemsByGroup(active.id))
+      setShoppingReceipts(getShoppingReceiptsByGroup(active.id))
       setTaskCategories(getTaskCategoriesByGroup(active.id))
       setEventPolls(getEventPollsByGroup(active.id))
       setDailyMenus(getDailyMenusByGroup(active.id))
@@ -553,6 +561,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setNotifications([])
       setShoppingLists([])
       setShoppingItems([])
+      setShoppingReceipts([])
       setTaskCategories([])
       setEventPolls([])
       setDailyMenus([])
@@ -1082,25 +1091,49 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }
 
   const dismissNotification = (id: string) => {
+    // 1. Inmediata actualización visual optimista
+    setNotifications((prev) => prev.filter((n) => n.id !== id))
+    // 2. Persistencia en localStorage
     deleteNotificationStore(id)
-    refreshData()
+    // 3. Sincronización en la nube
+    scheduleCloudSync()
+    bump()
   }
 
   const markNotificationAsRead = (id: string) => {
+    // 1. Inmediata actualización visual optimista
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, read: true } : n))
+    )
+    // 2. Persistencia en localStorage
     markNotificationAsReadStore(id)
-    refreshData()
+    // 3. Sincronización en la nube
+    scheduleCloudSync()
+    bump()
   }
 
   const markAllNotificationsAsRead = () => {
     if (!activeGroup) return
+    // 1. Inmediata actualización visual optimista
+    setNotifications((prev) =>
+      prev.map((n) => (n.groupId === activeGroup.id ? { ...n, read: true } : n))
+    )
+    // 2. Persistencia en localStorage
     markAllNotificationsAsReadByGroupStore(activeGroup.id)
-    refreshData()
+    // 3. Sincronización en la nube
+    scheduleCloudSync()
+    bump()
   }
 
   const clearNotifications = () => {
     if (!activeGroup) return
+    // 1. Inmediata actualización visual optimista
+    setNotifications((prev) => prev.filter((n) => n.groupId !== activeGroup.id))
+    // 2. Persistencia en localStorage
     clearNotificationsByGroupStore(activeGroup.id)
-    refreshData()
+    // 3. Sincronización en la nube
+    scheduleCloudSync()
+    bump()
   }
 
   // --- Shopping mutations ---
@@ -1163,6 +1196,33 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const handleDeleteShoppingItem = (itemId: string) => {
     if (!activeGroup) return
     deleteShoppingItemStore(itemId, activeGroup.id)
+    refreshData()
+    bump()
+  }
+
+  const handleCloseShoppingList = (listId: string): ShoppingReceipt | null => {
+    if (!activeGroup) return null
+    const receipt = closeShoppingListAndCreateReceiptStore(listId, activeGroup.id)
+    if (receipt) {
+      addActivityStore({
+        id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `act_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+        groupId: activeGroup.id,
+        type: 'shopping_completed',
+        title: `Compra realizada: ${receipt.listName}`,
+        details: `${receipt.totalItems} productos cerrados${receipt.totalPrice ? ` · ${receipt.totalPrice.toFixed(2).replace('.', ',')} €` : ''}`,
+        memberId: currentMember ? currentMember.id : 'system',
+        timestamp: new Date().toISOString(),
+        data: { receiptId: receipt.id },
+      })
+    }
+    refreshData()
+    bump()
+    return receipt
+  }
+
+  const handleDeleteShoppingReceipt = (receiptId: string) => {
+    if (!activeGroup) return
+    deleteShoppingReceiptStore(receiptId, activeGroup.id)
     refreshData()
     bump()
   }
@@ -1785,6 +1845,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
         shoppingLists,
         shoppingItems,
+        shoppingReceipts,
         taskCategories,
         eventPolls,
         dailyMenus,
@@ -1874,6 +1935,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         addShoppingItem: handleAddShoppingItem,
         toggleShoppingItem: handleToggleShoppingItem,
         deleteShoppingItem: handleDeleteShoppingItem,
+        closeShoppingList: handleCloseShoppingList,
+        deleteShoppingReceipt: handleDeleteShoppingReceipt,
 
         confirmDelete,
       }}

@@ -295,17 +295,32 @@ export function NotificationsPanel() {
 
                   {/* Acciones */}
                   <div className="flex flex-col items-end gap-1.5 shrink-0">
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        dismissNotification(n.id)
-                      }}
-                      className="flex size-6 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-rose-500 transition-colors"
-                      title="Descartar notificación"
-                    >
-                      <X className="size-3.5" />
-                    </button>
+                    <div className="flex items-center gap-1">
+                      {isUnread && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            markNotificationAsRead(n.id)
+                          }}
+                          className="flex size-6 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-emerald-500 transition-colors"
+                          title="Marcar como leída"
+                        >
+                          <Check className="size-3.5" />
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          dismissNotification(n.id)
+                        }}
+                        className="flex size-6 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-rose-500 transition-colors"
+                        title="Descartar notificación"
+                      >
+                        <X className="size-3.5" />
+                      </button>
+                    </div>
                     <ExternalLink className="size-3 text-slate-300 dark:text-slate-600 group-hover:text-slate-600 dark:group-hover:text-slate-400 transition-colors" />
                   </div>
                 </div>

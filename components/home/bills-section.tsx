@@ -28,6 +28,7 @@ import {
   Home,
   Dumbbell,
   ShieldCheck,
+  Gauge,
 } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { CustomSelect } from '@/components/ui/custom-select'
@@ -248,12 +249,12 @@ export function BillsSection() {
     const parsedKm = parseFloat(kilometers.replace(',', '.')) || 0
 
     let consumptionData: ConsumptionData | undefined = undefined
-    if (hasConsumption && parsedUnits > 0) {
+    if (hasConsumption) {
       consumptionData = {
         utilityType,
         customUtilityName: utilityType === 'otro' ? customUtilityName.trim() : undefined,
         customUtilityUnit: utilityType === 'otro' ? (customUtilityUnit.trim() || 'ud') : undefined,
-        consumptionValue: parsedUnits,
+        consumptionValue: parsedUnits > 0 ? parsedUnits : undefined,
         consumptionUnit: unitLabel,
         unitPrice: parsedPrice,
         kilometers: utilityType === 'combustible' && parsedKm > 0 ? parsedKm : undefined,
@@ -477,6 +478,16 @@ export function BillsSection() {
                               </span>
                             )}
                           </div>
+                          {bill.consumption && (bill.consumption.consumptionValue || bill.consumption.customUtilityName || bill.consumption.utilityType) && (
+                            <div className="flex items-center gap-1.5 mt-1.5 text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-md w-fit">
+                              <Gauge className="size-3 shrink-0" />
+                              <span>
+                                {bill.consumption.consumptionValue ? `${bill.consumption.consumptionValue} ${bill.consumption.consumptionUnit || 'ud'}` : (bill.consumption.customUtilityName || 'Suministro')}
+                                {bill.consumption.consumptionValue && bill.consumption.customUtilityName ? ` · ${bill.consumption.customUtilityName}` : ''}
+                                {bill.consumption.unitPrice ? ` (${bill.consumption.unitPrice.toFixed(3)} €/${bill.consumption.consumptionUnit || 'ud'})` : ''}
+                              </span>
+                            </div>
+                          )}
                         </div>
                       </div>
 
@@ -716,6 +727,15 @@ export function BillsSection() {
                         <span className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold capitalize">
                           {bill.category || 'Hogar'}
                         </span>
+                        {bill.consumption && (bill.consumption.consumptionValue || bill.consumption.customUtilityName || bill.consumption.utilityType) && (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
+                            <Gauge className="size-2.5 shrink-0" />
+                            <span>
+                              {bill.consumption.consumptionValue ? `${bill.consumption.consumptionValue} ${bill.consumption.consumptionUnit || 'ud'}` : (bill.consumption.customUtilityName || 'Suministro')}
+                              {bill.consumption.consumptionValue && bill.consumption.customUtilityName ? ` (${bill.consumption.customUtilityName})` : ''}
+                            </span>
+                          </span>
+                        )}
                       </div>
                     </div>
 
@@ -944,6 +964,60 @@ export function BillsSection() {
                         />
                       </div>
                     </div>
+
+                    {/* Especificación de suministro y unidad cuando es 'otro' */}
+                    {utilityType === 'otro' && (
+                      <div className="space-y-2 p-2.5 rounded-xl bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/5 animate-fade-in">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="text-[10px] text-slate-500 font-semibold">Sugerencias rápidas:</span>
+                          {[
+                            { name: 'Luz', unit: 'kWh' },
+                            { name: 'Agua', unit: 'm³' },
+                            { name: 'Gas', unit: 'kWh' },
+                            { name: 'Internet / Fibra', unit: 'mes' },
+                          ].map((item) => (
+                            <button
+                              key={item.name}
+                              type="button"
+                              onClick={() => {
+                                setCustomUtilityName(item.name)
+                                setCustomUtilityUnit(item.unit)
+                              }}
+                              className="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-slate-100 dark:bg-white/[0.05] hover:bg-emerald-50 hover:text-emerald-700 dark:hover:bg-emerald-500/20 text-slate-700 dark:text-slate-300 transition-colors border border-slate-200/60 dark:border-white/5"
+                            >
+                              {item.name} ({item.unit})
+                            </button>
+                          ))}
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="flex flex-col gap-1">
+                            <label className="font-semibold text-[11px] text-slate-600 dark:text-slate-400">
+                              Especificar suministro
+                            </label>
+                            <input
+                              type="text"
+                              value={customUtilityName}
+                              onChange={(e) => setCustomUtilityName(e.target.value)}
+                              placeholder="Ej: Luz, Agua, Gas, Internet..."
+                              className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-white/[0.04] py-1 px-2.5 text-xs font-medium text-slate-900 dark:text-white outline-none"
+                            />
+                          </div>
+                          <div className="flex flex-col gap-1">
+                            <label className="font-semibold text-[11px] text-slate-600 dark:text-slate-400">
+                              Unidad de medida
+                            </label>
+                            <input
+                              type="text"
+                              value={customUtilityUnit}
+                              onChange={(e) => setCustomUtilityUnit(e.target.value)}
+                              placeholder="Ej: kWh, m³, mes, botellas..."
+                              className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-white/[0.04] py-1 px-2.5 text-xs font-medium text-slate-900 dark:text-white outline-none"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
 
                     <div className="flex flex-col gap-1">
                       <label className="font-semibold text-slate-600 dark:text-slate-400">

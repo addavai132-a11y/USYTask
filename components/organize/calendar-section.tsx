@@ -292,24 +292,28 @@ export function CalendarSection({
     return list
   }, [])
 
-  const handlePrevMonth = () => {
-    setViewMonth((m) => {
-      if (m === 0) {
-        setViewYear((y) => Math.max(2024, y - 1))
-        return 11
-      }
-      return m - 1
-    })
+  const handlePrevDay = () => {
+    const [y, m, d] = (selectedDateISO || todayISO).split('-').map(Number)
+    const prev = new Date(y, m - 1, d - 1)
+    if (prev.getFullYear() < 2024) return
+    const prevYear = prev.getFullYear()
+    const prevMonth = prev.getMonth()
+    const prevISO = `${prevYear}-${String(prevMonth + 1).padStart(2, '0')}-${String(prev.getDate()).padStart(2, '0')}`
+    setViewYear(prevYear)
+    setViewMonth(prevMonth)
+    setSelectedDateISO(prevISO)
   }
 
-  const handleNextMonth = () => {
-    setViewMonth((m) => {
-      if (m === 11) {
-        setViewYear((y) => Math.min(2060, y + 1))
-        return 0
-      }
-      return m + 1
-    })
+  const handleNextDay = () => {
+    const [y, m, d] = (selectedDateISO || todayISO).split('-').map(Number)
+    const next = new Date(y, m - 1, d + 1)
+    if (next.getFullYear() > 2060) return
+    const nextYear = next.getFullYear()
+    const nextMonth = next.getMonth()
+    const nextISO = `${nextYear}-${String(nextMonth + 1).padStart(2, '0')}-${String(next.getDate()).padStart(2, '0')}`
+    setViewYear(nextYear)
+    setViewMonth(nextMonth)
+    setSelectedDateISO(nextISO)
   }
 
   const handleGoToday = () => {
@@ -317,7 +321,6 @@ export function CalendarSection({
     setViewYear(now.getFullYear())
     setViewMonth(now.getMonth())
     setSelectedDateISO(todayISO)
-    setSelectedDayModalISO(todayISO)
     setIsMonthPickerOpen(false)
     setIsYearPickerOpen(false)
   }
@@ -461,10 +464,10 @@ export function CalendarSection({
           {/* Flechas de Navegación y Botón Hoy */}
           <div className="flex items-center gap-1">
             <button
-              onClick={handlePrevMonth}
-              disabled={viewYear <= 2024 && viewMonth === 0}
+              onClick={handlePrevDay}
+              disabled={selectedDateISO <= '2024-01-01'}
               className="flex size-7 items-center justify-center rounded-lg bg-slate-100 dark:bg-white/[0.05] hover:bg-slate-200 dark:hover:bg-white/[0.1] text-slate-700 dark:text-slate-200 transition-all active:scale-95 border border-slate-200 dark:border-white/10 disabled:opacity-30 disabled:cursor-not-allowed"
-              title="Mes anterior"
+              title="Día anterior"
             >
               <ChevronLeft className="size-3.5" />
             </button>
@@ -480,10 +483,10 @@ export function CalendarSection({
               Hoy
             </button>
             <button
-              onClick={handleNextMonth}
-              disabled={viewYear >= 2060 && viewMonth === 11}
+              onClick={handleNextDay}
+              disabled={selectedDateISO >= '2060-12-31'}
               className="flex size-7 items-center justify-center rounded-lg bg-slate-100 dark:bg-white/[0.05] hover:bg-slate-200 dark:hover:bg-white/[0.1] text-slate-700 dark:text-slate-200 transition-all active:scale-95 border border-slate-200 dark:border-white/10 disabled:opacity-30 disabled:cursor-not-allowed"
-              title="Mes siguiente"
+              title="Día siguiente"
             >
               <ChevronRight className="size-3.5" />
             </button>

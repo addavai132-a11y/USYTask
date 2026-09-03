@@ -13,6 +13,7 @@ import {
   Edit2,
   X,
   ChevronRight,
+  ChevronLeft,
   Folder,
   ChefHat,
   ArrowLeft,
@@ -234,13 +235,15 @@ export function MealsSection() {
         })
 
         if (editingDailyId) {
-          updateDailyMenu({
+          const updated = {
             id: editingDailyId,
             groupId: '',
             title: menuTitle.trim(),
             date: menuDate || getTodayISO(),
             meals: mealsMap,
-          })
+          }
+          updateDailyMenu(updated)
+          setSelectedDailyMenu((current) => (current && current.id === editingDailyId ? updated : current))
           toast('Menú diario actualizado', '✅')
         } else {
           addDailyMenu({
@@ -274,14 +277,16 @@ export function MealsSection() {
         })
 
         if (editingWeeklyId) {
-          updateWeeklyMenu({
+          const updated = {
             id: editingWeeklyId,
             groupId: '',
             title: menuTitle.trim(),
             startDate: menuStartDate || getTodayISO(),
             endDate: menuEndDate || getSundayFromMonday(menuStartDate || getTodayISO()),
             days: daysMap,
-          })
+          }
+          updateWeeklyMenu(updated)
+          setSelectedWeeklyMenu((current) => (current && current.id === editingWeeklyId ? updated : current))
           toast('Menú semanal actualizado', '✅')
         } else {
           addWeeklyMenu({
@@ -656,6 +661,16 @@ export function MealsSection() {
                             <button
                               onClick={(e) => {
                                 e.stopPropagation()
+                                handleOpenEditDaily(menu)
+                              }}
+                              className="p-1.5 rounded-full text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
+                              title="Editar menú diario"
+                            >
+                              <Edit2 className="size-4" />
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
                                 duplicateDailyMenu(menu.id)
                                 toast('Menú diario duplicado', '📋')
                               }}
@@ -758,6 +773,16 @@ export function MealsSection() {
                           </div>
 
                           <div className="flex items-center gap-1">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleOpenEditWeekly(menu)
+                              }}
+                              className="p-1.5 rounded-full text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
+                              title="Editar menú semanal"
+                            >
+                              <Edit2 className="size-4" />
+                            </button>
                             <button
                               onClick={(e) => {
                                 e.stopPropagation()
@@ -1051,22 +1076,80 @@ export function MealsSection() {
               {/* ------------------------------------------------------------- */}
               {menuType === 'weekly' && (
                 <div className="flex flex-col gap-3 mt-2">
-                  <div className="no-scrollbar -mx-2 flex gap-1 overflow-x-auto px-2 py-1">
-                    {DAYS.map((day) => (
+                  {/* Selector y Navegación de Días (Lunes a Domingo) */}
+                  <div className="flex flex-col gap-2 p-2 rounded-2xl bg-secondary/20 border border-border/60">
+                    <div className="flex items-center justify-between gap-1">
                       <button
-                        key={day}
                         type="button"
-                        onClick={() => setWeeklyFormDayTab(day)}
-                        className={cn(
-                          'flex shrink-0 items-center gap-1 rounded-xl px-3 py-1.5 text-xs font-bold transition-all border',
-                          weeklyFormDayTab === day
-                            ? 'border-primary bg-primary text-primary-foreground'
-                            : 'border-border bg-card text-muted-foreground hover:bg-secondary'
-                        )}
+                        onClick={() => {
+                          const currentIndex = DAYS.indexOf(weeklyFormDayTab)
+                          if (currentIndex > 0) {
+                            setWeeklyFormDayTab(DAYS[currentIndex - 1])
+                          } else {
+                            setWeeklyFormDayTab(DAYS[DAYS.length - 1])
+                          }
+                        }}
+                        className="flex items-center gap-1 rounded-xl px-2.5 py-1 text-[11px] font-bold text-muted-foreground hover:text-foreground hover:bg-secondary transition-all"
+                        title="Día anterior"
                       >
-                        <span>{dayNamesMap[day]}</span>
+                        <ChevronLeft className="size-3.5" />
+                        <span>Anterior</span>
                       </button>
-                    ))}
+
+                      <span className="text-xs font-black uppercase tracking-wider text-primary">
+                        Configurando: {dayNamesMap[weeklyFormDayTab]}
+                      </span>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const currentIndex = DAYS.indexOf(weeklyFormDayTab)
+                          if (currentIndex < DAYS.length - 1) {
+                            setWeeklyFormDayTab(DAYS[currentIndex + 1])
+                          } else {
+                            setWeeklyFormDayTab(DAYS[0])
+                          }
+                        }}
+                        className="flex items-center gap-1 rounded-xl px-2.5 py-1 text-[11px] font-bold text-muted-foreground hover:text-foreground hover:bg-secondary transition-all"
+                        title="Día siguiente"
+                      >
+                        <span>Siguiente</span>
+                        <ChevronRight className="size-3.5" />
+                      </button>
+                    </div>
+
+                    {/* Chips de los 7 días de la semana */}
+                    <div className="flex gap-1.5 overflow-x-auto pb-1 pt-0.5 justify-start sm:justify-center">
+                      {DAYS.map((day) => {
+                        const dayMeals = weeklyFormDays[day]
+                        const hasAny = dayMeals && Object.values(dayMeals).some((m) => m?.name?.trim())
+                        const isCurrent = weeklyFormDayTab === day
+
+                        return (
+                          <button
+                            key={day}
+                            type="button"
+                            onClick={() => setWeeklyFormDayTab(day)}
+                            className={cn(
+                              'flex shrink-0 items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition-all border',
+                              isCurrent
+                                ? 'border-primary bg-primary text-primary-foreground shadow-sm scale-105'
+                                : 'border-border bg-card text-muted-foreground hover:bg-secondary hover:text-foreground'
+                            )}
+                          >
+                            <span>{dayNamesMap[day]}</span>
+                            {hasAny && (
+                              <span
+                                className={cn(
+                                  'size-1.5 rounded-full',
+                                  isCurrent ? 'bg-white' : 'bg-emerald-500'
+                                )}
+                              />
+                            )}
+                          </button>
+                        )
+                      })}
+                    </div>
                   </div>
 
                   {/* Meals for active weekly form day */}

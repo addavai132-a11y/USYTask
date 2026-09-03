@@ -17,6 +17,8 @@ import {
   UtensilsCrossed,
   Store,
   Tag,
+  Receipt,
+  FileText,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Card } from '@/components/ui/card'
@@ -104,6 +106,7 @@ export function ShoppingSection({
   const {
     shoppingLists,
     shoppingItems,
+    shoppingReceipts,
     dailyMenus,
     weeklyMenus,
     addShoppingList,
@@ -112,6 +115,8 @@ export function ShoppingSection({
     addShoppingItem,
     toggleShoppingItem,
     deleteShoppingItem,
+    closeShoppingList,
+    openHistory,
     confirmDelete,
   } = useApp()
 
@@ -254,6 +259,23 @@ export function ShoppingSection({
     setEditingListId(null)
     setEditingListTitle('')
     toast('Nombre de lista actualizado', '✏️')
+  }
+
+  // Cerrar Lista de la Compra
+  function handleCloseList() {
+    if (!activeList) return
+    if (currentItems.length === 0) {
+      toast('La lista está vacía. Añade productos antes de cerrarla.', 'ℹ️')
+      return
+    }
+
+    const receipt = closeShoppingList(activeList.id)
+    if (receipt) {
+      const priceText = receipt.totalPrice ? ` (${receipt.totalPrice.toFixed(2).replace('.', ',')} €)` : ''
+      toast(`🧾 Lista cerrada: Ticket guardado en el Historial con ${receipt.totalItems} productos${priceText}`, '✅')
+    } else {
+      toast('No se pudo cerrar la lista', '❌')
+    }
   }
 
   // Import ingredients from meals
@@ -416,7 +438,30 @@ export function ShoppingSection({
               </span>
             </div>
 
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={handleCloseList}
+                disabled={currentItems.length === 0}
+                className="flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed text-white px-3 py-1.5 text-xs font-bold transition-all active:scale-95 shadow-sm"
+                title="Cierra la lista, genera un ticket en el Historial y desmarca los productos dejándola lista para la próxima compra"
+              >
+                <Receipt className="size-3.5" />
+                <span>Cerrar lista</span>
+              </button>
+
+              {(shoppingReceipts || []).length > 0 && (
+                <button
+                  type="button"
+                  onClick={openHistory}
+                  className="flex items-center gap-1 rounded-xl bg-slate-100 dark:bg-white/[0.05] hover:bg-slate-200 dark:hover:bg-white/[0.1] text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-white/10 px-2.5 py-1.5 text-xs font-semibold transition-all active:scale-95"
+                  title="Ver tickets de compras anteriores en el historial"
+                >
+                  <FileText className="size-3.5 text-emerald-500" />
+                  <span className="hidden sm:inline">Tickets</span>
+                </button>
+              )}
+
               <button
                 onClick={() => setIsCreatingList(true)}
                 className="p-1.5 rounded-xl hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"

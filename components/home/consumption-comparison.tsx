@@ -79,12 +79,16 @@ export function ConsumptionComparison({ onOpenAddBill }: { onOpenAddBill?: () =>
     let totalAmount = 0
     let totalUnits = 0
     let count = 0
+    const explicitUnitPrices: number[] = []
 
     matchingBills.forEach((b) => {
       const amt = Number(b.amount) || 0
       totalAmount += b.billingCycle === 'mensual' ? amt : amt / 12
       if (b.consumption?.consumptionValue) {
         totalUnits += Number(b.consumption.consumptionValue) || 0
+      }
+      if (b.consumption?.unitPrice !== undefined && b.consumption.unitPrice > 0) {
+        explicitUnitPrices.push(Number(b.consumption.unitPrice))
       }
       count++
     })
@@ -95,10 +99,16 @@ export function ConsumptionComparison({ onOpenAddBill }: { onOpenAddBill?: () =>
       if (e.consumption?.consumptionValue) {
         totalUnits += Number(e.consumption.consumptionValue) || 0
       }
+      if (e.consumption?.unitPrice !== undefined && e.consumption.unitPrice > 0) {
+        explicitUnitPrices.push(Number(e.consumption.unitPrice))
+      }
       count++
     })
 
-    const unitPrice = totalUnits > 0 ? totalAmount / totalUnits : 0
+    // Respetar estrictamente el precio medio introducido manualmente por el usuario
+    const unitPrice = explicitUnitPrices.length > 0
+      ? explicitUnitPrices.reduce((acc, val) => acc + val, 0) / explicitUnitPrices.length
+      : 0
 
     return {
       amount: totalAmount,
@@ -122,7 +132,7 @@ export function ConsumptionComparison({ onOpenAddBill }: { onOpenAddBill?: () =>
   const unitPriceDiff = dataA.unitPrice - dataB.unitPrice
   const unitPriceDiffPercent = dataB.unitPrice > 0 ? ((dataA.unitPrice - dataB.unitPrice) / dataB.unitPrice) * 100 : 0
 
-  const utilityKeys: UtilityType[] = ['electricidad', 'agua', 'gas', 'internet_telefonia', 'combustible']
+  const utilityKeys: UtilityType[] = ['electricidad', 'agua', 'gas', 'internet_telefonia', 'combustible', 'otro']
 
   return (
     <div className="w-full max-w-2xl mx-auto space-y-4 animate-fade-in">
@@ -247,10 +257,10 @@ export function ConsumptionComparison({ onOpenAddBill }: { onOpenAddBill?: () =>
           </div>
         </Card>
 
-        {/* 3. Precio Unitario */}
+        {/* 3. Precio Medio */}
         <Card className="p-3.5 bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 rounded-2xl shadow-sm flex flex-col justify-between gap-1.5">
           <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-            Precio / {meta.unit}
+            Precio medio
           </span>
           <div>
             <p className="text-lg font-bold text-slate-900 dark:text-white tabular-nums tracking-tight">

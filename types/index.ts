@@ -308,6 +308,27 @@ export interface WeeklyMenu {
   createdAt?: string
 }
 
+export interface ShoppingReceiptItem {
+  id: string
+  name: string
+  quantity?: number
+  price?: number
+  unitPrice?: number
+  aisle?: string
+  supermarket?: string
+}
+
+export interface ShoppingReceipt {
+  id: string
+  groupId: string
+  listId: string
+  listName: string
+  closedAt: string // ISO timestamp
+  totalItems: number
+  totalPrice?: number
+  items: ShoppingReceiptItem[]
+}
+
 export * from './finances'
 export * from './family'
 export * from './fitness'
