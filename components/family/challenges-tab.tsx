@@ -321,7 +321,7 @@ export function ChallengesTab() {
                       <div className="flex items-center gap-2">
                         <span className="flex items-center gap-1 text-[10px] font-mono font-bold text-amber-300 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full">
                           <Timer className="size-2.5" />
-                          <span>Expira en {c.minutesRemaining}m</span>
+                          <span>Expira en {(c as any).minutesRemaining ?? 30}m</span>
                         </span>
                         <span className="inline-flex items-center gap-1 rounded-xl bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 text-xs font-bold text-emerald-300">
                           <CheckCircle2 className="size-3.5" />

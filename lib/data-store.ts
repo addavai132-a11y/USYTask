@@ -1,7 +1,7 @@
 // USYTask — Data store: CRUD for tasks, events, reminders, members (per group)
 // All data is scoped by groupId and persisted in localStorage.
 
-import type { Task, CalendarEvent, Reminder, Member, Activity, TaskCategory, EventPoll, DailyMenu, WeeklyMenu, Income, Expense, BillSubscription, Budget, PiggyBankConfig, AppNotification } from '@/types'
+import type { Task, CalendarEvent, Reminder, Member, Activity, TaskCategory, EventPoll, EventPollOption, DailyMenu, WeeklyMenu, Income, Expense, BillSubscription, Budget, PiggyBankConfig, AppNotification } from '@/types'
 import { daysUntil } from './date-utils'
 import { scheduleCloudSync } from './cloud-sync'
 
@@ -511,7 +511,7 @@ export function voteEventPoll(
 
   // Check unique voted members
   const votedMembersSet = new Set<string>()
-  updatedOptions.forEach((opt) => opt.votes.forEach((mId) => votedMembersSet.add(mId)))
+  updatedOptions.forEach((opt) => opt.votes.forEach((mId: string) => votedMembersSet.add(mId)))
 
   let resolvedEvent: CalendarEvent | undefined = undefined
   let newStatus: 'active' | 'resolved' = 'active'

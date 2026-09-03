@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import { ConfirmDeleteModal } from '@/components/ui/confirm-delete-modal'
 import { UsyTaskLogo } from '@/components/ui/usytask-logo'
+import { useToast } from '@/components/ui/toast'
 import type { Group, Task, CalendarEvent, Reminder, Member, GroupType, EventCategory, TaskSection, TaskPriority, Activity, AppNotification, TaskCategory, EventPoll, DailyMenu, WeeklyMenu, Income, Expense, BillSubscription, Budget } from '@/types'
 import { MEMBER_COLORS } from '@/types'
 
@@ -71,9 +72,11 @@ import {
   addDailyMenu as addDailyMenuStore,
   updateDailyMenu as updateDailyMenuStore,
   deleteDailyMenu as deleteDailyMenuStore,
+  duplicateDailyMenu as duplicateDailyMenuStore,
   addWeeklyMenu as addWeeklyMenuStore,
   updateWeeklyMenu as updateWeeklyMenuStore,
   deleteWeeklyMenu as deleteWeeklyMenuStore,
+  duplicateWeeklyMenu as duplicateWeeklyMenuStore,
   getIncomesByGroup,
   getExpensesByGroup,
   getBillsByGroup,
@@ -95,9 +98,7 @@ import {
   saveBudget as saveBudgetStore,
   deleteBudget as deleteBudgetStore,
   getPiggyBankBalance,
-  savePiggyBankBalance,
-  updateMemberInStore,
-  adjustMemberPointsInStore,
+  savePiggyBankBalance as savePiggyBankBalanceStore,
   type ShoppingList,
   type ShoppingItem,
 } from '@/lib/data-store'
@@ -197,6 +198,7 @@ interface AppState {
   addTask: (title: string, points: number, assignedToMemberId: string, section?: TaskSection, priority?: TaskPriority, dueDate?: string, dueTime?: string, assignedMemberIds?: string[], doBeforeDate?: string, doBeforeTime?: string) => void
   updateTask: (task: Task) => void
   toggleTask: (taskId: string) => { pointsAwarded: number; memberId: string | null }
+  deleteTask: (taskId: string) => void
   addEvent: (title: string, date: string, time: string | undefined, category: EventCategory, assignedMemberIds: string[], location?: string) => void
   updateEvent: (event: CalendarEvent) => void
   deleteEvent: (eventId: string) => void
@@ -311,6 +313,7 @@ export function useApp() {
 }
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
+  const { toast } = useToast()
   const [isInitialized, setIsInitialized] = useState(false)
   const [tab, setTabState] = useState<Tab>('inicio')
   const [quickAddOpen, setQuickAddOpen] = useState(false)
@@ -722,7 +725,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     addTaskStore(task)
 
     try {
-      addActivity({
+      addActivityStore({
         id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `act_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
         groupId: activeGroup.id,
         type: 'task_created',
@@ -882,7 +885,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       { id: currentMember?.id || 'usr_default', name: userName || 'Usuario' }
 
     try {
-      addActivity({
+      addActivityStore({
         id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `act_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
         groupId: activeGroup.id,
         type: 'event_created',
@@ -980,7 +983,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       { id: currentMember?.id || 'usr_default', name: userName || 'Usuario' }
 
     try {
-      addActivity({
+      addActivityStore({
         id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `act_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
         groupId: activeGroup.id,
         type: 'reminder_created',
@@ -1206,7 +1209,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     addEventPollStore(poll)
 
-    addActivity({
+    addActivityStore({
       id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `act_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
       groupId: activeGroup.id,
       type: 'event_created',
@@ -1540,7 +1543,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     })
 
     try {
-      addActivity({
+      addActivityStore({
         id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `act_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
         groupId: activeGroup.id,
         type: 'task_created',
@@ -1586,7 +1589,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         adjustMemberPointsStore(currentMember.id, activeGroup.id, res.pointsAwarded)
       }
       try {
-        addNotification({
+        addNotificationStore({
           id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `notif_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
           groupId: activeGroup.id,
           type: 'task',
@@ -1642,7 +1645,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (res.success && res.reward) {
         const claimingMember = getMembersByGroup(activeGroup.id).find((m) => m.id === memberId)
         try {
-          addActivity({
+          addActivityStore({
             id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `act_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
             groupId: activeGroup.id,
             type: 'reward_claimed',
@@ -1651,7 +1654,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             memberId,
             timestamp: new Date().toISOString(),
           })
-          addNotification({
+          addNotificationStore({
             id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `notif_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
             groupId: activeGroup.id,
             type: 'reward',
@@ -1716,7 +1719,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     adjustMemberPointsStore(memberId, activeGroup.id, pointsDelta)
     const targetMember = getMembersByGroup(activeGroup.id).find((m) => m.id === memberId)
     if (reason && targetMember) {
-      addActivity({
+      addActivityStore({
         id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `act_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
         groupId: activeGroup.id,
         type: pointsDelta >= 0 ? 'task_completed' : 'task_created',

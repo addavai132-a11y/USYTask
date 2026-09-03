@@ -18,7 +18,6 @@ import {
   Timer,
   Flame,
   Layers,
-  RotateLeft,
 } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { CustomSelect } from '@/components/ui/custom-select'

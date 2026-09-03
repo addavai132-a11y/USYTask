@@ -25,7 +25,7 @@ import { MemberAvatar } from '@/components/ui/member-avatar'
 import { useApp } from '@/components/app/app-context'
 import { useToast } from '@/components/ui/toast'
 import { getTodayISO } from '@/lib/date-utils'
-import { getEventMemberIds, getTaskMemberIds, getReminderMemberIds } from '@/types'
+import { getEventMemberIds, getTaskMemberIds, getReminderMemberIds, type Member } from '@/types'
 
 const dayFullNames = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
 const monthNames = [
@@ -107,6 +107,7 @@ export function CalendarSection({
     tasks,
     reminders,
     dailyMenus,
+    currentMember,
     getMemberById,
     openQuickAdd,
     toggleTask,

@@ -116,9 +116,13 @@ export async function POST(req: Request) {
       }
 
       // 4. Actualizar notifications_enabled en la tabla profiles
-      await supabase.from('profiles').update({
-        notifications_enabled: true,
-      }).eq('id', user.id).catch(() => ({}))
+      try {
+        await supabase.from('profiles').update({
+          notifications_enabled: true,
+        }).eq('id', user.id)
+      } catch (err) {
+        // Silently continue if profiles table does not have notifications_enabled
+      }
 
       return NextResponse.json({
         success: true,

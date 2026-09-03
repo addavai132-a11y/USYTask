@@ -582,7 +582,7 @@ export function clearMealLog(
       const matchType = m.mealType === mealType
       let matchDay = false
       if (dayOfWeek) {
-        matchDay = m.dayOfWeek === dayOfWeek || (m.date && getDayOfWeekFromDate(m.date) === dayOfWeek)
+        matchDay = Boolean(m.dayOfWeek === dayOfWeek || (m.date && getDayOfWeekFromDate(m.date) === dayOfWeek))
       } else if (dateISO) {
         matchDay = m.date === dateISO
       } else {

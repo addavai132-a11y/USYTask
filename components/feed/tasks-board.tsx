@@ -118,7 +118,7 @@ export function TasksBoard() {
         dueDate: r.dueDate || today,
         dueTime: r.time,
         completed: false,
-        assignedToMemberId: r.assignedMemberIds?.[0] || r.memberIds?.[0],
+        assignedToMemberId: r.assignedMemberIds?.[0] || (r as any).memberIds?.[0],
         isUrgent: r.dueDate === today || r.daysLeft === 0,
       })
     })
