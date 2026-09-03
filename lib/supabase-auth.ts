@@ -107,28 +107,51 @@ export async function updateUserProfile(
       return { success: false, profile: null, error: 'No user session found' }
     }
 
-    const { error: profileError } = await supabase
+    // 1. Upsert or update in public.profiles table
+    let profileUpdateError: string | null = null
+    const { error: upsertErr } = await supabase
       .from('profiles')
-      .upsert({
-        id: user.id,
-        username,
-        date_of_birth: dateOfBirth,
-        profile_completed: true
-      })
+      .upsert(
+        {
+          id: user.id,
+          username,
+          date_of_birth: dateOfBirth,
+          profile_completed: true,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'id' }
+      )
 
-    // Also update user_metadata for backward compatibility temporarily,
-    // but ONLY minimal fields, not the huge cloud backup.
-    const { data, error } = await supabase.auth.updateUser({
+    if (upsertErr) {
+      console.warn('profiles upsert failed, attempting fallback update:', upsertErr.message)
+      const { error: updateErr } = await supabase
+        .from('profiles')
+        .update({
+          username,
+          date_of_birth: dateOfBirth,
+          profile_completed: true,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', user.id)
+
+      if (updateErr) {
+        console.error('profiles update also failed:', updateErr.message)
+        profileUpdateError = upsertErr.message || updateErr.message
+      }
+    }
+
+    // 2. Also update minimal user_metadata as best effort for session sync
+    const { data } = await supabase.auth.updateUser({
       data: {
         username,
         date_of_birth: dateOfBirth,
         profile_completed: true,
       },
-    })
+    }).catch(() => ({ data: null, error: null }))
 
-    if (error || profileError) {
-      console.error('Error updating user profile:', error || profileError)
-      return { success: false, profile: null, error: (error || profileError)?.message }
+    if (profileUpdateError) {
+      console.error('Error saving user profile to profiles table:', profileUpdateError)
+      return { success: false, profile: null, error: profileUpdateError }
     }
 
     const updatedUser = data?.user || user
