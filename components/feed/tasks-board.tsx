@@ -168,13 +168,12 @@ export function TasksBoard() {
       return
     }
 
-    const canComplete =
+    const isAssigned =
       !currentMember ||
-      item.assignedToMemberId === currentMember.id ||
-      item.createdBy === currentMember.id
+      item.assignedToMemberId === currentMember.id
 
-    if (!canComplete) {
-      toast('Solo la persona asignada o el creador pueden marcarla', '🔒')
+    if (!isAssigned) {
+      toast('Solo la persona asignada a esta tarea puede marcarla como completada', '🔒')
       return
     }
 
@@ -372,19 +371,38 @@ export function TasksBoard() {
               >
                 {/* Checkbox y Título */}
                 <div className="flex items-center gap-3 min-w-0 flex-1">
-                  <button
-                    disabled={isCompleted}
-                    onClick={() => handleToggle(item)}
-                    className={cn(
-                      'flex size-5.5 shrink-0 items-center justify-center rounded-lg border transition-all',
-                      isCompleted
-                        ? 'bg-emerald-500 border-emerald-500 text-white cursor-default opacity-90'
-                        : 'border-slate-300 dark:border-purple-400/40 hover:border-emerald-500 dark:hover:border-purple-400 bg-white dark:bg-black/40 active:scale-90'
-                    )}
-                    title={isCompleted ? 'Tarea completada (bloqueada)' : 'Completar tarea'}
-                  >
-                    {isCompleted && <Check className="size-3.5 stroke-[3]" />}
-                  </button>
+                  {(() => {
+                    const isAssigned = !currentMember || item.assignedToMemberId === currentMember.id
+                    return (
+                      <button
+                        disabled={isCompleted || !isAssigned}
+                        onClick={() => {
+                          if (!isAssigned) {
+                            toast('Solo la persona asignada a esta tarea puede marcarla como completada', '🔒')
+                            return
+                          }
+                          handleToggle(item)
+                        }}
+                        className={cn(
+                          'flex size-5.5 shrink-0 items-center justify-center rounded-lg border transition-all',
+                          isCompleted
+                            ? 'bg-emerald-500 border-emerald-500 text-white cursor-default opacity-90'
+                            : !isAssigned
+                            ? 'border-slate-300/40 dark:border-white/10 opacity-40 cursor-not-allowed bg-slate-100 dark:bg-white/[0.02]'
+                            : 'border-slate-300 dark:border-purple-400/40 hover:border-emerald-500 dark:hover:border-purple-400 bg-white dark:bg-black/40 active:scale-90 cursor-pointer'
+                        )}
+                        title={
+                          isCompleted
+                            ? 'Tarea completada (bloqueada)'
+                            : !isAssigned
+                            ? 'Solo la persona asignada puede completarla'
+                            : 'Completar tarea'
+                        }
+                      >
+                        {isCompleted && <Check className="size-3.5 stroke-[3]" />}
+                      </button>
+                    )
+                  })()}
 
                   {/* Icono de Tipo */}
                   <div className="flex size-7 items-center justify-center rounded-lg bg-slate-200/60 dark:bg-white/5 shrink-0">

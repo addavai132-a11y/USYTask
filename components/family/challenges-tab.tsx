@@ -93,13 +93,19 @@ export function ChallengesTab() {
       return
     }
 
+    const parsedRewardPoints = parseInt(rewardPoints, 10)
+    if (isNaN(parsedRewardPoints) || parsedRewardPoints < 10) {
+      toast('Los puntos de recompensa deben ser como mínimo 10', '⚠️')
+      return
+    }
+
     addFamilyChallenge({
       title: cleanTitle,
       description: description.trim(),
       category,
       targetDays: Math.max(1, Number(targetDays) || 7),
       currentDays: 0,
-      rewardPoints: Math.max(10, Number(rewardPoints) || 100),
+      rewardPoints: parsedRewardPoints,
       assignedMemberIds,
       status: 'en_progreso',
     })
@@ -376,10 +382,10 @@ export function ChallengesTab() {
             </div>
 
             <div className="flex flex-col gap-1">
-              <label className="font-bold text-slate-400">Puntos de recompensa</label>
+              <label className="font-bold text-slate-400">Puntos de recompensa (mín. 10)</label>
               <input
                 type="number"
-                min={1}
+                min={10}
                 step={10}
                 value={rewardPoints}
                 onChange={(e) => setRewardPoints(e.target.value)}

@@ -352,10 +352,10 @@ export function MealsSection() {
         </div>
         <button
           onClick={() => handleOpenCreate(activeTab === 'diarios' ? 'daily' : 'weekly')}
-          className="flex items-center gap-1 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 py-1.5 text-xs font-bold transition-all active:scale-95 shadow-sm"
+          className="flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 py-1.5 text-xs font-bold transition-all active:scale-95 shadow-sm"
         >
-          <Plus className="size-3" />
-          <span>+ Crear menú</span>
+          <Plus className="size-3.5" />
+          <span>Crear menú</span>
         </button>
       </div>
 
@@ -622,7 +622,7 @@ export function MealsSection() {
                     onClick={() => handleOpenCreate('daily')}
                     className="mt-1 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 text-xs font-bold transition-all active:scale-95 shadow-sm"
                   >
-                    + Crear menú
+                    Crear menú
                   </button>
                 </div>
               ) : (
@@ -725,7 +725,7 @@ export function MealsSection() {
                     onClick={() => handleOpenCreate('weekly')}
                     className="mt-1 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 text-xs font-bold transition-all active:scale-95 shadow-sm"
                   >
-                    + Crear menú semanal
+                    Crear menú semanal
                   </button>
                 </div>
               ) : (

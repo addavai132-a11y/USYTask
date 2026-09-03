@@ -138,9 +138,16 @@ export function QuickAdd() {
       return
     }
 
+    const parsedPoints = parseInt(taskPoints, 10)
+    if (isNaN(parsedPoints) || parsedPoints < 10) {
+      setShowErrors(true)
+      toast('Los puntos deben ser como mínimo 10 puntos por tarea', '⚠️')
+      return
+    }
+
     addTask(
       title,
-      parseInt(taskPoints) || 10,
+      parsedPoints,
       taskMembers[0],
       quickAddDefaultSection || 'familia',
       'medium',
@@ -378,14 +385,18 @@ export function QuickAdd() {
 
           <div className="flex gap-3">
             <div className="w-32 flex flex-col gap-1">
-              <label className={labelClass}>Puntos <span className="text-red-500">*</span></label>
+              <label className={labelClass}>Puntos (mín. 10) <span className="text-red-500">*</span></label>
               <input
                 type="number"
                 value={taskPoints}
                 onChange={(e) => { setTaskPoints(e.target.value); setShowErrors(false) }}
-                className={cn(inputClass, showErrors && (!taskPoints.trim() || isNaN(parseInt(taskPoints))) && 'border-red-500 bg-red-500/10')}
-                min="0"
+                className={cn(inputClass, showErrors && (!taskPoints.trim() || isNaN(parseInt(taskPoints, 10)) || parseInt(taskPoints, 10) < 10) && 'border-red-500 bg-red-500/10')}
+                min="10"
+                step="1"
               />
+              {showErrors && (parseInt(taskPoints, 10) < 10 || isNaN(parseInt(taskPoints, 10))) && (
+                <p className="text-[10px] font-bold text-red-500">Mínimo 10 pts</p>
+              )}
             </div>
             <div className="flex-1">
               <MemberMultiSelect

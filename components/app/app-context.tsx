@@ -496,21 +496,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setTasks(cTasks)
       setArchivedTasks(aTasks)
 
-      // 2. Eventos: Archivar si pasaron 30 min de su hora programada O 30 min tras completarse
+      // 2. Eventos: Archivar automáticamente cuando pase su hora programada O si fue marcado como completado
       const allEvents = getEventsByGroup(active.id)
       const aEvents: CalendarEvent[] = []
       const cEvents: CalendarEvent[] = []
       for (const e of allEvents) {
-        const timeStr = e.time || '23:59:59'
+        // Si el evento tiene hora específica (ej. 14:30), expira cuando pase esa hora.
+        // Si no tiene hora específica, expira al finalizar el día (23:59:59).
+        const timeStr = e.time ? (e.time.length === 5 ? `${e.time}:00` : e.time) : '23:59:59'
         const eventTime = new Date(`${e.date}T${timeStr}`).getTime()
-        const isPastDueBy30Mins = !isNaN(eventTime) && now - eventTime > THIRTY_MINS
-        const isCompletedBy30Mins = !!(
-          (e as any).completed &&
-          (e as any).completedAt &&
-          now - new Date((e as any).completedAt).getTime() > THIRTY_MINS
-        )
+        const isPastDue = !isNaN(eventTime) && now >= eventTime
+        const isCompleted = !!(e as any).completed
 
-        if (isCompletedBy30Mins || isPastDueBy30Mins) {
+        if (isCompleted || isPastDue) {
           aEvents.push(e)
         } else {
           cEvents.push(e)
@@ -519,21 +517,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setEvents(cEvents)
       setArchivedEvents(aEvents)
 
-      // 3. Recordatorios: Archivar si pasaron 30 min de su fecha/hora límite O 30 min tras completarse
+      // 3. Recordatorios: Archivar automáticamente cuando pase su fecha/hora límite O si fue marcado como completado
       const allReminders = getRemindersByGroup(active.id)
       const aReminders: Reminder[] = []
       const cReminders: Reminder[] = []
       for (const r of allReminders) {
-        const timeStr = r.time || '23:59:59'
+        // Si tiene hora específica (ej. 09:00), expira cuando pase esa hora.
+        // Si no tiene hora específica, expira al finalizar el día (23:59:59).
+        const timeStr = r.time ? (r.time.length === 5 ? `${r.time}:00` : r.time) : '23:59:59'
         const reminderTime = new Date(`${r.dueDate}T${timeStr}`).getTime()
-        const isPastDueBy30Mins = !isNaN(reminderTime) && now - reminderTime > THIRTY_MINS
-        const isCompletedBy30Mins = !!(
-          (r as any).completed &&
-          (r as any).completedAt &&
-          now - new Date((r as any).completedAt).getTime() > THIRTY_MINS
-        )
+        const isPastDue = !isNaN(reminderTime) && now >= reminderTime
+        const isCompleted = !!(r as any).completed
 
-        if (isCompletedBy30Mins || isPastDueBy30Mins) {
+        if (isCompleted || isPastDue) {
           aReminders.push(r)
         } else {
           cReminders.push(r)
@@ -601,10 +597,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const handler = () => refreshData()
     window.addEventListener('usytask_group_change', handler)
 
-    // Re-evaluate 30-min auto-archive expiration every 60s
+    // Re-evaluate auto-archive expiration every 30s
     const ticker = setInterval(() => {
       refreshData()
-    }, 60000)
+    }, 30000)
 
     return () => {
       window.removeEventListener('usytask_group_change', handler)
@@ -705,10 +701,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       groupMembers[0] ||
       { id: currentMember?.id || 'usr_default', name: userName || 'Usuario' }
 
+    const safePoints = Math.max(10, Number(points) || 10)
+
     const task: Task = {
       id: uniqueId,
       title,
-      points,
+      points: safePoints,
       assignedToMemberId,
       assignedMemberIds: assignedMemberIds && assignedMemberIds.length > 0 ? assignedMemberIds : [assignedToMemberId],
       completed: false,
@@ -781,10 +779,26 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }
 
   const handleToggleTask = (taskId: string) => {
-    if (!activeGroup) return { pointsAwarded: 0, memberId: null }
+    if (!activeGroup) return { pointsAwarded: 0, memberId: null, error: 'No active group' }
     const existingTask = getTasksByGroup(activeGroup.id).find((t) => t.id === taskId)
-    if (existingTask?.completed) {
+    if (!existingTask) return { pointsAwarded: 0, memberId: null, error: 'Tarea no encontrada' }
+    if (existingTask.completed) {
       return { pointsAwarded: 0, memberId: null }
+    }
+
+    // Comprobación de permisos: solo la persona asignada puede marcar la tarea como completada
+    if (currentMember) {
+      const assignedIds = existingTask.assignedMemberIds && existingTask.assignedMemberIds.length > 0
+        ? existingTask.assignedMemberIds
+        : existingTask.assignedToMemberId
+        ? [existingTask.assignedToMemberId]
+        : []
+
+      const isAssigned = assignedIds.includes(currentMember.id)
+      if (!isAssigned) {
+        toast('Solo la persona asignada a esta tarea puede marcarla como completada', '🔒')
+        return { pointsAwarded: 0, memberId: null, error: 'unauthorized' }
+      }
     }
 
     const result = toggleTaskStore(taskId, activeGroup.id)

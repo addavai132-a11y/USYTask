@@ -111,7 +111,11 @@ export function getTasksByGroup(groupId: string): Task[] {
 
 export function addTask(task: Task): void {
   const all = getAllTasks()
-  all.push(task)
+  const safeTask: Task = {
+    ...task,
+    points: Math.max(10, Number(task.points) || 10),
+  }
+  all.push(safeTask)
   saveArray(TASKS_KEY, all)
 }
 
@@ -144,7 +148,10 @@ export function updateTask(task: Task): void {
   const all = getAllTasks()
   const idx = all.findIndex((t) => t.id === task.id && t.groupId === task.groupId)
   if (idx >= 0) {
-    all[idx] = task
+    all[idx] = {
+      ...task,
+      points: Math.max(10, Number(task.points) || 10),
+    }
     saveArray(TASKS_KEY, all)
   }
 }

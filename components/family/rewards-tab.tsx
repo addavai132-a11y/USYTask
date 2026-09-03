@@ -140,7 +140,12 @@ export function RewardsTab() {
         return
       }
 
-      const cost = Math.max(1, parseInt(pointCost, 10) || 10)
+      const parsedCost = parseInt(pointCost, 10)
+      if (isNaN(parsedCost) || parsedCost < 10) {
+        toast('El coste debe ser como mínimo de 10 puntos', '⚠️')
+        return
+      }
+      const cost = parsedCost
       const parsedStock = stock.trim() ? Math.max(1, parseInt(stock, 10)) : undefined
 
       if (editingRewardId) {
@@ -634,10 +639,10 @@ export function RewardsTab() {
           {/* Coste y Cantidad disponible */}
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1">
-              <label className="font-bold text-slate-700 dark:text-slate-300">Coste en puntos</label>
+              <label className="font-bold text-slate-700 dark:text-slate-300">Coste en puntos (mín. 10)</label>
               <input
                 type="number"
-                min={1}
+                min={10}
                 step={10}
                 value={pointCost}
                 onChange={(e) => setPointCost(e.target.value)}

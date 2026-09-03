@@ -114,6 +114,20 @@ export function TasksSection({
   }, [taskCategories])
 
   function handleToggle(taskId: string, title: string) {
+    const targetTask = tasks.find((t) => t.id === taskId)
+    if (targetTask && currentMember) {
+      const assignedIds = targetTask.assignedMemberIds && targetTask.assignedMemberIds.length > 0
+        ? targetTask.assignedMemberIds
+        : targetTask.assignedToMemberId
+        ? [targetTask.assignedToMemberId]
+        : []
+
+      if (!assignedIds.includes(currentMember.id)) {
+        toast('Solo la persona asignada a esta tarea puede marcarla como completada', '🔒')
+        return
+      }
+    }
+
     const result = toggleTask(taskId)
     if (result.pointsAwarded > 0) {
       toast(`¡+${result.pointsAwarded} puntos!`, '⭐')
@@ -452,19 +466,38 @@ export function TasksSection({
                     >
                       <div className="flex items-center gap-3 min-w-0 flex-1">
                         {/* Tipo de actividad */}
-                        {act.type === 'task' && (
-                          <button
-                            onClick={() => handleToggle(act.rawId, act.title)}
-                            className={cn(
-                              'flex size-5 shrink-0 items-center justify-center rounded-md border transition-all',
-                              act.completed
-                                ? 'bg-blue-500 border-blue-500 text-white'
-                                : 'border-blue-500/40 text-transparent hover:border-blue-500'
-                            )}
-                          >
-                            <Check className="size-3 stroke-[3]" />
-                          </button>
-                        )}
+                        {act.type === 'task' && (() => {
+                          const isAssigned = !currentMember || act.memberIds.length === 0 || act.memberIds.includes(currentMember.id)
+                          return (
+                            <button
+                              disabled={act.completed || !isAssigned}
+                              onClick={() => {
+                                if (!isAssigned) {
+                                  toast('Solo la persona asignada a esta tarea puede marcarla como completada', '🔒')
+                                  return
+                                }
+                                handleToggle(act.rawId, act.title)
+                              }}
+                              className={cn(
+                                'flex size-5 shrink-0 items-center justify-center rounded-md border transition-all',
+                                act.completed
+                                  ? 'bg-blue-500 border-blue-500 text-white cursor-default'
+                                  : !isAssigned
+                                  ? 'border-border/40 opacity-40 cursor-not-allowed bg-secondary/30'
+                                  : 'border-blue-500/40 text-transparent hover:border-blue-500 cursor-pointer'
+                              )}
+                              title={
+                                act.completed
+                                  ? 'Tarea completada'
+                                  : !isAssigned
+                                  ? 'Solo la persona asignada puede completarla'
+                                  : 'Completar tarea'
+                              }
+                            >
+                              <Check className="size-3 stroke-[3]" />
+                            </button>
+                          )
+                        })()}
                         {act.type === 'event' && (
                           <div className="flex size-6 shrink-0 items-center justify-center rounded-md bg-emerald-50 text-emerald-700 dark:bg-purple-500/20 dark:text-purple-400">
                             <CalendarDays className="size-3.5" />
@@ -631,21 +664,33 @@ export function TasksSection({
                           {prio.label}
                         </span>
                         <div className="flex-1 min-w-0">
-                          <TaskRow
-                            task={t}
-                            member={getMemberById(t.assignedToMemberId)}
-                            creator={t.createdBy ? getMemberById(t.createdBy) : null}
-                            checked={t.completed}
-                            onToggle={() => handleToggle(t.id, t.title)}
-                            onDelete={() => {
-                              confirmDelete({
-                                title: '¿Eliminar tarea?',
-                                itemName: t.title,
-                                confirmText: 'Eliminar Tarea',
-                                onConfirm: () => deleteTask(t.id),
-                              })
-                            }}
-                          />
+                          {(() => {
+                            const assignedIds = t.assignedMemberIds && t.assignedMemberIds.length > 0
+                              ? t.assignedMemberIds
+                              : t.assignedToMemberId
+                              ? [t.assignedToMemberId]
+                              : []
+                            const isAssigned = !currentMember || assignedIds.includes(currentMember.id)
+                            return (
+                              <TaskRow
+                                task={t}
+                                member={getMemberById(t.assignedToMemberId)}
+                                creator={t.createdBy ? getMemberById(t.createdBy) : null}
+                                checked={t.completed}
+                                disabled={!isAssigned}
+                                onDisabledClick={() => toast('Solo la persona asignada a esta tarea puede marcarla como completada', '🔒')}
+                                onToggle={() => handleToggle(t.id, t.title)}
+                                onDelete={() => {
+                                  confirmDelete({
+                                    title: '¿Eliminar tarea?',
+                                    itemName: t.title,
+                                    confirmText: 'Eliminar Tarea',
+                                    onConfirm: () => deleteTask(t.id),
+                                  })
+                                }}
+                              />
+                            )
+                          })()}
                         </div>
                       </div>
                     </div>
@@ -662,19 +707,40 @@ export function TasksSection({
                     Pendientes ({filteredTasks.filter((t) => !t.completed).length})
                   </span>
                 </div>
-                {filteredTasks.filter((t) => !t.completed).map((t) => (
-                  <Card key={t.id} className="p-3 bg-white/[0.02] border-white/10 rounded-xl space-y-2">
-                    <div className="flex items-start justify-between gap-2">
-                      <p className="text-xs font-bold text-foreground">{t.title}</p>
-                      <button
-                        onClick={() => handleToggle(t.id, t.title)}
-                        className="size-5 rounded border border-white/20 flex items-center justify-center text-transparent hover:border-emerald-400"
-                      >
-                        <Check className="size-3" />
-                      </button>
-                    </div>
-                  </Card>
-                ))}
+                {filteredTasks.filter((t) => !t.completed).map((t) => {
+                  const assignedIds = t.assignedMemberIds && t.assignedMemberIds.length > 0
+                    ? t.assignedMemberIds
+                    : t.assignedToMemberId
+                    ? [t.assignedToMemberId]
+                    : []
+                  const isAssigned = !currentMember || assignedIds.includes(currentMember.id)
+                  return (
+                    <Card key={t.id} className="p-3 bg-white/[0.02] border-white/10 rounded-xl space-y-2">
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="text-xs font-bold text-foreground">{t.title}</p>
+                        <button
+                          disabled={!isAssigned}
+                          onClick={() => {
+                            if (!isAssigned) {
+                              toast('Solo la persona asignada a esta tarea puede marcarla como completada', '🔒')
+                              return
+                            }
+                            handleToggle(t.id, t.title)
+                          }}
+                          className={cn(
+                            "size-5 rounded border flex items-center justify-center text-transparent transition-all",
+                            !isAssigned
+                              ? "border-white/10 opacity-40 cursor-not-allowed"
+                              : "border-white/20 hover:border-emerald-400 cursor-pointer"
+                          )}
+                          title={!isAssigned ? "Solo la persona asignada puede completarla" : "Completar tarea"}
+                        >
+                          <Check className="size-3" />
+                        </button>
+                      </div>
+                    </Card>
+                  )
+                })}
               </div>
               <div className="space-y-2">
                 <div className="flex items-center justify-between px-1">

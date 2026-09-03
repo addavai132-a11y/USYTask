@@ -622,12 +622,25 @@ export function CalendarSection({
           items={selectedDayItems}
           onClose={() => setSelectedDayModalISO(null)}
           getMember={getMemberById}
+          currentMember={currentMember}
           onQuickAdd={(type) => {
             const dateToPass = selectedDayModalISO
             setSelectedDayModalISO(null)
             openQuickAdd(type as any, { hideTabs: true, defaultDate: dateToPass })
           }}
           onToggleTask={(taskId, title) => {
+            const targetTask = tasks.find((t) => t.id === taskId)
+            if (targetTask && currentMember) {
+              const assignedIds = targetTask.assignedMemberIds && targetTask.assignedMemberIds.length > 0
+                ? targetTask.assignedMemberIds
+                : targetTask.assignedToMemberId
+                ? [targetTask.assignedToMemberId]
+                : []
+              if (!assignedIds.includes(currentMember.id)) {
+                toast('Solo la persona asignada a esta tarea puede marcarla como completada', '🔒')
+                return
+              }
+            }
             const res = toggleTask(taskId)
             if (res.pointsAwarded > 0) {
               toast(`¡Tarea completada! +${res.pointsAwarded} pts`)
@@ -660,6 +673,7 @@ function DayDetailModal({
   items,
   onClose,
   getMember,
+  currentMember,
   onQuickAdd,
   onToggleTask,
   onDeleteTask,
@@ -670,6 +684,7 @@ function DayDetailModal({
   items: CalendarItem[]
   onClose: () => void
   getMember: (id: string) => any
+  currentMember?: Member | null
   onQuickAdd: (type: 'evento' | 'tarea' | 'recordatorio') => void
   onToggleTask: (taskId: string, title: string) => void
   onDeleteTask: (id: string) => void
@@ -814,20 +829,37 @@ function DayDetailModal({
                       )}
 
                       {/* Toggle completado si es tarea */}
-                      {item.kind === 'task' && (
-                        <button
-                          onClick={() => onToggleTask(item.rawId, item.title)}
-                          className={cn(
-                            'flex size-6 items-center justify-center rounded-lg transition-all',
-                            item.completed
-                              ? 'bg-blue-500 text-white'
-                              : 'bg-slate-200 dark:bg-white/[0.06] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                          )}
-                          title={item.completed ? 'Marcar incompleta' : 'Completar tarea'}
-                        >
-                          <Check className="size-3 stroke-[3]" />
-                        </button>
-                      )}
+                      {item.kind === 'task' && (() => {
+                        const isAssigned = !currentMember || item.memberIds.length === 0 || item.memberIds.includes(currentMember.id)
+                        return (
+                          <button
+                            disabled={item.completed || !isAssigned}
+                            onClick={() => {
+                              if (!isAssigned) {
+                                return
+                              }
+                              onToggleTask(item.rawId, item.title)
+                            }}
+                            className={cn(
+                              'flex size-6 items-center justify-center rounded-lg transition-all',
+                              item.completed
+                                ? 'bg-blue-500 text-white cursor-default'
+                                : !isAssigned
+                                ? 'bg-slate-200/50 dark:bg-white/[0.02] text-slate-400 opacity-40 cursor-not-allowed'
+                                : 'bg-slate-200 dark:bg-white/[0.06] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white cursor-pointer'
+                            )}
+                            title={
+                              item.completed
+                                ? 'Tarea completada'
+                                : !isAssigned
+                                ? 'Solo la persona asignada puede completarla'
+                                : 'Completar tarea'
+                            }
+                          >
+                            <Check className="size-3 stroke-[3]" />
+                          </button>
+                        )
+                      })()}
 
                       {/* Botón eliminar */}
                       <button
