@@ -62,6 +62,7 @@ export interface Expense {
   amount: number
   category: ExpenseCategory
   customCategory?: string
+  note?: string
   date: string // ISO YYYY-MM-DD
   paidByMemberId: string // principal
   paidByMemberIds?: string[] // selección múltiple de miembros pagadores/asociados

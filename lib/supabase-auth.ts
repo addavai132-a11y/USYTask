@@ -82,6 +82,7 @@ export async function getActiveUserSession(): Promise<UserProfile | null> {
     authProvider: 'google',
     profileCompleted,
     createdAt: user.created_at || new Date().toISOString(),
+    points: typeof profile.points === 'number' ? profile.points : 0,
   }
 
     setStoredSession(userProfile)

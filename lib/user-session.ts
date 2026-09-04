@@ -9,6 +9,7 @@ export interface UserProfile {
   authProvider: 'google' | 'email'
   profileCompleted: boolean
   createdAt: string
+  points?: number
 }
 
 const SESSION_KEY = 'usytask_user_session'

@@ -60,14 +60,33 @@ export function addMember(member: Member): void {
   saveArray(MEMBERS_KEY, all)
 }
 
+export function saveAllMembers(members: Member[]): void {
+  saveArray(MEMBERS_KEY, members)
+}
+
 export function updateMemberPoints(memberId: string, groupId: string, pointsToAdd: number): void {
   const all = getAllMembers()
-  const idx = all.findIndex((m) => m.id === memberId && m.groupId === groupId)
+  let idx = all.findIndex((m) => m.id === memberId && (m.groupId === groupId || !groupId))
+  if (idx < 0) {
+    idx = all.findIndex((m) => (m.groupId === groupId || !groupId) && m.isOwner)
+    if (idx < 0 && all.length > 0) {
+      idx = 0
+    }
+  }
   if (idx >= 0) {
     const current = Number(all[idx].points) || 0
     const delta = Number(pointsToAdd) || 0
-    all[idx] = { ...all[idx], points: current + delta }
+    const newPoints = Math.max(0, current + delta)
+    all[idx] = { ...all[idx], points: newPoints }
     saveArray(MEMBERS_KEY, all)
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(
+        new CustomEvent('usytask_points_updated', {
+          detail: { memberId: all[idx].id, pointsDelta: delta, points: newPoints },
+        })
+      )
+    }
   }
 }
 
@@ -111,11 +130,10 @@ export function getTasksByGroup(groupId: string): Task[] {
 
 export function addTask(task: Task): void {
   const all = getAllTasks()
-  const safeTask: Task = {
+  all.push({
     ...task,
     points: Math.max(10, Number(task.points) || 10),
-  }
-  all.push(safeTask)
+  })
   saveArray(TASKS_KEY, all)
 }
 
@@ -138,8 +156,11 @@ export function toggleTask(taskId: string, groupId: string): { pointsAwarded: nu
   saveArray(TASKS_KEY, all)
 
   if (task.points > 0) {
-    updateMemberPoints(task.assignedToMemberId, groupId, task.points)
-    return { pointsAwarded: task.points, memberId: task.assignedToMemberId }
+    const targetMemberId = task.assignedToMemberId || (task.assignedMemberIds && task.assignedMemberIds[0]) || task.createdBy || null
+    if (targetMemberId) {
+      updateMemberPoints(targetMemberId, groupId, task.points)
+      return { pointsAwarded: task.points, memberId: targetMemberId }
+    }
   }
   return { pointsAwarded: 0, memberId: null }
 }

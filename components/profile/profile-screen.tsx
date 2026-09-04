@@ -15,15 +15,19 @@ import { ChangePasswordModal } from './change-password-modal'
 import { usePushNotifications } from '@/hooks/use-push-notifications'
 import { useToast } from '@/components/ui/toast'
 import { useApp } from '@/components/app/app-context'
+import { useUserPoints } from '@/lib/points-service'
 import { cn } from '@/lib/utils'
 
 export function ProfileScreen() {
   const router = useRouter()
   const { toast } = useToast()
-  const { userName, activeGroup, members, openHistory } = useApp()
+  const { userName, activeGroup, members, currentMember: contextMember, openHistory } = useApp()
   const [session, setSession] = useState<UserProfile | null>(null)
   const [isNotificationModalOpen, setIsNotificationModalOpen] = useState(false)
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false)
+
+  // Real-time points hook connected to Supabase and app interactions
+  const { points: userPoints, loading: pointsLoading } = useUserPoints()
 
   const {
     isSubscribed,
@@ -74,10 +78,19 @@ export function ProfileScreen() {
   const displayEmail = session?.email || ''
   const displayUsername = session?.username ? `@${session.username}` : ''
 
-  // Find current user's member data
-  const currentMember = members.find((m) => m.name.toLowerCase() === userName.toLowerCase())
+  // Find current user's member data with robust fallback (by user ID, name match, or owner)
+  const currentMember =
+    contextMember ||
+    members.find(
+      (m) =>
+        (session?.id && (m as any).userId === session.id) ||
+        m.name.toLowerCase() === userName.toLowerCase() ||
+        m.isOwner
+    ) ||
+    members[0] ||
+    null
+
   const userRole = (currentMember?.role as string) === 'admin' ? 'Administrador' : currentMember?.role === 'hijo' || currentMember?.role === 'child' ? 'Hijo/a' : 'Adulto'
-  const userPoints = currentMember?.points || 0
   const userStreak = currentMember?.streakDays || currentMember?.streak || 0
 
   return (
@@ -121,8 +134,12 @@ export function ProfileScreen() {
               <span className="rounded-full bg-primary/10 border border-primary/20 px-2.5 py-0.5 text-[11px] font-bold text-primary">
                 {userRole}
               </span>
-              <span className="rounded-full bg-amber-500/15 border border-amber-500/30 px-2.5 py-0.5 text-[11px] font-bold text-amber-600 dark:text-amber-300 flex items-center gap-1">
-                ⭐ {userPoints} pts
+              <span className="rounded-full bg-amber-500/15 border border-amber-500/30 px-2.5 py-0.5 text-[11px] font-bold text-amber-600 dark:text-amber-300 flex items-center gap-1 transition-all">
+                ⭐ {pointsLoading && userPoints === 0 ? (
+                  <Loader2 className="size-3 animate-spin inline-block text-amber-500" />
+                ) : (
+                  <span>{userPoints} pts</span>
+                )}
               </span>
               {userStreak > 0 && (
                 <span className="rounded-full bg-orange-500/15 border border-orange-500/30 px-2.5 py-0.5 text-[11px] font-bold text-orange-600 dark:text-orange-300 flex items-center gap-1">

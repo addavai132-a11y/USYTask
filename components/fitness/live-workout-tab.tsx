@@ -153,8 +153,8 @@ export function LiveWorkoutTab({
   })
 
   const [isTimerRunning, setIsTimerRunning] = useState<boolean>(() => {
-    const saved = getActiveWorkoutSession()
-    return saved ? saved.isTimerRunning : true
+    // NUNCA arrancar automáticamente al entrar a la pantalla o modo entrenamiento
+    return false
   })
 
   const [startTimeMs, setStartTimeMs] = useState<number>(() => {
@@ -239,12 +239,12 @@ export function LiveWorkoutTab({
       const newStart = Date.now()
       setStartTimeMs(newStart)
       setSessionSeconds(0)
-      setIsTimerRunning(true)
+      setIsTimerRunning(false)
       persistCurrentWorkout(
         initialExercises,
         activeRoutineForSession.id,
         0,
-        true,
+        false,
         '',
         newStart
       )
@@ -462,6 +462,20 @@ export function LiveWorkoutTab({
     }
   }, [sessionExercises])
 
+  // ── START & PAUSE HANDLERS (EXPLICIT USER CONTROL) ──
+  function handleStartSession() {
+    if (sessionSeconds === 0) {
+      setStartTimeMs(Date.now())
+    }
+    setIsTimerRunning(true)
+    toast('⚡ Sesión de entrenamiento iniciada', '⏱️')
+  }
+
+  function handlePauseSession() {
+    setIsTimerRunning(false)
+    toast('⏸️ Cronómetro pausado', '⏸️')
+  }
+
   // ── CLEAN RESET OF CURRENT SESSION ──
   function handleResetSession() {
     clearActiveWorkoutSession()
@@ -470,10 +484,10 @@ export function LiveWorkoutTab({
     setSessionExercises(resetExercises)
     setSessionSeconds(0)
     setStartTimeMs(Date.now())
-    setIsTimerRunning(true)
+    setIsTimerRunning(false)
     setSessionNotes('')
     setIsResetModalOpen(false)
-    toast('Entrenamiento reiniciado a su estado inicial', '🔄')
+    toast('Entrenamiento reiniciado y cronómetro detenido en 00:00', '🔄')
   }
 
   // ── FINISH SESSION & CLEAN STORAGE ──
@@ -513,21 +527,50 @@ export function LiveWorkoutTab({
             </div>
             <div>
               <span className="text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
-                <span className="size-2 rounded-full bg-emerald-500 animate-ping" />
-                Sesión en Vivo (Guardado automático)
+                {isTimerRunning ? (
+                  <>
+                    <span className="size-2 rounded-full bg-emerald-500 animate-ping" />
+                    <span className="text-emerald-600 dark:text-emerald-400 font-bold">Sesión en Vivo (En curso)</span>
+                  </>
+                ) : sessionSeconds > 0 ? (
+                  <>
+                    <span className="size-2 rounded-full bg-amber-500" />
+                    <span className="text-amber-600 dark:text-amber-400 font-bold">Sesión en Pausa</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="size-2 rounded-full bg-slate-400 dark:bg-slate-500" />
+                    <span className="text-slate-500 dark:text-slate-400 font-medium">Sesión detenida</span>
+                  </>
+                )}
               </span>
-              <div className="flex items-baseline gap-2">
+              <div className="flex items-center gap-2.5 mt-0.5">
                 <span className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tabular-nums tracking-tight font-mono">
                   {formatStopwatch(sessionSeconds)}
                 </span>
-                <button
-                  type="button"
-                  onClick={() => setIsTimerRunning((r) => !r)}
-                  className="p-1 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-white/10 transition-colors"
-                  title={isTimerRunning ? 'Pausar cronómetro' : 'Reanudar cronómetro'}
-                >
-                  {isTimerRunning ? <Pause className="size-3.5" /> : <Play className="size-3.5 fill-current" />}
-                </button>
+                
+                {/* Botón de Iniciar / Pausar / Reanudar bajo demanda manual */}
+                {!isTimerRunning ? (
+                  <button
+                    type="button"
+                    onClick={handleStartSession}
+                    className="flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 text-xs font-black shadow-sm transition-all active:scale-95 cursor-pointer"
+                    title={sessionSeconds > 0 ? 'Reanudar cronómetro' : 'Iniciar sesión de entrenamiento'}
+                  >
+                    <Play className="size-3.5 fill-current" />
+                    <span>{sessionSeconds > 0 ? 'Reanudar' : 'Iniciar sesión'}</span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handlePauseSession}
+                    className="flex items-center gap-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 text-xs font-bold shadow-sm transition-all active:scale-95 cursor-pointer"
+                    title="Pausar cronómetro"
+                  >
+                    <Pause className="size-3.5" />
+                    <span>Pausar</span>
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -617,159 +660,164 @@ export function LiveWorkoutTab({
                 </button>
               </div>
 
-              {/* Tabla de Series */}
-              <div className="space-y-1.5 overflow-x-auto no-scrollbar">
-                {/* Cabecera de Columnas */}
-                <div className="grid grid-cols-12 gap-1.5 text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 px-1 text-center items-center">
-                  <div className="col-span-1">Set</div>
-                  <div className="col-span-3">Tipo</div>
-                  <div className="col-span-2">Kg</div>
-                  <div className="col-span-2">Reps</div>
-                  <div className="col-span-2">Descanso</div>
-                  <div className="col-span-2">✓</div>
+              {/* Tabla de Series con scroll horizontal garantizado en móvil */}
+              <div className="overflow-x-auto no-scrollbar pb-1">
+                <div className="min-w-[490px] sm:min-w-0 space-y-1.5">
+                  {/* Cabecera de Columnas */}
+                  <div className="grid grid-cols-12 gap-2 text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 px-1 text-center items-center">
+                    <div className="col-span-1">Set</div>
+                    <div className="col-span-3 min-w-[120px] text-left pl-1">Tipo</div>
+                    <div className="col-span-2 min-w-[64px]">Kg</div>
+                    <div className="col-span-2 min-w-[56px]">Reps</div>
+                    <div className="col-span-2 min-w-[62px]">Descanso</div>
+                    <div className="col-span-2 min-w-[62px]">✓</div>
+                  </div>
+
+                  {/* Filas de Series con inputs y checks persistentes */}
+                  {exerciseSession.sets.map((set, setIdx) => {
+                    return (
+                      <div
+                        key={set.id ? `${set.id}-${setIdx}` : `set-${exIdx}-${setIdx}`}
+                        className={cn(
+                          'grid grid-cols-12 gap-2 items-center p-2 rounded-xl transition-all duration-200 text-xs font-semibold text-center',
+                          set.completed
+                            ? 'bg-emerald-50 border border-emerald-300 text-emerald-950 dark:bg-emerald-950/30 dark:border-emerald-500/40 dark:text-emerald-100 shadow-[inset_0_1px_0_0_rgba(16,185,129,0.15)]'
+                            : 'bg-slate-50/80 border border-slate-200/90 text-slate-900 hover:bg-slate-100/90 dark:bg-white/[0.02] dark:border-white/5 dark:text-slate-200 dark:hover:bg-white/[0.04]'
+                        )}
+                      >
+                        {/* Set Number */}
+                        <div className={cn(
+                          'col-span-1 font-mono font-black transition-colors',
+                          set.completed ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-600 dark:text-slate-400'
+                        )}>
+                          {set.setNumber}
+                        </div>
+
+                        {/* Tipo de Serie con portal flotante sin recorte */}
+                        <div className="col-span-3 min-w-[120px]">
+                          <CustomSelect<SetType>
+                            value={set.type}
+                            onChange={(val) => handleUpdateSet(exIdx, setIdx, 'type', val)}
+                            usePortal={true}
+                            options={[
+                              { value: 'calentamiento', label: 'W · Calentamiento' },
+                              { value: 'efectiva', label: 'S · Efectiva' },
+                              { value: 'dropset', label: 'D · Drop Set' },
+                              { value: 'fallo', label: 'F · Al Fallo' },
+                            ]}
+                            className="w-full"
+                            triggerClassName={cn(
+                              'py-1.5 px-2 text-[11px] rounded-lg transition-colors font-semibold truncate w-full',
+                              set.completed && 'border-emerald-400 text-emerald-900 dark:text-emerald-200'
+                            )}
+                            panelClassName="min-w-[150px] max-w-[190px]"
+                          />
+                        </div>
+
+                        {/* Kg / Peso Input */}
+                        <div className="col-span-2 min-w-[64px]">
+                          <input
+                            type="number"
+                            step="0.5"
+                            value={set.weightKg === 0 ? '' : (set.weightKg ?? '')}
+                            onChange={(e) =>
+                              handleUpdateSet(
+                                exIdx,
+                                setIdx,
+                                'weightKg',
+                                e.target.value === '' ? ('' as any) : parseFloat(e.target.value)
+                              )
+                            }
+                            placeholder="Kg"
+                            className={cn(
+                              'w-full rounded-lg border py-1.5 px-1 text-center font-mono font-bold text-xs outline-none transition-colors',
+                              set.completed
+                                ? 'border-emerald-400 bg-emerald-100/50 text-emerald-950 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-400/30 dark:border-emerald-500/40 dark:bg-emerald-950/40 dark:text-emerald-100'
+                                : 'border-slate-300 bg-white text-slate-900 focus:border-emerald-500 dark:border-purple-500/20 dark:bg-white/[0.04] dark:text-white dark:focus:border-purple-500'
+                            )}
+                          />
+                        </div>
+
+                        {/* Reps Input */}
+                        <div className="col-span-2 min-w-[56px]">
+                          <input
+                            type="number"
+                            value={set.reps === 0 ? '' : (set.reps ?? '')}
+                            onChange={(e) =>
+                              handleUpdateSet(
+                                exIdx,
+                                setIdx,
+                                'reps',
+                                e.target.value === '' ? ('' as any) : parseInt(e.target.value, 10)
+                              )
+                            }
+                            placeholder="Reps"
+                            className={cn(
+                              'w-full rounded-lg border py-1.5 px-1 text-center font-mono font-bold text-xs outline-none transition-colors',
+                              set.completed
+                                ? 'border-emerald-400 bg-emerald-100/50 text-emerald-950 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-400/30 dark:border-emerald-500/40 dark:bg-emerald-950/40 dark:text-emerald-100'
+                                : 'border-slate-300 bg-white text-slate-900 focus:border-emerald-500 dark:border-purple-500/20 dark:bg-white/[0.04] dark:text-white dark:focus:border-purple-500'
+                            )}
+                          />
+                        </div>
+
+                        {/* Descanso por Serie (s) Input */}
+                        <div className="col-span-2 min-w-[62px] relative">
+                          <input
+                            type="number"
+                            step="5"
+                            min="0"
+                            placeholder={String(exerciseSession.targetRestSeconds || 90)}
+                            value={set.restSeconds ?? ''}
+                            onChange={(e) =>
+                              handleUpdateSet(
+                                exIdx,
+                                setIdx,
+                                'restSeconds',
+                                e.target.value === '' ? ('' as any) : parseInt(e.target.value, 10)
+                              )
+                            }
+                            className={cn(
+                              'w-full rounded-lg border py-1.5 pr-3 text-center font-mono font-bold text-xs outline-none transition-colors',
+                              set.completed
+                                ? 'border-emerald-400 bg-emerald-100/50 text-emerald-950 dark:border-emerald-500/40 dark:bg-emerald-950/40 dark:text-emerald-100'
+                                : 'border-slate-300 bg-white text-slate-900 focus:border-emerald-500 dark:border-purple-500/20 dark:bg-white/[0.04] dark:text-white dark:focus:border-purple-500'
+                            )}
+                          />
+                          <span className="absolute right-1 top-1/2 -translate-y-1/2 text-[9px] font-bold text-slate-400 pointer-events-none">
+                            s
+                          </span>
+                        </div>
+
+                        {/* Check Complete Circular Button & Delete */}
+                        <div className="col-span-2 min-w-[62px] flex items-center justify-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => handleToggleSetComplete(exIdx, setIdx)}
+                            className={cn(
+                              'size-7 sm:size-8 rounded-full flex items-center justify-center transition-all duration-200 active:scale-90 select-none shrink-0 cursor-pointer',
+                              set.completed
+                                ? 'bg-emerald-600 hover:bg-emerald-700 border border-emerald-500 text-white shadow-sm ring-2 ring-emerald-500/30'
+                                : 'bg-white border border-slate-300 text-slate-400 hover:border-emerald-500 hover:text-emerald-600 hover:bg-emerald-50 dark:bg-white/[0.05] dark:border-white/20 dark:text-slate-400 dark:hover:border-purple-400 dark:hover:text-white dark:hover:bg-purple-500/10'
+                            )}
+                            title={set.completed ? 'Serie completada (clic para desmarcar)' : `Completar serie (inicia descanso de ${set.restSeconds ?? exerciseSession.targetRestSeconds ?? 90}s)`}
+                          >
+                            <Check className={cn('size-3.5 sm:size-4 stroke-[3.5] transition-transform duration-200', set.completed && 'scale-110')} />
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveSet(exIdx, setIdx)}
+                            className="p-1 text-slate-400 hover:text-rose-600 transition-colors rounded-lg hover:bg-slate-100 dark:hover:bg-white/5"
+                            title="Eliminar serie"
+                          >
+                            <Trash2 className="size-3" />
+                          </button>
+                        </div>
+                      </div>
+                    )
+                  })}
                 </div>
-
-                {/* Filas de Series con inputs y checks persistentes */}
-                {exerciseSession.sets.map((set, setIdx) => {
-                  return (
-                    <div
-                      key={set.id ? `${set.id}-${setIdx}` : `set-${exIdx}-${setIdx}`}
-                      className={cn(
-                        'grid grid-cols-12 gap-1.5 items-center p-2 rounded-xl transition-all duration-200 text-xs font-semibold text-center',
-                        set.completed
-                          ? 'bg-emerald-50 border border-emerald-300 text-emerald-950 dark:bg-emerald-950/30 dark:border-emerald-500/40 dark:text-emerald-100 shadow-[inset_0_1px_0_0_rgba(16,185,129,0.15)]'
-                          : 'bg-slate-50/80 border border-slate-200/90 text-slate-900 hover:bg-slate-100/90 dark:bg-white/[0.02] dark:border-white/5 dark:text-slate-200 dark:hover:bg-white/[0.04]'
-                      )}
-                    >
-                      {/* Set Number */}
-                      <div className={cn(
-                        'col-span-1 font-mono font-black transition-colors',
-                        set.completed ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-600 dark:text-slate-400'
-                      )}>
-                        {set.setNumber}
-                      </div>
-
-                      {/* Tipo de Serie */}
-                      <div className="col-span-3">
-                        <CustomSelect<SetType>
-                          value={set.type}
-                          onChange={(val) => handleUpdateSet(exIdx, setIdx, 'type', val)}
-                          options={[
-                            { value: 'calentamiento', label: 'W · Calentamiento' },
-                            { value: 'efectiva', label: 'S · Efectiva' },
-                            { value: 'dropset', label: 'D · Drop Set' },
-                            { value: 'fallo', label: 'F · Al Fallo' },
-                          ]}
-                          triggerClassName={cn(
-                            'py-1 px-1.5 text-[11px] rounded-lg transition-colors font-semibold truncate',
-                            set.completed && 'border-emerald-400 text-emerald-900 dark:text-emerald-200'
-                          )}
-                        />
-                      </div>
-
-                      {/* Kg / Peso Input */}
-                      <div className="col-span-2">
-                        <input
-                          type="number"
-                          step="0.5"
-                          value={set.weightKg === 0 ? '' : (set.weightKg ?? '')}
-                          onChange={(e) =>
-                            handleUpdateSet(
-                              exIdx,
-                              setIdx,
-                              'weightKg',
-                              e.target.value === '' ? ('' as any) : parseFloat(e.target.value)
-                            )
-                          }
-                          placeholder="Kg"
-                          className={cn(
-                            'w-full rounded-lg border py-1 text-center font-mono font-bold text-xs outline-none transition-colors',
-                            set.completed
-                              ? 'border-emerald-400 bg-emerald-100/50 text-emerald-950 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-400/30 dark:border-emerald-500/40 dark:bg-emerald-950/40 dark:text-emerald-100'
-                              : 'border-slate-300 bg-white text-slate-900 focus:border-emerald-500 dark:border-purple-500/20 dark:bg-white/[0.04] dark:text-white dark:focus:border-purple-500'
-                          )}
-                        />
-                      </div>
-
-                      {/* Reps Input */}
-                      <div className="col-span-2">
-                        <input
-                          type="number"
-                          value={set.reps === 0 ? '' : (set.reps ?? '')}
-                          onChange={(e) =>
-                            handleUpdateSet(
-                              exIdx,
-                              setIdx,
-                              'reps',
-                              e.target.value === '' ? ('' as any) : parseInt(e.target.value, 10)
-                            )
-                          }
-                          placeholder="Reps"
-                          className={cn(
-                            'w-full rounded-lg border py-1 text-center font-mono font-bold text-xs outline-none transition-colors',
-                            set.completed
-                              ? 'border-emerald-400 bg-emerald-100/50 text-emerald-950 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-400/30 dark:border-emerald-500/40 dark:bg-emerald-950/40 dark:text-emerald-100'
-                              : 'border-slate-300 bg-white text-slate-900 focus:border-emerald-500 dark:border-purple-500/20 dark:bg-white/[0.04] dark:text-white dark:focus:border-purple-500'
-                          )}
-                        />
-                      </div>
-
-                      {/* Descanso por Serie (s) Input */}
-                      <div className="col-span-2 relative">
-                        <input
-                          type="number"
-                          step="5"
-                          min="0"
-                          placeholder={String(exerciseSession.targetRestSeconds || 90)}
-                          value={set.restSeconds ?? ''}
-                          onChange={(e) =>
-                            handleUpdateSet(
-                              exIdx,
-                              setIdx,
-                              'restSeconds',
-                              e.target.value === '' ? ('' as any) : parseInt(e.target.value, 10)
-                            )
-                          }
-                          className={cn(
-                            'w-full rounded-lg border py-1 pr-3 text-center font-mono font-bold text-xs outline-none transition-colors',
-                            set.completed
-                              ? 'border-emerald-400 bg-emerald-100/50 text-emerald-950 dark:border-emerald-500/40 dark:bg-emerald-950/40 dark:text-emerald-100'
-                              : 'border-slate-300 bg-white text-slate-900 focus:border-emerald-500 dark:border-purple-500/20 dark:bg-white/[0.04] dark:text-white dark:focus:border-purple-500'
-                          )}
-                        />
-                        <span className="absolute right-1 top-1/2 -translate-y-1/2 text-[9px] font-bold text-slate-400 pointer-events-none">
-                          s
-                        </span>
-                      </div>
-
-                      {/* Check Complete Circular Button & Delete */}
-                      <div className="col-span-2 flex items-center justify-center gap-1">
-                        <button
-                          type="button"
-                          onClick={() => handleToggleSetComplete(exIdx, setIdx)}
-                          className={cn(
-                            'size-7 sm:size-8 rounded-full flex items-center justify-center transition-all duration-200 active:scale-90 select-none shrink-0 cursor-pointer',
-                            set.completed
-                              ? 'bg-emerald-600 hover:bg-emerald-700 border border-emerald-500 text-white shadow-sm ring-2 ring-emerald-500/30'
-                              : 'bg-white border border-slate-300 text-slate-400 hover:border-emerald-500 hover:text-emerald-600 hover:bg-emerald-50 dark:bg-white/[0.05] dark:border-white/20 dark:text-slate-400 dark:hover:border-purple-400 dark:hover:text-white dark:hover:bg-purple-500/10'
-                          )}
-                          title={set.completed ? 'Serie completada (clic para desmarcar)' : `Completar serie (inicia descanso de ${set.restSeconds ?? exerciseSession.targetRestSeconds ?? 90}s)`}
-                        >
-                          <Check className={cn('size-3.5 sm:size-4 stroke-[3.5] transition-transform duration-200', set.completed && 'scale-110')} />
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveSet(exIdx, setIdx)}
-                          className="p-1 text-slate-400 hover:text-rose-600 transition-colors rounded-lg hover:bg-slate-100 dark:hover:bg-white/5"
-                          title="Eliminar serie"
-                        >
-                          <Trash2 className="size-3" />
-                        </button>
-                      </div>
-                    </div>
-                  )
-                })}
               </div>
 
               {/* Botón + Añadir Serie */}
@@ -1017,7 +1065,7 @@ export function LiveWorkoutTab({
               </div>
             </div>
             <p className="text-xs text-slate-600 dark:text-slate-300">
-              Esta acción limpiará los checks de series de la sesión actual y restablecerá el cronómetro a 0.
+              Esta acción limpiará los checks de series de la sesión actual y restablecerá el cronómetro a 00:00 (totalmente detenido hasta que pulses manualmente &quot;Iniciar sesión&quot;).
             </p>
             <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200 dark:border-white/10">
               <button

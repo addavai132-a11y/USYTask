@@ -135,6 +135,7 @@ import {
   notifyTaskDue,
 } from '@/lib/notification-triggers'
 import { checkProximityAndRecurringAlerts } from '@/lib/notification-dispatcher'
+import { syncUserPointsToDatabase } from '@/lib/points-service'
 
 export type Tab = 'inicio' | 'organizar' | 'hogar' | 'fitness' | 'familia' | 'perfil'
 export type AddTab = 'tarea' | 'evento' | 'recordatorio' | 'miembro'
@@ -620,6 +621,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, [refreshData])
 
+  // Process monthly recurring items whenever selectedMonthISO changes
+  useEffect(() => {
+    if (activeGroup?.id && selectedMonthISO) {
+      processMonthlyRecurringItems(activeGroup.id, selectedMonthISO)
+      setExpenses(getExpensesByGroup(activeGroup.id))
+      setIncomes(getIncomesByGroup(activeGroup.id))
+    }
+  }, [activeGroup?.id, selectedMonthISO])
+
   // Tab navigation history & root boundary anchor
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -816,6 +826,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const result = toggleTaskStore(taskId, activeGroup.id)
     
     if (result.pointsAwarded > 0 && result.memberId) {
+      // Sync real-time points with Supabase and local event
+      syncUserPointsToDatabase(result.pointsAwarded, result.memberId).catch((err) =>
+        console.warn('syncUserPointsToDatabase error:', err)
+      )
+
       const task = getTasksByGroup(activeGroup.id).find(t => t.id === taskId)
       if (task) {
         const completedByMember = getMemberByIdStore(result.memberId, activeGroup.id)
@@ -1641,6 +1656,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       return { completedNow: false, pointsAwarded: 0, alreadyDoneToday: true }
     }
     if (res.completedNow && res.pointsAwarded > 0) {
+      const firstTargetMemberId = (res.challenge?.assignedMemberIds && res.challenge.assignedMemberIds[0]) || currentMember?.id
+      syncUserPointsToDatabase(res.pointsAwarded, firstTargetMemberId).catch((err) =>
+        console.warn('syncUserPointsToDatabase error:', err)
+      )
+
       if (res.challenge?.assignedMemberIds && res.challenge.assignedMemberIds.length > 0) {
         res.challenge.assignedMemberIds.forEach((mId) => {
           adjustMemberPointsStore(mId, activeGroup.id, res.pointsAwarded)
@@ -1703,6 +1723,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     try {
       const res = claimRewardStore(rewardId, memberId, activeGroup.id)
       if (res.success && res.reward) {
+        syncUserPointsToDatabase(-res.reward.pointCost, memberId).catch((err) =>
+          console.warn('syncUserPointsToDatabase error:', err)
+        )
+
         const claimingMember = getMembersByGroup(activeGroup.id).find((m) => m.id === memberId)
         try {
           addActivityStore({
