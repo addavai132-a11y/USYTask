@@ -69,7 +69,7 @@ export async function POST(req: Request) {
     // 5. Preparar payload y enviar notificación
     const payload = JSON.stringify({
       title: 'USYTask 🚀',
-      body: '¡Enhorabuena! Notificación Push recibida correctamente.',
+      body: '¡Notificaciones activadas con éxito! Ahora estarás al tanto de todo.',
       icon: '/icon-192x192.png',
       badge: '/icon-192x192.png',
       url: '/app',

@@ -60,7 +60,7 @@ export async function POST(req: Request) {
         .eq('group_id', body.groupId)
 
       if (groupMembers && groupMembers.length > 0) {
-        targetUserIds = groupMembers.map((m) => m.user_id).filter(Boolean)
+        targetUserIds = groupMembers.map((m) => m.user_id).filter(id => id && id !== user.id)
       }
     }
 

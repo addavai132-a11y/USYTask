@@ -225,7 +225,7 @@ export function usePushNotifications() {
             const reg = await navigator.serviceWorker.ready.catch(() => null)
             if (reg && reg.showNotification) {
               await reg.showNotification('USYTask 🚀', {
-                body: '¡Notificación de prueba recibida correctamente!',
+                body: '¡Notificaciones activadas con éxito! Ahora estarás al tanto de todo.',
                 icon: '/icon-192x192.png',
                 badge: '/icon-192x192.png',
               })
@@ -237,7 +237,7 @@ export function usePushNotifications() {
         }
 
         new Notification('USYTask 🚀', {
-          body: '¡Notificación de prueba recibida correctamente!',
+          body: '¡Notificaciones activadas con éxito! Ahora estarás al tanto de todo.',
           icon: '/icon-192x192.png',
         })
         return { success: true }
@@ -267,7 +267,7 @@ export function usePushNotifications() {
       // Si el endpoint falló o no había suscripción remota, fallback local
       try {
         new Notification('USYTask 🚀', {
-          body: '¡Notificación de prueba recibida correctamente!',
+          body: '¡Notificaciones activadas con éxito! Ahora estarás al tanto de todo.',
           icon: '/icon-192x192.png',
         })
       } catch (e) {
@@ -279,7 +279,7 @@ export function usePushNotifications() {
       if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
         try {
           new Notification('USYTask 🚀', {
-            body: '¡Notificación de prueba recibida correctamente!',
+            body: '¡Notificaciones activadas con éxito! Ahora estarás al tanto de todo.',
             icon: '/icon-192x192.png',
           })
           return { success: true }

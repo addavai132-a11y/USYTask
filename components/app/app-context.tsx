@@ -969,6 +969,45 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const handleUpdateEvent = (event: CalendarEvent) => {
     if (!activeGroup) return
     updateEventStore(event)
+
+    const groupMembers = getMembersByGroup(activeGroup.id)
+    const actingMember =
+      groupMembers.find((m) => m.name === userName) ||
+      groupMembers[0] ||
+      { id: currentMember?.id || 'usr_default', name: userName || 'Usuario' }
+    const creatorName = actingMember.name || 'Alguien'
+    const targetEventMemberIds = (event.assignedMemberIds || []).filter((id) => id !== actingMember.id)
+
+    if (targetEventMemberIds.length > 0) {
+      addNotificationStore({
+        id: `notif_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+        groupId: activeGroup.id,
+        recipientMemberId: targetEventMemberIds[0],
+        type: 'event',
+        title: 'Evento modificado',
+        body: `${creatorName} ha modificado el evento: "${event.title}"`,
+        timestamp: new Date().toISOString(),
+        read: false,
+        actionUrl: '/app?tab=organizar',
+        data: { eventId: event.id, tab: 'organizar', subTab: 'calendario' },
+        colorVar: 'var(--purple-500)',
+      })
+
+      if (typeof window !== 'undefined') {
+        fetch('/api/push/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            groupId: activeGroup.id,
+            title: 'Evento modificado',
+            body: `${creatorName} ha modificado el evento: "${event.title}"`,
+            url: '/app?tab=organizar',
+            data: { type: 'organizacion_events', eventId: event.id },
+          }),
+        }).catch((err) => console.warn('Push error:', err))
+      }
+    }
+
     refreshData()
     bump()
   }
