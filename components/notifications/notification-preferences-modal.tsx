@@ -108,11 +108,13 @@ export function NotificationPreferencesModal({
         body: JSON.stringify({ preferences: updated }),
       })
 
-      if (res.ok) {
+      const data = await res.json().catch(() => ({}))
+
+      if (res.ok && data.success !== false) {
         // Silencioso para evitar spam de toasts
       } else {
         setPreferences(safePreferences) // Revert on error
-        toast('Error guardando en el servidor', '⚠️')
+        toast(data.message || 'Error guardando en el servidor', '⚠️')
       }
     } catch (err) {
       console.error('Error guardando preferencias:', err)

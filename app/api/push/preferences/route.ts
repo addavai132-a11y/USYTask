@@ -63,32 +63,18 @@ export async function POST(req: Request) {
       ...(body?.preferences || {}),
     }
 
-    const { data: existing } = await supabase
+    const { error: upsertError } = await supabase
       .from('notification_preferences')
-      .select('id')
-      .eq('user_id', user.id)
-      .maybeSingle()
-
-    if (existing) {
-      const { error: updateError } = await supabase
-        .from('notification_preferences')
-        .update({
-          preferences,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', existing.id)
-
-      if (updateError) throw updateError
-    } else {
-      const { error: insertError } = await supabase
-        .from('notification_preferences')
-        .insert({
+      .upsert(
+        {
           user_id: user.id,
           preferences,
-        })
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'user_id' }
+      )
 
-      if (insertError) throw insertError
-    }
+    if (upsertError) throw upsertError
 
     return NextResponse.json({
       success: true,
@@ -97,7 +83,7 @@ export async function POST(req: Request) {
   } catch (error) {
     console.error('Error guardando preferencias en /api/push/preferences:', error)
     return NextResponse.json(
-      { error: 'Error guardando preferencias en el servidor.' },
+      { success: false, message: 'No se pudieron guardar tus preferencias, inténtalo de nuevo.' },
       { status: 500 }
     )
   }

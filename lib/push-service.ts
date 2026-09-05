@@ -1,7 +1,14 @@
 import webpush from 'web-push'
-import { createClient } from '@/lib/supabase-server'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import type { PushNotificationPayload, NotificationType, NotificationPreferences } from '@/types/notifications'
 import { DEFAULT_NOTIFICATION_PREFERENCES } from '@/types/notifications'
+
+// Cliente de Supabase Admin (Bypass RLS para poder leer las suscripciones de otros usuarios)
+function getSupabaseAdmin() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+  return createSupabaseClient(supabaseUrl, serviceRoleKey)
+}
 
 // Inicializar configuración VAPID
 function ensureVapidConfig(): boolean {
@@ -56,13 +63,14 @@ export async function sendPushNotification(
     return result
   }
 
-  const supabase = await createClient()
+  // Usar admin client para bypassear RLS y poder leer y borrar subscripciones de otros usuarios
+  const supabaseAdmin = getSupabaseAdmin()
 
   // 1. Filtrar usuarios que tengan silenciada esta categoría de notificación
   let targetUserIds = [...userIds]
 
   if (notificationType) {
-    const { data: prefsData } = await supabase
+    const { data: prefsData } = await supabaseAdmin
       .from('notification_preferences')
       .select('user_id, preferences')
       .in('user_id', userIds)
@@ -89,7 +97,7 @@ export async function sendPushNotification(
   }
 
   // 2. Obtener todas las suscripciones activas de los usuarios destino
-  const { data: subscriptions, error: subsError } = await supabase
+  const { data: subscriptions, error: subsError } = await supabaseAdmin
     .from('push_subscriptions')
     .select('id, user_id, subscription')
     .in('user_id', targetUserIds)
@@ -140,7 +148,7 @@ export async function sendPushNotification(
 
   // 5. Limpieza automática de endpoints caducados en la base de datos
   if (expiredSubscriptionIds.length > 0) {
-    const { error: cleanError } = await supabase
+    const { error: cleanError } = await supabaseAdmin
       .from('push_subscriptions')
       .delete()
       .in('id', expiredSubscriptionIds)
