@@ -8,7 +8,15 @@ const ToastContext = createContext<{ toast: (message: string, emoji?: string) =>
 
 export function useToast() {
   const ctx = useContext(ToastContext)
-  if (!ctx) throw new Error('useToast must be used within ToastProvider')
+  if (!ctx) {
+    return {
+      toast: (message: string, emoji?: string) => {
+        if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+          console.warn('[useToast] toast llamado fuera de ToastProvider:', message)
+        }
+      },
+    }
+  }
   return ctx
 }
 

@@ -1,5 +1,7 @@
 'use client'
 
+export const dynamic = 'force-dynamic'
+
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import {
@@ -23,10 +25,10 @@ import {
 } from '@/lib/promo-codes'
 import type { PromoCode, PromoPlanType } from '@/types/promo-codes'
 import { getStoredSession } from '@/lib/user-session'
-import { useToast } from '@/components/ui/toast'
+import { useToast, ToastProvider } from '@/components/ui/toast'
 import { cn } from '@/lib/utils'
 
-export default function DevPromoCodesPage() {
+function DevPromoCodesContent() {
   const { toast } = useToast()
   const isDev = isDevEnvironment()
   const [codes, setCodes] = useState<PromoCode[]>([])
@@ -311,5 +313,13 @@ export default function DevPromoCodesPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function DevPromoCodesPage() {
+  return (
+    <ToastProvider>
+      <DevPromoCodesContent />
+    </ToastProvider>
   )
 }
