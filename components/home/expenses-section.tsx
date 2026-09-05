@@ -15,10 +15,14 @@ import {
   type ExpenseCategory,
   type UtilityType,
   type ConsumptionData,
+  type ExpenseFrequency,
   EXPENSE_CATEGORIES,
+  EXPENSE_FREQUENCIES,
+  EXPENSE_FREQUENCY_CONFIG,
   expenseCategoryMeta,
   formatCurrency,
   getExpenseMemberIds,
+  isExpenseDueInMonth,
 } from '@/types/finances'
 import { getTodayISO } from '@/lib/date-utils'
 import { cn } from '@/lib/utils'
@@ -49,7 +53,7 @@ export function ExpensesSection() {
   const [customCategoryInput, setCustomCategoryInput] = useState('')
   const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([])
   const [date, setDate] = useState(getTodayISO())
-  const [isRecurring, setIsRecurring] = useState(false)
+  const [frequency, setFrequency] = useState<ExpenseFrequency>('puntual')
   const [billingDay, setBillingDay] = useState('1')
 
   // Optional consumption fields (suministros: luz, agua, gas, etc.)
@@ -89,7 +93,7 @@ export function ExpensesSection() {
     setCustomCategoryInput('')
     setSelectedMemberIds([])
     setDate(getTodayISO())
-    setIsRecurring(false)
+    setFrequency('puntual')
     setBillingDay(new Date().getDate().toString())
     setHasConsumption(false)
     setUtilityType('electricidad')
@@ -108,7 +112,8 @@ export function ExpensesSection() {
     setCustomCategoryInput(exp.customCategory || '')
     setSelectedMemberIds(getExpenseMemberIds(exp))
     setDate(exp.date || getTodayISO())
-    setIsRecurring(exp.isRecurring)
+    const initialFreq: ExpenseFrequency = exp.frequency || (exp.isRecurring ? 'mensual' : 'puntual')
+    setFrequency(initialFreq)
     setBillingDay((exp.billingDay || (exp.date ? parseInt(exp.date.split('-')[2] || '1', 10) : 1)).toString())
     
     if (exp.consumption && (exp.consumption.consumptionValue !== undefined && exp.consumption.consumptionValue !== null)) {
@@ -148,7 +153,8 @@ export function ExpensesSection() {
 
     const memberIds = selectedMemberIds
     const customCat = category === 'otros' && customCategoryInput.trim() ? customCategoryInput.trim() : undefined
-    const parsedBillingDay = isRecurring ? Math.min(31, Math.max(1, parseInt(billingDay, 10) || 1)) : undefined
+    const isRec = frequency !== 'puntual'
+    const parsedBillingDay = isRec ? Math.min(31, Math.max(1, parseInt(billingDay, 10) || 1)) : undefined
 
     const parsedUnits = parseFloat(consumptionValue.replace(',', '.')) || 0
     const rawPrice = unitPrice.trim() ? parseFloat(unitPrice.replace(',', '.')) : NaN
@@ -178,7 +184,8 @@ export function ExpensesSection() {
         date,
         paidByMemberId: memberIds[0] || '',
         paidByMemberIds: memberIds,
-        isRecurring,
+        isRecurring: isRec,
+        frequency,
         billingDay: parsedBillingDay,
         consumption: consumptionData,
       })
@@ -193,7 +200,8 @@ export function ExpensesSection() {
         date,
         paidByMemberId: memberIds[0] || '',
         paidByMemberIds: memberIds,
-        isRecurring,
+        isRecurring: isRec,
+        frequency,
         billingDay: parsedBillingDay,
         consumption: consumptionData,
       })
@@ -218,7 +226,7 @@ export function ExpensesSection() {
           className="flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 text-xs font-bold transition-all active:scale-95 shadow-sm"
         >
           <Plus className="size-3.5" />
-          <span>+ Registrar gasto</span>
+          <span>Registrar gasto</span>
         </button>
       </div>
 
@@ -292,9 +300,9 @@ export function ExpensesSection() {
                           📝 {noteText}
                         </span>
                       )}
-                      {exp.isRecurring && (
+                      {((exp.frequency && exp.frequency !== 'puntual') || exp.isRecurring) && (
                         <span className="px-2 py-0.5 rounded bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 text-[10px] font-bold text-amber-700 dark:text-amber-300">
-                          🔄 Fijo mensual {exp.billingDay ? `(Día ${exp.billingDay})` : ''}
+                          🔄 {EXPENSE_FREQUENCY_CONFIG[exp.frequency || 'mensual']?.label || 'Recurrente'} {exp.billingDay ? `(Día ${exp.billingDay})` : ''}
                         </span>
                       )}
                       {exp.consumption && (exp.consumption.consumptionValue || exp.consumption.customUtilityName || exp.consumption.utilityType) && (
@@ -436,7 +444,7 @@ export function ExpensesSection() {
 
               <div className="grid grid-cols-2 gap-2">
                 <div className="flex flex-col gap-1">
-                  <label className="font-semibold text-slate-500 dark:text-slate-400">Fecha del gasto</label>
+                  <label className="font-semibold text-slate-700 dark:text-slate-300">Fecha del gasto</label>
                   <input
                     type="date"
                     value={date}
@@ -445,34 +453,36 @@ export function ExpensesSection() {
                   />
                 </div>
 
-                <div className="flex flex-col justify-end">
-                  <label className="flex items-center gap-2 p-2 rounded-xl bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/5 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={isRecurring}
-                      onChange={(e) => setIsRecurring(e.target.checked)}
-                      className="rounded accent-emerald-600"
-                    />
-                    <span className="font-semibold text-slate-700 dark:text-slate-300">Gasto fijo mensual</span>
-                  </label>
+                <div className="flex flex-col gap-1">
+                  <label className="font-semibold text-slate-700 dark:text-slate-300">Periodicidad</label>
+                  <CustomSelect<ExpenseFrequency>
+                    value={frequency}
+                    onChange={(val) => setFrequency(val)}
+                    options={EXPENSE_FREQUENCIES}
+                  />
                 </div>
               </div>
 
-              {isRecurring && (
-                <div className="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 flex items-center justify-between gap-2">
-                  <div>
-                    <span className="font-bold text-amber-800 dark:text-amber-300 text-xs">Día de cobro/pago del mes</span>
-                    <p className="text-[10px] text-slate-500 dark:text-slate-400">Generación recurrente cada mes</p>
+              {/* Selector dinámico de día de cobro si es periódico (Bimestral, Trimestral, Mensual, Anual) */}
+              {frequency !== 'puntual' && (
+                <div className="p-3 rounded-2xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 flex items-center justify-between gap-3 animate-fade-in">
+                  <div className="min-w-0">
+                    <span className="font-bold text-amber-800 dark:text-amber-300 text-xs block">
+                      Día exacto de cobro del ciclo
+                    </span>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                      Cobro el día {billingDay || '1'} · Periodicidad {EXPENSE_FREQUENCY_CONFIG[frequency]?.label.toLowerCase()}
+                    </p>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <span className="text-xs text-slate-500">Día</span>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <span className="text-xs font-semibold text-slate-500">Día</span>
                     <input
                       type="number"
                       min={1}
                       max={31}
                       value={billingDay}
                       onChange={(e) => setBillingDay(e.target.value)}
-                      className="w-14 rounded-lg border border-amber-300 dark:border-amber-500/40 bg-white dark:bg-black/40 py-1 px-2 font-mono font-bold text-center text-xs text-slate-900 dark:text-white outline-none"
+                      className="w-16 rounded-xl border border-amber-300 dark:border-amber-500/40 bg-white dark:bg-black/40 py-1.5 px-2 font-mono font-bold text-center text-xs text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-amber-500"
                     />
                   </div>
                 </div>

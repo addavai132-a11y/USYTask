@@ -10,6 +10,8 @@ import {
   formatCurrency,
   formatMonthLabel,
   getPreviousMonthISO,
+  getEffectiveExpensesForMonth,
+  getEffectiveBillsForMonth,
 } from '@/types/finances'
 import { getTodayISO } from '@/lib/date-utils'
 import { cn } from '@/lib/utils'
@@ -51,21 +53,12 @@ export function ConsumptionComparison({ onOpenAddBill }: { onOpenAddBill?: () =>
   const [monthA, setMonthA] = useState<string>(defaultMonthA)
   const [monthB, setMonthB] = useState<string>(defaultMonthB)
 
-  // Helper to extract data for a specific utility in a given month
+  // Helper to extract data for a specific utility in a given month using effective monthly expenses
   const getUtilityDataForMonth = (utilType: UtilityType, monthISO: string) => {
-    const matchingBills = bills.filter((b) => {
-      const name = b.name.toLowerCase()
-      return (
-        b.consumption?.utilityType === utilType ||
-        (utilType === 'electricidad' && (name.includes('luz') || name.includes('endesa') || name.includes('iberdrola') || name.includes('elec'))) ||
-        (utilType === 'agua' && (name.includes('agua') || name.includes('aqualia') || name.includes('canal'))) ||
-        (utilType === 'gas' && (name.includes('gas') || name.includes('naturgy') || name.includes('butano'))) ||
-        (utilType === 'combustible' && (name.includes('gasolina') || name.includes('diésel') || name.includes('combustible') || name.includes('repsol')))
-      )
-    })
+    const effectiveExpenses = getEffectiveExpensesForMonth(expenses, monthISO)
+    const effectiveBills = getEffectiveBillsForMonth(bills || [], expenses, monthISO)
 
-    const matchingExpenses = expenses.filter((e) => {
-      if (e.date && !e.date.startsWith(monthISO) && !e.isRecurring) return false
+    const matchingExpenses = effectiveExpenses.filter((e) => {
       const title = e.title.toLowerCase()
       return (
         e.consumption?.utilityType === utilType ||
@@ -76,22 +69,21 @@ export function ConsumptionComparison({ onOpenAddBill }: { onOpenAddBill?: () =>
       )
     })
 
+    const matchingBills = effectiveBills.filter((b) => {
+      const name = b.name.toLowerCase()
+      return (
+        b.consumption?.utilityType === utilType ||
+        (utilType === 'electricidad' && (name.includes('luz') || name.includes('endesa') || name.includes('iberdrola') || name.includes('elec'))) ||
+        (utilType === 'agua' && (name.includes('agua') || name.includes('aqualia') || name.includes('canal'))) ||
+        (utilType === 'gas' && (name.includes('gas') || name.includes('naturgy') || name.includes('butano'))) ||
+        (utilType === 'combustible' && (name.includes('gasolina') || name.includes('diésel') || name.includes('combustible') || name.includes('repsol')))
+      )
+    })
+
     let totalAmount = 0
     let totalUnits = 0
     let count = 0
     const explicitUnitPrices: number[] = []
-
-    matchingBills.forEach((b) => {
-      const amt = Number(b.amount) || 0
-      totalAmount += b.billingCycle === 'mensual' ? amt : amt / 12
-      if (b.consumption?.consumptionValue) {
-        totalUnits += Number(b.consumption.consumptionValue) || 0
-      }
-      if (b.consumption?.unitPrice !== undefined && b.consumption.unitPrice > 0) {
-        explicitUnitPrices.push(Number(b.consumption.unitPrice))
-      }
-      count++
-    })
 
     matchingExpenses.forEach((e) => {
       const amt = Number(e.amount) || 0
@@ -101,6 +93,18 @@ export function ConsumptionComparison({ onOpenAddBill }: { onOpenAddBill?: () =>
       }
       if (e.consumption?.unitPrice !== undefined && e.consumption.unitPrice > 0) {
         explicitUnitPrices.push(Number(e.consumption.unitPrice))
+      }
+      count++
+    })
+
+    matchingBills.forEach((b) => {
+      const amt = Number(b.amount) || 0
+      totalAmount += amt
+      if (b.consumption?.consumptionValue) {
+        totalUnits += Number(b.consumption.consumptionValue) || 0
+      }
+      if (b.consumption?.unitPrice !== undefined && b.consumption.unitPrice > 0) {
+        explicitUnitPrices.push(Number(b.consumption.unitPrice))
       }
       count++
     })

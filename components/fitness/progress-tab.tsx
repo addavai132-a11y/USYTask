@@ -37,6 +37,7 @@ interface ProgressTabProps {
   sessions: WorkoutSession[]
   onSavePR: (pr: PersonalRecord) => void
   onSaveBodyMetric: (metric: BodyMetric) => void
+  onDeleteSession?: (sessionId: string) => void
 }
 
 export function ProgressTab({
@@ -45,6 +46,7 @@ export function ProgressTab({
   sessions,
   onSavePR,
   onSaveBodyMetric,
+  onDeleteSession,
 }: ProgressTabProps) {
   const { toast } = useToast()
 
@@ -230,14 +232,48 @@ export function ProgressTab({
     }
   }, [weightDiff, goalPhase])
 
-  // Volume by Muscle Group in past workouts
+  // Sorted Sessions (newest first)
+  const sortedSessions = useMemo(() => {
+    return [...sessions].sort((a, b) => {
+      const dateA = new Date(`${a.date}T${a.startTime || '00:00'}:00`).getTime() || 0
+      const dateB = new Date(`${b.date}T${b.startTime || '00:00'}:00`).getTime() || 0
+      return dateB - dateA
+    })
+  }, [sessions])
+
+  // Volume by Muscle Group dynamically calculated from sessions
   const volumeByMuscle = useMemo(() => {
     const counts: Record<string, number> = {
-      Pecho: 16,
-      Espalda: 18,
-      Pierna: 22,
-      Hombro: 14,
-      Brazos: 12,
+      Pecho: 0,
+      Espalda: 0,
+      Pierna: 0,
+      Hombro: 0,
+      Brazos: 0,
+    }
+
+    sessions.forEach((sess) => {
+      sess.exercises?.forEach((ex) => {
+        const muscle = (ex.muscleGroup || '').toLowerCase()
+        const effectiveSets = ex.sets?.filter((s) => s.completed && s.type !== 'calentamiento').length || 0
+        if (muscle.includes('pecho')) counts.Pecho += effectiveSets
+        else if (muscle.includes('espalda')) counts.Espalda += effectiveSets
+        else if (
+          muscle.includes('cuadriceps') ||
+          muscle.includes('isquios') ||
+          muscle.includes('gluteo') ||
+          muscle.includes('gemelo') ||
+          muscle.includes('pierna')
+        )
+          counts.Pierna += effectiveSets
+        else if (muscle.includes('hombro')) counts.Hombro += effectiveSets
+        else if (muscle.includes('biceps') || muscle.includes('triceps') || muscle.includes('brazo'))
+          counts.Brazos += effectiveSets
+      })
+    })
+
+    const totalCount = Object.values(counts).reduce((a, b) => a + b, 0)
+    if (totalCount === 0) {
+      return { Pecho: 16, Espalda: 18, Pierna: 22, Hombro: 14, Brazos: 12 }
     }
     return counts
   }, [sessions])
@@ -255,7 +291,7 @@ export function ProgressTab({
           className="flex items-center gap-1.5 rounded-full bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 text-xs font-bold transition-all active:scale-95 shadow-sm"
         >
           <Plus className="size-3.5" />
-          <span>+ Registrar PR</span>
+          <span>Registrar PR</span>
         </button>
       </div>
 
@@ -448,6 +484,135 @@ export function ProgressTab({
             )
           })}
         </div>
+      </Card>
+
+      {/* ── HISTORIAL DE ENTRENAMIENTOS ── */}
+      <Card className="p-4 bg-white border border-slate-200 rounded-2xl shadow-sm space-y-3 dark:bg-[#121026]/90 dark:border-purple-500/20 dark:shadow-xl">
+        <div className="flex items-center justify-between pb-2 border-b border-slate-200/80 dark:border-purple-500/15">
+          <div className="flex items-center gap-2.5">
+            <div className="flex size-9 items-center justify-center rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 dark:bg-purple-500/15 dark:border-purple-500/30 dark:text-purple-300 shrink-0">
+              <History className="size-4" />
+            </div>
+            <div>
+              <h3 className="text-sm font-black text-slate-900 dark:text-white">
+                Historial de Entrenamientos
+              </h3>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                Registro completo de sesiones finalizadas, volumen y ejercicios
+              </p>
+            </div>
+          </div>
+          <span className="rounded-full bg-slate-100 dark:bg-white/[0.06] px-2.5 py-1 text-xs font-black text-slate-700 dark:text-slate-300 font-mono">
+            {sortedSessions.length} {sortedSessions.length === 1 ? 'sesión' : 'sesiones'}
+          </span>
+        </div>
+
+        {sortedSessions.length === 0 ? (
+          <div className="py-8 px-4 text-center rounded-xl bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/5 space-y-1">
+            <p className="text-xs font-bold text-slate-700 dark:text-slate-300">Sin entrenamientos registrados</p>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400">
+              Completa una sesión en la pestaña &quot;En Vivo&quot; para registrarla aquí y en tu calendario.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {sortedSessions.map((s) => {
+              const durationMin = Math.round(s.durationSeconds / 60)
+              const exerciseList = s.exercises || []
+              return (
+                <div
+                  key={s.id}
+                  className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 dark:bg-white/[0.02] dark:border-white/10 space-y-2.5 transition-all"
+                >
+                  {/* Cabecera de la sesión */}
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <h4 className="text-xs sm:text-sm font-black text-slate-900 dark:text-white truncate flex items-center gap-1.5">
+                        <Dumbbell className="size-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                        <span>{s.routineName}</span>
+                      </h4>
+                      <div className="flex items-center gap-2 mt-0.5 text-[10px] text-slate-500 dark:text-slate-400 font-medium">
+                        <span className="font-mono font-bold text-slate-700 dark:text-slate-300">{s.date}</span>
+                        {(s.startTime || s.endTime) && (
+                          <span>· {s.startTime || ''}{s.endTime ? ` - ${s.endTime}` : ''}</span>
+                        )}
+                      </div>
+                    </div>
+
+                    {onDeleteSession && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onDeleteSession(s.id)
+                          toast('Sesión eliminada del historial', '🗑️')
+                        }}
+                        className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors"
+                        title="Eliminar sesión del historial"
+                      >
+                        <X className="size-3.5" />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* 3 Métricas Globales */}
+                  <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                    <div className="p-2 rounded-xl bg-white border border-slate-200/80 dark:bg-white/[0.03] dark:border-white/5">
+                      <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 block">Volumen</span>
+                      <span className="font-mono font-black text-slate-900 dark:text-white text-xs">
+                        {s.totalVolumeKg.toLocaleString('es-ES')} kg
+                      </span>
+                    </div>
+                    <div className="p-2 rounded-xl bg-white border border-slate-200/80 dark:bg-white/[0.03] dark:border-white/5">
+                      <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 block">Duración</span>
+                      <span className="font-mono font-black text-slate-900 dark:text-white text-xs">
+                        {durationMin > 0 ? `${durationMin} min` : `${s.durationSeconds}s`}
+                      </span>
+                    </div>
+                    <div className="p-2 rounded-xl bg-white border border-slate-200/80 dark:bg-white/[0.03] dark:border-white/5">
+                      <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 block">Series Ef.</span>
+                      <span className="font-mono font-black text-emerald-600 dark:text-emerald-400 text-xs">
+                        {s.effectiveSetsCount || 0}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Ejercicios Realizados */}
+                  {exerciseList.length > 0 && (
+                    <div className="space-y-1 pt-1 border-t border-slate-200/60 dark:border-white/5">
+                      <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                        Ejercicios realizados ({exerciseList.length}):
+                      </span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {exerciseList.map((ex, i) => {
+                          const completedCount = ex.sets?.filter((st) => st.completed).length || 0
+                          const maxWeight = Math.max(0, ...(ex.sets?.map((st) => st.weightKg) || [0]))
+                          return (
+                            <span
+                              key={i}
+                              className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-white border border-slate-200 dark:bg-white/[0.04] dark:border-white/10 text-[11px] font-semibold text-slate-700 dark:text-slate-300"
+                            >
+                              <span>{ex.exerciseName}</span>
+                              <span className="text-[10px] text-slate-400 font-mono">
+                                ({completedCount > 0 ? `${completedCount} series` : `${ex.sets?.length || 0} series`}{maxWeight > 0 ? ` · ${maxWeight}kg` : ''})
+                              </span>
+                            </span>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Notas de la sesión */}
+                  {s.notes && (
+                    <p className="text-[11px] text-slate-600 dark:text-slate-400 italic bg-white/60 dark:bg-white/[0.02] p-2 rounded-lg border border-slate-200/50 dark:border-white/5">
+                      💬 &quot;{s.notes}&quot;
+                    </p>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        )}
       </Card>
 
       {/* ── MODAL REGISTRO DE NUEVO PR ── */}

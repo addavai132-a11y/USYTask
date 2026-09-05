@@ -277,7 +277,7 @@ interface AppState {
   cancelBillSubscription: (id: string) => void
   reactivateBillSubscription: (id: string) => void
   pauseBillSubscription: (id: string) => void
-  saveBudget: (category: string, monthlyLimit: number) => void
+  saveBudget: (category: string, monthlyLimit: number, note?: string) => void
   deleteBudget: (id: string) => void
 
   // Month Navigation & Hucha / Piggy Bank
@@ -1552,9 +1552,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     bump()
   }
 
-  const handleSaveBudget = (category: string, monthlyLimit: number) => {
+  const handleSaveBudget = (category: string, monthlyLimit: number, note?: string) => {
     if (!activeGroup) return
-    saveBudgetStore(activeGroup.id, category, monthlyLimit)
+    saveBudgetStore(activeGroup.id, category, monthlyLimit, note)
     refreshData()
     bump()
   }

@@ -25,6 +25,7 @@ import {
   deleteRoutine,
   getAllSessions,
   saveSession,
+  deleteSession,
   getAllPRs,
   savePR,
   getAllBodyMetrics,
@@ -92,7 +93,7 @@ export function FitnessScreen() {
   }
 
   // ── SESSIONS HANDLERS ──
-  function handleFinishSession(session: WorkoutSession) {
+  function handleFinishSession(session: WorkoutSession, navigateToProgress: boolean = true) {
     saveSession(session)
 
     // Check and update PRs automatically if higher estimated 1RM is achieved
@@ -118,19 +119,35 @@ export function FitnessScreen() {
     })
 
     // Sincronización con Actividades y Calendario
+    const durationMin = Math.max(1, Math.round(session.durationSeconds / 60))
+    const exerciseNames = session.exercises?.map((e) => e.exerciseName).filter(Boolean) || []
+    const exerciseSummary =
+      exerciseNames.length > 0
+        ? `${exerciseNames.length} ej: ${exerciseNames.slice(0, 3).join(', ')}${
+            exerciseNames.length > 3 ? ` +${exerciseNames.length - 3}` : ''
+          }`
+        : 'Gimnasio'
+
     if (activeGroup) {
       addEvent(
-        `🏋️‍♂️ ${session.routineName} (${Math.round(session.durationSeconds / 60)} min · ${session.totalVolumeKg.toLocaleString('es-ES')} kg)`,
+        `🏋️‍♂️ ${session.routineName} (${durationMin} min · ${session.totalVolumeKg.toLocaleString('es-ES')} kg)`,
         session.date,
-        session.startTime || '18:00',
+        session.startTime || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         'Deporte',
         [],
-        'Gimnasio'
+        `Gimnasio · ${exerciseSummary}`
       )
     }
 
     refreshData()
-    setSubTab('progreso')
+    if (navigateToProgress) {
+      setSubTab('progreso')
+    }
+  }
+
+  function handleDeleteSession(sessionId: string) {
+    deleteSession(sessionId)
+    refreshData()
   }
 
   // ── PR & BODY METRIC HANDLERS ──
@@ -226,6 +243,7 @@ export function FitnessScreen() {
           activeRoutineForSession={activeRoutineForSession}
           onFinishSession={handleFinishSession}
           onClearActiveRoutine={() => setActiveRoutineForSession(null)}
+          onNavigateToProgress={() => setSubTab('progreso')}
         />
       )}
 
@@ -236,6 +254,7 @@ export function FitnessScreen() {
           sessions={sessions}
           onSavePR={handleSavePR}
           onSaveBodyMetric={handleSaveBodyMetric}
+          onDeleteSession={handleDeleteSession}
         />
       )}
 

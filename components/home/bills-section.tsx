@@ -47,6 +47,8 @@ import {
   type ExpenseCategory,
   type UtilityType,
   type ConsumptionData,
+  BILLING_CYCLES,
+  BILLING_CYCLE_CONFIG,
   EXPENSE_CATEGORIES,
   expenseCategoryMeta,
   formatCurrency,
@@ -120,6 +122,7 @@ export function BillsSection() {
   const [name, setName] = useState('')
   const [amount, setAmount] = useState('')
   const [billingCycle, setBillingCycle] = useState<BillingCycle>('mensual')
+  const [startMonth, setStartMonth] = useState('')
   const [dueDay, setDueDay] = useState('1')
   const [autopay, setAutopay] = useState(false)
   const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([])
@@ -152,8 +155,8 @@ export function BillsSection() {
   })
 
   const totalMonthlyBillsSum = activeBills.reduce((sum, b) => {
-    if (b.billingCycle === 'mensual') return sum + b.amount
-    return sum + b.amount / 12
+    const interval = BILLING_CYCLE_CONFIG[b.billingCycle]?.monthsInterval || 1
+    return sum + (b.amount / interval)
   }, 0)
 
   const totalAnnualBillsSum = totalMonthlyBillsSum * 12
@@ -178,6 +181,7 @@ export function BillsSection() {
     setName('')
     setAmount('')
     setBillingCycle('mensual')
+    setStartMonth(new Date().toISOString().slice(0, 7))
     setDueDay(new Date().getDate().toString())
     setAutopay(false)
     setSelectedMemberIds([])
@@ -198,6 +202,7 @@ export function BillsSection() {
     setName(bill.name)
     setAmount(bill.amount.toString())
     setBillingCycle(bill.billingCycle)
+    setStartMonth(bill.startMonth || (bill.createdAt ? bill.createdAt.slice(0, 7) : new Date().toISOString().slice(0, 7)))
     setDueDay(bill.dueDay.toString())
     setAutopay(bill.autopay || false)
     setSelectedMemberIds(bill.paidByMemberIds || (bill.paidByMemberId ? [bill.paidByMemberId] : []))
@@ -271,6 +276,7 @@ export function BillsSection() {
         name: name.trim(),
         amount: numAmount,
         billingCycle,
+        startMonth: billingCycle !== 'mensual' ? (startMonth || new Date().toISOString().slice(0, 7)) : undefined,
         dueDay: numDueDay,
         autopay,
         category,
@@ -288,6 +294,7 @@ export function BillsSection() {
         name: name.trim(),
         amount: numAmount,
         billingCycle,
+        startMonth: billingCycle !== 'mensual' ? (startMonth || new Date().toISOString().slice(0, 7)) : undefined,
         dueDay: numDueDay,
         autopay,
         category,
@@ -414,7 +421,7 @@ export function BillsSection() {
               className="flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 text-xs font-bold transition-all active:scale-95 shadow-sm dark:bg-purple-600 dark:hover:bg-purple-500"
             >
               <Plus className="size-3.5" />
-              <span>+ Añadir Factura / Gasto</span>
+              <span>Añadir Factura / Gasto</span>
             </button>
           </div>
 
@@ -468,10 +475,10 @@ export function BillsSection() {
                           </h4>
                           <div className="flex flex-wrap items-center gap-1.5 mt-1 text-[11px] text-slate-500 dark:text-slate-400">
                             <span className="font-semibold text-slate-700 dark:text-slate-300">
-                              Día {bill.dueDay} de cada mes
+                              Día {bill.dueDay} ({BILLING_CYCLE_CONFIG[bill.billingCycle]?.label || bill.billingCycle})
                             </span>
                             <span>·</span>
-                            <span className="capitalize">{bill.billingCycle}</span>
+                            <span className="capitalize font-medium">{BILLING_CYCLE_CONFIG[bill.billingCycle]?.shortLabel || bill.billingCycle}</span>
                             {bill.autopay && (
                               <span className="text-[10px] bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300 px-1.5 py-0.5 rounded font-bold">
                                 Domiciliado
@@ -642,7 +649,7 @@ export function BillsSection() {
               className="flex items-center gap-1 text-xs font-bold text-emerald-700 dark:text-purple-300 hover:underline px-2"
             >
               <Plus className="size-3" />
-              <span>+ Añadir recurrente</span>
+              <span>Añadir recurrente</span>
             </button>
           </div>
 
@@ -775,7 +782,7 @@ export function BillsSection() {
                         <span className="text-base font-black text-slate-900 dark:text-white tabular-nums">
                           {formatCurrency(bill.amount)}
                         </span>
-                        <span className="text-[10px] text-slate-400 block -mt-0.5">/{bill.billingCycle === 'anual' ? 'año' : 'mes'}</span>
+                        <span className="text-[10px] text-slate-400 block -mt-0.5">/{BILLING_CYCLE_CONFIG[bill.billingCycle]?.shortLabel || 'mes'}</span>
                       </div>
                     </div>
                   </Card>
@@ -840,17 +847,30 @@ export function BillsSection() {
                 </div>
 
                 <div className="flex flex-col gap-1">
-                  <label className="font-semibold text-slate-700 dark:text-slate-300">Frecuencia</label>
+                  <label className="font-semibold text-slate-700 dark:text-slate-300">Periodicidad / Frecuencia</label>
                   <CustomSelect<BillingCycle>
                     value={billingCycle}
                     onChange={(val) => setBillingCycle(val)}
-                    options={[
-                      { value: 'mensual', label: 'Mensual' },
-                      { value: 'anual', label: 'Anual' },
-                    ]}
+                    options={BILLING_CYCLES}
                   />
                 </div>
               </div>
+
+              {/* Mes inicial de cobro si es periódico no mensual */}
+              {billingCycle !== 'mensual' && (
+                <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/5 flex items-center justify-between gap-2">
+                  <div>
+                    <span className="font-semibold text-xs text-slate-700 dark:text-slate-300">Mes inicial de ciclo</span>
+                    <p className="text-[10px] text-slate-400">Se cobrará en este mes y luego cada {BILLING_CYCLE_CONFIG[billingCycle]?.monthsInterval} meses</p>
+                  </div>
+                  <input
+                    type="month"
+                    value={startMonth}
+                    onChange={(e) => setStartMonth(e.target.value)}
+                    className="rounded-lg border border-slate-300 dark:border-white/10 bg-white dark:bg-black/30 py-1 px-2 text-xs font-medium text-slate-900 dark:text-white outline-none"
+                  />
+                </div>
+              )}
 
               {/* Día de cobro y Autopay */}
               <div className="grid grid-cols-2 gap-2">

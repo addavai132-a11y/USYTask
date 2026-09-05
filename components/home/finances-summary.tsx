@@ -4,7 +4,14 @@ import { useState, useEffect } from 'react'
 import { TrendingUp, TrendingDown, Wallet, PiggyBank, AlertCircle, PieChart, Edit3 } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { useApp } from '@/components/app/app-context'
-import { formatCurrency, EXPENSE_CATEGORIES, expenseCategoryMeta, formatMonthLabel } from '@/types/finances'
+import {
+  formatCurrency,
+  EXPENSE_CATEGORIES,
+  expenseCategoryMeta,
+  formatMonthLabel,
+  getEffectiveExpensesForMonth,
+  getEffectiveBillsForMonth,
+} from '@/types/finances'
 import { useToast } from '@/components/ui/toast'
 import { cn } from '@/lib/utils'
 
@@ -38,22 +45,15 @@ export function FinancesSummary() {
     }, 0)
   }
 
-  // Helper to compute total expenses for a specific monthISO
+  // Helper to compute total expenses for a specific monthISO without false intermediate charges
   function getMonthExpensesSum(monthISO: string): number {
-    const directExpensesSum = expenses.reduce((sum, e) => {
-      const amt = Number(e.amount) || 0
-      if (e.isRecurring) return sum + amt
-      if (!e.isRecurring && e.date && e.date.startsWith(monthISO)) return sum + amt
-      return sum
-    }, 0)
+    const effectiveMonthExpenses = getEffectiveExpensesForMonth(expenses, monthISO)
+    const effectiveMonthBills = getEffectiveBillsForMonth(bills || [], expenses, monthISO)
 
-    const billsSum = bills.reduce((sum, b) => {
-      const amt = Number(b.amount) || 0
-      if (b.billingCycle === 'mensual') return sum + amt
-      return sum + amt / 12
-    }, 0)
+    const expSum = effectiveMonthExpenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0)
+    const billSum = effectiveMonthBills.reduce((sum, b) => sum + (Number(b.amount) || 0), 0)
 
-    return directExpensesSum + billsSum
+    return expSum + billSum
   }
 
   // 1. Current Selected Month Calculations
@@ -71,11 +71,16 @@ export function FinancesSummary() {
     categorySpentMap[cat] = 0
   })
 
-  expenses.forEach((e) => {
+  const effectiveSelectedExpenses = getEffectiveExpensesForMonth(expenses, selectedMonthISO)
+  const effectiveSelectedBills = getEffectiveBillsForMonth(bills || [], expenses, selectedMonthISO)
+
+  effectiveSelectedExpenses.forEach((e) => {
     const amt = Number(e.amount) || 0
-    if (e.isRecurring || (e.date && e.date.startsWith(selectedMonthISO))) {
-      categorySpentMap[e.category] = (categorySpentMap[e.category] || 0) + amt
-    }
+    categorySpentMap[e.category] = (categorySpentMap[e.category] || 0) + amt
+  })
+  effectiveSelectedBills.forEach((b) => {
+    const cat = b.category || 'hogar'
+    categorySpentMap[cat] = (categorySpentMap[cat] || 0) + (Number(b.amount) || 0)
   })
 
   function handleSaveBaseBalance() {
@@ -218,9 +223,16 @@ export function FinancesSummary() {
                 return (
                   <div key={b.id} className="p-2.5 rounded-xl bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/5 space-y-1.5">
                     <div className="flex items-center justify-between text-xs">
-                      <span className="font-semibold text-slate-800 dark:text-slate-200 capitalize">
-                        {meta.label}
-                      </span>
+                      <div className="min-w-0 flex items-center gap-1.5">
+                        <span className="font-semibold text-slate-800 dark:text-slate-200 capitalize">
+                          {meta.label}
+                        </span>
+                        {b.note && (
+                          <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium truncate max-w-[140px] sm:max-w-[200px]">
+                            ({b.note})
+                          </span>
+                        )}
+                      </div>
                       <div className="flex items-center gap-1.5">
                         <span className="font-bold text-slate-900 dark:text-slate-100 tabular-nums">
                           {formatCurrency(spent)} / {formatCurrency(b.monthlyLimit)}

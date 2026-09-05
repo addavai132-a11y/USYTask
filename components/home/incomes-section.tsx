@@ -154,7 +154,7 @@ export function IncomesSection() {
               className="flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 text-xs font-bold transition-all active:scale-95 shadow-sm"
             >
               <Plus className="size-3.5" />
-              <span>+ Registrar ingreso</span>
+              <span>Registrar ingreso</span>
             </button>
           </div>
 

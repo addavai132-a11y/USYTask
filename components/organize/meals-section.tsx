@@ -880,7 +880,7 @@ export function MealsSection() {
                     className="flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline"
                   >
                     <ShoppingBag className="size-3.5" />
-                    <span>+ Añadir a Compras</span>
+                    <span>Añadir a Compras</span>
                   </button>
                 )}
               </div>

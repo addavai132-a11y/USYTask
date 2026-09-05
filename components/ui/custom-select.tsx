@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect, ReactNode } from 'react'
+import { useState, useRef, useEffect, useCallback, ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { ChevronDown, Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -33,59 +33,94 @@ export function CustomSelect<T extends string | number>({
   className,
   triggerClassName,
   panelClassName,
-  usePortal = false,
+  usePortal = true,
 }: CustomSelectProps<T>) {
   const [isOpen, setIsOpen] = useState(false)
-  const [coords, setCoords] = useState<{ top: number; left: number; width: number; placeAbove: boolean } | null>(null)
+  const [coords, setCoords] = useState<{
+    top: number
+    left: number
+    width: number
+    maxHeight: number
+    placeAbove: boolean
+  } | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const panelRef = useRef<HTMLDivElement>(null)
 
   const selectedOption = options.find((o) => o.value === value)
 
-  const updatePosition = () => {
+  const updatePosition = useCallback(() => {
     if (!containerRef.current) return
     const rect = containerRef.current.getBoundingClientRect()
-    const spaceBelow = window.innerHeight - rect.bottom
-    const spaceAbove = rect.top
-    const estHeight = Math.min(options.length * 36 + 16, 220)
-    const placeAbove = spaceBelow < estHeight && spaceAbove > spaceBelow
+    const viewportHeight = window.innerHeight
+    const viewportWidth = window.innerWidth
 
-    // Ancho adaptado al elemento disparador (mínimo 140px, sin salirse de pantalla)
-    const minW = 140
-    const desiredWidth = Math.max(rect.width, minW)
-    let left = rect.left
-    if (left + desiredWidth > window.innerWidth - 8) {
-      left = Math.max(8, window.innerWidth - desiredWidth - 8)
+    // Cerrar automáticamente si el elemento disparador sale completamente de la pantalla (ej. scroll en modal)
+    if (rect.bottom < -40 || rect.top > viewportHeight + 40) {
+      setIsOpen(false)
+      return
     }
 
+    const safeMargin = 10
+    const spaceBelow = Math.max(0, viewportHeight - rect.bottom - safeMargin)
+    const spaceAbove = Math.max(0, rect.top - safeMargin)
+    const estPanelHeight = Math.min(options.length * 40 + 20, 280)
+
+    // Decidir posición vertical (arriba vs abajo) dinámicamente según espacio disponible
+    const placeAbove = spaceBelow < Math.min(estPanelHeight, 180) && spaceAbove > spaceBelow
+    const availableHeight = placeAbove ? spaceAbove : spaceBelow
+    const maxHeight = Math.max(80, Math.min(estPanelHeight, availableHeight - 6))
+
+    // Ancho y posición horizontal acotados a los márgenes visibles de la pantalla
+    const minW = Math.max(rect.width, 160)
+    const desiredWidth = Math.min(minW, viewportWidth - safeMargin * 2)
+    let left = rect.left
+    if (left + desiredWidth > viewportWidth - safeMargin) {
+      left = Math.max(safeMargin, viewportWidth - desiredWidth - safeMargin)
+    }
+    if (left < safeMargin) {
+      left = safeMargin
+    }
+
+    // Coordenadas top absolutas (inmunes a cambios de tamaño de barra de navegación móvil)
+    const top = placeAbove
+      ? Math.max(safeMargin, rect.top - maxHeight - 6)
+      : Math.min(viewportHeight - maxHeight - safeMargin, rect.bottom + 6)
+
     setCoords({
-      top: placeAbove ? rect.top - 6 : rect.bottom + 6,
+      top,
       left,
-      width: Math.min(desiredWidth, window.innerWidth - 16),
+      width: desiredWidth,
+      maxHeight,
       placeAbove,
     })
+  }, [options.length])
+
+  // Compute position immediately when opening
+  const handleToggle = () => {
+    if (!isOpen) {
+      updatePosition()
+      setIsOpen(true)
+    } else {
+      setIsOpen(false)
+    }
   }
 
   useEffect(() => {
-    if (!isOpen || !usePortal) return
+    if (!isOpen) return
 
     updatePosition()
+    const rafId = requestAnimationFrame(updatePosition)
 
     const handleScrollOrResize = () => {
       updatePosition()
     }
 
     window.addEventListener('resize', handleScrollOrResize)
-    window.addEventListener('scroll', handleScrollOrResize, true)
-
-    return () => {
-      window.removeEventListener('resize', handleScrollOrResize)
-      window.removeEventListener('scroll', handleScrollOrResize, true)
+    window.addEventListener('scroll', handleScrollOrResize, { capture: true, passive: true })
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', handleScrollOrResize)
+      window.visualViewport.addEventListener('scroll', handleScrollOrResize)
     }
-  }, [isOpen, usePortal])
-
-  useEffect(() => {
-    if (!isOpen) return
 
     function handleClickOutside(event: MouseEvent | TouchEvent) {
       const target = event.target as Node
@@ -94,13 +129,29 @@ export function CustomSelect<T extends string | number>({
       setIsOpen(false)
     }
 
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setIsOpen(false)
+      }
+    }
+
     document.addEventListener('mousedown', handleClickOutside)
-    document.addEventListener('touchstart', handleClickOutside)
+    document.addEventListener('touchstart', handleClickOutside, { passive: true })
+    document.addEventListener('keydown', handleKeyDown)
+
     return () => {
+      cancelAnimationFrame(rafId)
+      window.removeEventListener('resize', handleScrollOrResize)
+      window.removeEventListener('scroll', handleScrollOrResize, true)
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', handleScrollOrResize)
+        window.visualViewport.removeEventListener('scroll', handleScrollOrResize)
+      }
       document.removeEventListener('mousedown', handleClickOutside)
       document.removeEventListener('touchstart', handleClickOutside)
+      document.removeEventListener('keydown', handleKeyDown)
     }
-  }, [isOpen])
+  }, [isOpen, updatePosition])
 
   const panelContent = (
     <div
@@ -109,18 +160,17 @@ export function CustomSelect<T extends string | number>({
         usePortal && coords
           ? {
               position: 'fixed',
-              top: coords.placeAbove ? undefined : `${coords.top}px`,
-              bottom: coords.placeAbove ? `${window.innerHeight - coords.top}px` : undefined,
+              top: `${coords.top}px`,
               left: `${coords.left}px`,
               width: `${coords.width}px`,
-              zIndex: 99999,
+              maxHeight: `${coords.maxHeight}px`,
+              zIndex: 999999,
             }
           : undefined
       }
       className={cn(
-        usePortal
-          ? 'max-h-52 overflow-y-auto pr-1 dropdown-scroll rounded-2xl bg-white border border-slate-200 shadow-2xl p-1.5 space-y-1 animate-in fade-in zoom-in-95 duration-150 dark:bg-[#100e23] dark:border-purple-500/30 dark:shadow-2xl'
-          : 'absolute right-0 top-full mt-1.5 z-[70] w-full min-w-[200px] max-h-48 md:max-h-56 overflow-y-auto pr-1 dropdown-scroll rounded-2xl bg-white border border-slate-200 shadow-2xl p-2 space-y-1 animate-in fade-in zoom-in-95 duration-150 dark:bg-[#100e23]/95 dark:backdrop-blur-xl dark:border-purple-500/30 dark:shadow-2xl',
+        'overflow-y-auto pr-1 dropdown-scroll rounded-2xl bg-white border border-slate-200 shadow-2xl p-1.5 space-y-1 animate-in fade-in zoom-in-95 duration-150 dark:bg-[#100e23] dark:border-purple-500/30 dark:shadow-2xl',
+        !usePortal && 'absolute right-0 top-full mt-1.5 z-[70] w-full min-w-[180px] max-h-52',
         panelClassName
       )}
     >
@@ -145,9 +195,16 @@ export function CustomSelect<T extends string | number>({
               {opt.icon && <span className="shrink-0 leading-none">{opt.icon}</span>}
               <span className="truncate text-slate-900 dark:text-white">{opt.label}</span>
             </div>
-            {isSelected && (
-              <Check className="size-3.5 text-emerald-600 dark:text-purple-400 shrink-0 stroke-[2.5]" />
-            )}
+            <div className="flex items-center gap-1 shrink-0">
+              {opt.badge && (
+                <span className="text-[10px] text-slate-400 font-medium">
+                  {opt.badge}
+                </span>
+              )}
+              {isSelected && (
+                <Check className="size-3.5 text-emerald-600 dark:text-purple-400 stroke-[2.5]" />
+              )}
+            </div>
           </button>
         )
       })}
@@ -159,15 +216,14 @@ export function CustomSelect<T extends string | number>({
       {/* ── BOTÓN DISPARADOR (TRIGGER) ── */}
       <button
         type="button"
-        onClick={() => setIsOpen((prev) => !prev)}
+        onClick={handleToggle}
         className={cn(
-          'flex w-full items-center justify-between gap-2.5 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 px-3.5 py-2 text-xs md:text-sm font-medium text-slate-800 transition-all active:scale-[0.98] shadow-sm dark:border-purple-500/20 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] dark:text-white',
+          'flex w-full items-center justify-between gap-2.5 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 px-3.5 py-2 text-xs md:text-sm font-medium text-slate-800 transition-all active:scale-[0.98] shadow-sm dark:border-purple-500/20 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] dark:text-white cursor-pointer',
           isOpen && 'border-emerald-500/50 bg-slate-50 dark:border-purple-500/40 dark:bg-white/[0.08]',
           triggerClassName
         )}
       >
         <div className="flex items-center gap-2 min-w-0">
-          {/* Icono a la izquierda */}
           {selectedOption?.icon ? (
             <span className="shrink-0 leading-none">{selectedOption.icon}</span>
           ) : icon ? (
@@ -176,13 +232,11 @@ export function CustomSelect<T extends string | number>({
             </span>
           ) : null}
 
-          {/* Texto del selector */}
           <span className="truncate font-medium text-slate-800 dark:text-white">
             {selectedOption ? selectedOption.label : placeholder}
           </span>
         </div>
 
-        {/* Flecha indicadora */}
         <ChevronDown
           className={cn(
             'size-3.5 text-slate-400 transition-transform duration-200 shrink-0',

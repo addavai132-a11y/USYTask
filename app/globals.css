@@ -546,5 +546,55 @@ select option:checked {
   background-color: #ffffff;
 }
 
+/* =========================================================================
+   DATE & TIME PICKERS STANDARDIZATION
+   Mobile-friendly touch targets, adaptive indicator colors, and contrast
+   ========================================================================= */
 
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"] {
+  min-height: 40px;
+  cursor: pointer;
+}
 
+/* Ensure WebKit calendar picker indicators are visible and responsive */
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  padding: 4px;
+  opacity: 0.85;
+  transition: opacity 0.2s ease, transform 0.15s ease;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator:hover,
+input[type="time"]::-webkit-calendar-picker-indicator:hover,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+  transform: scale(1.08);
+}
+
+.dark input[type="date"],
+.dark input[type="time"],
+.dark input[type="datetime-local"] {
+  color-scheme: dark;
+}
+
+.dark input[type="date"]::-webkit-calendar-picker-indicator,
+.dark input[type="time"]::-webkit-calendar-picker-indicator,
+.dark input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.85) sepia(10%) saturate(150%) hue-rotate(220deg);
+}
+
+.light input[type="date"],
+.light input[type="time"],
+.light input[type="datetime-local"] {
+  color-scheme: light;
+}
+
+.light input[type="date"]::-webkit-calendar-picker-indicator,
+.light input[type="time"]::-webkit-calendar-picker-indicator,
+.light input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.2) sepia(50%) saturate(200%) hue-rotate(110deg);
+}

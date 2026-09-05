@@ -1,6 +1,7 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useRef, useEffect, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import {
   Plus,
   RotateCw,
@@ -98,6 +99,80 @@ export function TasksSection({
   const [tab, setTab] = useState<string>('familia')
   const [viewMode, setViewMode] = useState<ViewMode>('list')
   const [isAddMenuOpen, setIsAddMenuOpen] = useState(false)
+  const addBtnRef = useRef<HTMLButtonElement>(null)
+  const addMenuRef = useRef<HTMLDivElement>(null)
+  const [addMenuCoords, setAddMenuCoords] = useState<{ top: number; left: number } | null>(null)
+
+  const updateAddMenuCoords = useCallback(() => {
+    if (!addBtnRef.current) return
+    const rect = addBtnRef.current.getBoundingClientRect()
+    const viewportHeight = window.innerHeight
+    const viewportWidth = window.innerWidth
+    const safeMargin = 10
+    const panelWidth = Math.min(208, viewportWidth - safeMargin * 2)
+    const panelHeight = 150
+
+    const spaceBelow = Math.max(0, viewportHeight - rect.bottom - safeMargin)
+    const spaceAbove = Math.max(0, rect.top - safeMargin)
+    const placeAbove = spaceBelow < panelHeight && spaceAbove > spaceBelow
+
+    let left = rect.right - panelWidth
+    if (left + panelWidth > viewportWidth - safeMargin) {
+      left = Math.max(safeMargin, viewportWidth - panelWidth - safeMargin)
+    }
+    if (left < safeMargin) left = safeMargin
+
+    const top = placeAbove
+      ? Math.max(safeMargin, rect.top - panelHeight - 6)
+      : Math.min(viewportHeight - panelHeight - safeMargin, rect.bottom + 6)
+
+    setAddMenuCoords({ top, left })
+  }, [])
+
+  useEffect(() => {
+    if (!isAddMenuOpen) return
+    updateAddMenuCoords()
+
+    const handleScrollOrResize = () => {
+      updateAddMenuCoords()
+    }
+
+    window.addEventListener('resize', handleScrollOrResize)
+    window.addEventListener('scroll', handleScrollOrResize, { capture: true, passive: true })
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', handleScrollOrResize)
+      window.visualViewport.addEventListener('scroll', handleScrollOrResize)
+    }
+
+    function handleClickOutside(e: MouseEvent | TouchEvent) {
+      const target = e.target as Node
+      if (!addBtnRef.current?.contains(target) && !addMenuRef.current?.contains(target)) {
+        setIsAddMenuOpen(false)
+      }
+    }
+
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        setIsAddMenuOpen(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    document.addEventListener('touchstart', handleClickOutside, { passive: true })
+    document.addEventListener('keydown', handleKeyDown)
+
+    return () => {
+      window.removeEventListener('resize', handleScrollOrResize)
+      window.removeEventListener('scroll', handleScrollOrResize, true)
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', handleScrollOrResize)
+        window.visualViewport.removeEventListener('scroll', handleScrollOrResize)
+      }
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('touchstart', handleClickOutside)
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [isAddMenuOpen, updateAddMenuCoords])
 
   // Create Category Modal state
   const [isCreatingCategory, setIsCreatingCategory] = useState(false)
@@ -319,7 +394,10 @@ export function TasksSection({
     if (activityKind === 'tareas') openQuickAdd('tarea', { hideTabs: true, defaultSection: tab })
     else if (activityKind === 'eventos') openQuickAdd('evento', { hideTabs: true })
     else if (activityKind === 'recordatorios') openQuickAdd('recordatorio', { hideTabs: true })
-    else setIsAddMenuOpen(true)
+    else {
+      updateAddMenuCoords()
+      setIsAddMenuOpen((v) => !v)
+    }
   }
 
   return (
@@ -380,41 +458,60 @@ export function TasksSection({
         {/* Botón de Creación Rápida Inteligente */}
         <div className="relative shrink-0">
           <button
+            ref={addBtnRef}
             onClick={() => handleDirectAdd()}
-            className="flex items-center gap-1 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 text-xs font-bold transition-all active:scale-95 shadow-sm"
+            className="flex items-center gap-1 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 text-xs font-bold transition-all active:scale-95 shadow-sm cursor-pointer"
           >
             <Plus className="size-3.5 stroke-[2.5]" />
             <span className="hidden sm:inline">Añadir</span>
           </button>
 
-          {/* Menú emergente de creación en caso de 'Todas' */}
-          {isAddMenuOpen && (
+          {/* Menú emergente de creación en caso de 'Todas' con portal */}
+          {isAddMenuOpen && typeof document !== 'undefined' && createPortal(
             <>
-              <div className="fixed inset-0 z-40 bg-black/20 backdrop-blur-[1px]" onClick={() => setIsAddMenuOpen(false)} />
-              <div className="absolute right-0 top-full mt-2 z-50 w-52 rounded-2xl bg-white dark:bg-[#1a1738] border border-slate-200 dark:border-white/20 shadow-2xl p-1.5 flex flex-col gap-1 backdrop-blur-2xl animate-in fade-in zoom-in-95">
+              <div className="fixed inset-0 z-[999998] bg-black/20 backdrop-blur-[1px]" onClick={() => setIsAddMenuOpen(false)} />
+              <div
+                ref={addMenuRef}
+                style={
+                  addMenuCoords
+                    ? {
+                        position: 'fixed',
+                        top: `${addMenuCoords.top}px`,
+                        left: `${addMenuCoords.left}px`,
+                        width: '13rem',
+                        zIndex: 999999,
+                      }
+                    : undefined
+                }
+                className="rounded-2xl bg-white dark:bg-[#1a1738] border border-slate-200 dark:border-white/20 shadow-2xl p-1.5 flex flex-col gap-1 backdrop-blur-2xl animate-in fade-in zoom-in-95"
+              >
                 <button
+                  type="button"
                   onClick={() => handleDirectAdd('tarea')}
-                  className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-all text-left"
+                  className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-all text-left cursor-pointer"
                 >
                   <span className="size-2 rounded-full bg-blue-500" />
                   <span>🔵 Nueva Tarea</span>
                 </button>
                 <button
+                  type="button"
                   onClick={() => handleDirectAdd('evento')}
-                  className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-all text-left"
+                  className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-all text-left cursor-pointer"
                 >
                   <span className="size-2 rounded-full bg-emerald-500" />
                   <span>🟢 Nuevo Evento</span>
                 </button>
                 <button
+                  type="button"
                   onClick={() => handleDirectAdd('recordatorio')}
-                  className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-all text-left"
+                  className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-all text-left cursor-pointer"
                 >
                   <span className="size-2 rounded-full bg-orange-500" />
                   <span>🟠 Nuevo Recordatorio</span>
                 </button>
               </div>
-            </>
+            </>,
+            document.body
           )}
         </div>
       </div>

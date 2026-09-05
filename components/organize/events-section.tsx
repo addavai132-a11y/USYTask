@@ -215,7 +215,7 @@ export function EventsSection({
           className="flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 text-xs font-bold shadow-sm transition-transform active:scale-95"
         >
           <Vote className="size-3.5" />
-          <span>+ Crear encuesta</span>
+          <span>Crear encuesta</span>
         </button>
       </div>
 
@@ -569,7 +569,7 @@ export function EventsSection({
                       className="flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-xs font-bold text-primary-foreground shadow-soft transition-transform active:scale-95"
                     >
                       <Plus className="size-3.5" />
-                      <span>+ Añadir primera opción</span>
+                      <span>Añadir primera opción</span>
                     </button>
                   </div>
                 ) : (
@@ -700,7 +700,7 @@ export function EventsSection({
                       className="flex items-center justify-center gap-1.5 rounded-2xl border border-dashed border-primary/40 bg-primary/5 py-2 text-xs font-bold text-primary hover:bg-primary/10 transition-colors"
                     >
                       <Plus className="size-4" />
-                      <span>+ Añadir otra opción</span>
+                      <span>Añadir otra opción</span>
                     </button>
                   </div>
                 )}

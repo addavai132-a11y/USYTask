@@ -173,7 +173,7 @@ export function MembersTab() {
           className="flex items-center gap-1.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 text-xs font-bold transition-all active:scale-95 shadow-sm dark:bg-purple-600 dark:hover:bg-purple-500"
         >
           <UserPlus className="size-3.5" />
-          <span>+ Invitar</span>
+          <span>Invitar</span>
         </button>
       </div>
 

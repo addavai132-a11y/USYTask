@@ -2,6 +2,7 @@
 // All data is scoped by groupId and persisted in localStorage.
 
 import type { Task, CalendarEvent, Reminder, Member, Activity, TaskCategory, EventPoll, EventPollOption, DailyMenu, WeeklyMenu, Income, Expense, BillSubscription, Budget, PiggyBankConfig, AppNotification, ShoppingReceipt, ShoppingReceiptItem } from '@/types'
+import { isExpenseDueInMonth, isBillDueInMonth } from '@/types'
 import { daysUntil } from './date-utils'
 import { scheduleCloudSync } from './cloud-sync'
 
@@ -995,12 +996,27 @@ export function processMonthlyRecurringItems(groupId: string, monthISO: string):
 
   // 1. Process active BillSubscriptions (recurring expenses / subscriptions)
   const allBills = getBillsByGroup(groupId)
-  const allExpenses = getAllExpenses()
+  let allExpenses = getAllExpenses()
   let expensesUpdated = false
 
   allBills.forEach((bill) => {
     // Only process if active
     if (bill.subscriptionStatus === 'cancelada' || bill.subscriptionStatus === 'pausada' || bill.isActive === false) {
+      const oldIdx = allExpenses.findIndex((e) => e.id === `exp_sub_${bill.id}_${yearMonth}`)
+      if (oldIdx >= 0) {
+        allExpenses.splice(oldIdx, 1)
+        expensesUpdated = true
+      }
+      return
+    }
+
+    // Check if bill is actually due in this month based on its frequency/cycle
+    if (!isBillDueInMonth(bill, yearMonth)) {
+      const oldIdx = allExpenses.findIndex((e) => e.id === `exp_sub_${bill.id}_${yearMonth}`)
+      if (oldIdx >= 0) {
+        allExpenses.splice(oldIdx, 1)
+        expensesUpdated = true
+      }
       return
     }
 
@@ -1008,7 +1024,7 @@ export function processMonthlyRecurringItems(groupId: string, monthISO: string):
     const exists = allExpenses.some(
       (e) =>
         e.groupId === groupId &&
-        (e.subscriptionId === bill.id || (e.title.toLowerCase() === bill.name.toLowerCase() && e.isRecurring)) &&
+        (e.id === `exp_sub_${bill.id}_${yearMonth}` || e.subscriptionId === bill.id || (e.title.toLowerCase() === bill.name.toLowerCase() && e.isRecurring)) &&
         e.date.startsWith(yearMonth)
     )
 
@@ -1029,6 +1045,61 @@ export function processMonthlyRecurringItems(groupId: string, monthISO: string):
         isRecurring: true,
         billingDay: dayNum,
         subscriptionId: bill.id,
+        createdAt: new Date().toISOString(),
+      }
+      allExpenses.push(newExpense)
+      expensesUpdated = true
+    }
+  })
+
+  // 2. Process standalone recurring Expenses (registered from "Registrar Gasto" or "Otros")
+  const templateExpenses = allExpenses.filter(
+    (e) =>
+      e.groupId === groupId &&
+      Boolean(e.isRecurring) &&
+      !e.subscriptionId &&
+      !e.id.startsWith('exp_sub_') &&
+      !e.id.startsWith('exp_rec_')
+  )
+
+  templateExpenses.forEach((tmpl) => {
+    // If not due in this month (intermediate month for bimestral, trimestral, etc.), clean up any stray record
+    if (!isExpenseDueInMonth(tmpl, yearMonth)) {
+      const strayIdx = allExpenses.findIndex((e) => e.id === `exp_rec_${tmpl.id}_${yearMonth}`)
+      if (strayIdx >= 0) {
+        allExpenses.splice(strayIdx, 1)
+        expensesUpdated = true
+      }
+      return
+    }
+
+    // Check if an entry for this recurring expense already exists in this month
+    const existsInMonth = allExpenses.some(
+      (e) =>
+        e.groupId === groupId &&
+        (e.id === tmpl.id || e.id === `exp_rec_${tmpl.id}_${yearMonth}` || (e.title.toLowerCase() === tmpl.title.toLowerCase() && e.isRecurring)) &&
+        e.date.startsWith(yearMonth)
+    )
+
+    if (!existsInMonth) {
+      const bDay = Number(tmpl.billingDay)
+      const dayNum = isNaN(bDay) ? 1 : Math.min(daysInMonth, Math.max(1, bDay))
+      const dateStr = `${yearMonth}-${dayNum.toString().padStart(2, '0')}`
+      const newExpense: Expense = {
+        id: `exp_rec_${tmpl.id}_${yearMonth}`,
+        groupId,
+        title: tmpl.title,
+        amount: Number(tmpl.amount) || 0,
+        category: tmpl.category,
+        customCategory: tmpl.customCategory,
+        note: tmpl.note,
+        date: dateStr,
+        paidByMemberId: tmpl.paidByMemberId || '',
+        paidByMemberIds: tmpl.paidByMemberIds || (tmpl.paidByMemberId ? [tmpl.paidByMemberId] : []),
+        isRecurring: true,
+        frequency: tmpl.frequency || 'mensual',
+        billingDay: dayNum,
+        consumption: tmpl.consumption,
         createdAt: new Date().toISOString(),
       }
       allExpenses.push(newExpense)
@@ -1096,17 +1167,23 @@ export function getBudgetsByGroup(groupId: string): Budget[] {
   return getAllBudgets().filter((item) => item.groupId === groupId)
 }
 
-export function saveBudget(groupId: string, category: string, monthlyLimit: number): void {
+export function saveBudget(groupId: string, category: string, monthlyLimit: number, note?: string): void {
   const all = getAllBudgets()
   const idx = all.findIndex((b) => b.groupId === groupId && b.category === category)
   if (idx >= 0) {
     all[idx].monthlyLimit = monthlyLimit
+    if (note !== undefined) {
+      all[idx].note = note ? note.trim() : undefined
+    }
+    all[idx].updatedAt = new Date().toISOString()
   } else {
     all.push({
       id: `budget_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
       groupId,
       category: category as any,
       monthlyLimit,
+      note: note ? note.trim() : undefined,
+      updatedAt: new Date().toISOString(),
     })
   }
   saveArray(BUDGETS_KEY, all)

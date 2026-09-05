@@ -18,6 +18,7 @@ import {
   Timer,
   Flame,
   Layers,
+  TrendingUp,
 } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { CustomSelect } from '@/components/ui/custom-select'
@@ -45,11 +46,21 @@ import type { Exercise, MuscleGroup, EquipmentType } from '@/types/fitness'
 import { equipmentLabels } from '@/types/fitness'
 import { Search } from 'lucide-react'
 
+export interface CompletedSessionSummary {
+  routineName: string
+  durationSeconds: number
+  totalVolumeKg: number
+  effectiveSetsCount: number
+  completedSetsCount: number
+  exercises: WorkoutExerciseSession[]
+}
+
 interface LiveWorkoutTabProps {
   routines: WorkoutRoutine[]
   activeRoutineForSession: WorkoutRoutine | null
-  onFinishSession: (session: WorkoutSession) => void
+  onFinishSession: (session: WorkoutSession, navigateToProgress?: boolean) => void
   onClearActiveRoutine: () => void
+  onNavigateToProgress?: () => void
 }
 
 function generateSetId(exerciseId: string, setIdx: number): string {
@@ -115,6 +126,7 @@ export function LiveWorkoutTab({
   activeRoutineForSession,
   onFinishSession,
   onClearActiveRoutine,
+  onNavigateToProgress,
 }: LiveWorkoutTabProps) {
   const { toast } = useToast()
   const isHydratedRef = useRef(false)
@@ -169,6 +181,7 @@ export function LiveWorkoutTab({
 
   const [isResetModalOpen, setIsResetModalOpen] = useState(false)
   const [isFinishModalOpen, setIsFinishModalOpen] = useState(false)
+  const [completedSummary, setCompletedSummary] = useState<CompletedSessionSummary | null>(null)
 
   // Exercise Picker Modal & Custom Exercise Creation for Live Workout
   const [isAddExerciseModalOpen, setIsAddExerciseModalOpen] = useState(false)
@@ -351,10 +364,87 @@ export function LiveWorkoutTab({
       targetSet.completed = willBeCompleted
 
       if (willBeCompleted) {
-        const restSecs = targetSet.restSeconds ?? updated[exerciseIndex].targetRestSeconds ?? 90
-        const exName = updated[exerciseIndex].exerciseName
-        triggerRestTimer(restSecs, `${exName} (Serie ${targetSet.setNumber})`)
-        toast(`⏰ Descanso de ${restSecs}s activado para Serie ${targetSet.setNumber}`, '⏱️')
+        // ── AUTODETECCIÓN DE FIN DE SERIES (ÚLTIMA SERIE ACTIVA) ──
+        // Comprobar si todas las series de todos los ejercicios del entrenamiento están completadas
+        const totalSets = updated.reduce((acc, ex) => acc + ex.sets.length, 0)
+        const allCompleted =
+          totalSets > 0 &&
+          updated.every((ex) => ex.sets.length > 0 && ex.sets.every((s) => s.completed))
+
+        if (allCompleted) {
+          // 1. Capturar duración exacta y calcular métricas finales completas (volumen total en kg)
+          const finalDuration = sessionSeconds
+          let calcVolume = 0
+          let calcEffective = 0
+          let calcCompleted = 0
+
+          updated.forEach((ex) => {
+            ex.sets.forEach((s) => {
+              if (s.completed) {
+                calcVolume += (s.weightKg || 0) * (s.reps || 0)
+                calcCompleted++
+                if (s.type === 'efectiva' || s.type === 'dropset' || s.type === 'fallo') {
+                  calcEffective++
+                }
+              }
+            })
+          })
+
+          const routine = routines.find((r) => r.id === selectedRoutineId)
+          const routineName = routine ? routine.name : 'Entrenamiento Libre'
+          const finishedExercisesSnapshot: WorkoutExerciseSession[] = JSON.parse(JSON.stringify(updated))
+
+          // 2. Control del cronómetro: detener de inmediato y reiniciar a cero
+          setIsTimerRunning(false)
+          setSessionSeconds(0)
+          setStartTimeMs(Date.now())
+
+          // 3. Crear sesión con el volumen total de kilogramos y registrarla en historial y calendario
+          const sessionToSave: WorkoutSession = {
+            id: `session_${Date.now()}`,
+            groupId: 'default',
+            routineId: selectedRoutineId,
+            routineName,
+            date: getTodayISO(),
+            startTime: new Date(startTimeMs).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            endTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            durationSeconds: finalDuration,
+            totalVolumeKg: calcVolume,
+            effectiveSetsCount: calcEffective,
+            exercises: finishedExercisesSnapshot,
+            notes: sessionNotes.trim() || undefined,
+          }
+
+          // Disparar acción de fin de sesión (guarda en historial y en calendario sin saltar de pantalla)
+          onFinishSession(sessionToSave, false)
+          clearActiveWorkoutSession()
+          onClearActiveRoutine()
+
+          // Guardar resumen final para mostrar en el modal de finalización
+          setCompletedSummary({
+            routineName,
+            durationSeconds: finalDuration,
+            totalVolumeKg: calcVolume,
+            effectiveSetsCount: calcEffective,
+            completedSetsCount: calcCompleted,
+            exercises: finishedExercisesSnapshot,
+          })
+
+          // Abrir modal de finalización de sesión con el resumen
+          setIsFinishModalOpen(true)
+          toast('🎉 ¡Última serie completada! Sesión guardada y cronómetro reiniciado a 00:00.', '🏆')
+
+          // Resetear ejercicios de la sesión para preparar el próximo entreno con cronómetro a 0
+          const freshExercises = buildInitialExercisesForRoutine(routine)
+          setSessionNotes('')
+          return freshExercises
+        } else {
+          // Si quedan más series, activar temporizador de descanso
+          const restSecs = targetSet.restSeconds ?? updated[exerciseIndex].targetRestSeconds ?? 90
+          const exName = updated[exerciseIndex].exerciseName
+          triggerRestTimer(restSecs, `${exName} (Serie ${targetSet.setNumber})`)
+          toast(`⏰ Descanso de ${restSecs}s activado para Serie ${targetSet.setNumber}`, '⏱️')
+        }
       }
       return updated
     })
@@ -462,6 +552,11 @@ export function LiveWorkoutTab({
     }
   }, [sessionExercises])
 
+  const isWorkoutAllCompleted = useMemo(() => {
+    const totalSets = sessionExercises.reduce((acc, ex) => acc + ex.sets.length, 0)
+    return totalSets > 0 && sessionExercises.every((ex) => ex.sets.length > 0 && ex.sets.every((s) => s.completed))
+  }, [sessionExercises])
+
   // ── START & PAUSE HANDLERS (EXPLICIT USER CONTROL) ──
   function handleStartSession() {
     if (sessionSeconds === 0) {
@@ -508,12 +603,22 @@ export function LiveWorkoutTab({
       notes: sessionNotes.trim() || undefined,
     }
 
-    // Save to permanent history & clean active session storage
-    onFinishSession(session)
+    // 1. Guardar en historial permanente y sincronizar base de datos y calendario
+    onFinishSession(session, true)
     clearActiveWorkoutSession()
     onClearActiveRoutine()
+
+    // 2. Detener y REINICIAR el cronómetro a cero para el próximo entrenamiento
+    setSessionSeconds(0)
+    setIsTimerRunning(false)
+    setStartTimeMs(Date.now())
+    setSessionNotes('')
+    const resetExercises = buildInitialExercisesForRoutine(routine)
+    setSessionExercises(resetExercises)
+    setCompletedSummary(null)
     setIsFinishModalOpen(false)
-    toast('🎉 ¡Entrenamiento completado y guardado permanentemente!', '🏆')
+
+    toast('🎉 ¡Entrenamiento completado y cronómetro reiniciado a 00:00!', '🏆')
   }
 
   return (
@@ -611,8 +716,11 @@ export function LiveWorkoutTab({
 
             <button
               type="button"
-              onClick={() => setIsFinishModalOpen(true)}
-              className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 text-xs font-black shadow-md transition-all active:scale-95 flex items-center gap-1"
+              onClick={() => {
+                setIsTimerRunning(false)
+                setIsFinishModalOpen(true)
+              }}
+              className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 text-xs font-black shadow-md transition-all active:scale-95 flex items-center gap-1 cursor-pointer"
             >
               <CheckCircle2 className="size-3.5" />
               <span>Finalizar Sesión</span>
@@ -840,7 +948,7 @@ export function LiveWorkoutTab({
           className="w-full flex items-center justify-center gap-2 p-3.5 rounded-2xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-800 text-xs font-black transition-all active:scale-95 shadow-sm dark:bg-white/[0.03] dark:border-white/10 dark:text-white dark:hover:bg-white/[0.06]"
         >
           <Plus className="size-4 text-emerald-600 dark:text-purple-400" />
-          <span>+ Añadir Ejercicio a la Sesión en Vivo</span>
+          <span>Añadir Ejercicio a la Sesión en Vivo</span>
         </button>
       </div>
 
@@ -1097,55 +1205,163 @@ export function LiveWorkoutTab({
                 Resumen del Entrenamiento
               </h3>
               <button
-                onClick={() => setIsFinishModalOpen(false)}
+                onClick={() => {
+                  setIsFinishModalOpen(false)
+                  setCompletedSummary(null)
+                }}
                 className="rounded-full p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:text-white dark:hover:bg-white/10"
               >
                 <X className="size-5" />
               </button>
             </div>
 
+            {/* Banner de autodetección / series completadas */}
+            {completedSummary ? (
+              <div className="flex items-start gap-2.5 p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 dark:bg-emerald-500/15 dark:border-emerald-500/30 dark:text-emerald-300 text-xs font-bold animate-in fade-in duration-200">
+                <CheckCircle2 className="size-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                <div className="min-w-0 space-y-1">
+                  <p className="font-extrabold text-xs sm:text-sm">¡Entrenamiento Finalizado con Éxito!</p>
+                  <p className="text-[11px] font-medium opacity-90 leading-relaxed">
+                    Última serie activa completada. El cronómetro se ha detenido de inmediato y se ha reiniciado a <strong>00:00</strong>.
+                  </p>
+                  <p className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-1">
+                    <span>✅ Guardado en Historial y Calendario ({completedSummary.totalVolumeKg.toLocaleString('es-ES')} kg)</span>
+                  </p>
+                </div>
+              </div>
+            ) : isWorkoutAllCompleted ? (
+              <div className="flex items-center gap-2.5 p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 dark:bg-emerald-500/15 dark:border-emerald-500/30 dark:text-emerald-300 text-xs font-bold animate-in fade-in duration-200">
+                <CheckCircle2 className="size-4.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                <div className="min-w-0">
+                  <p className="font-extrabold">¡Todas las series completadas!</p>
+                  <p className="text-[10px] font-medium opacity-90">El cronómetro se ha detenido de forma automática.</p>
+                </div>
+              </div>
+            ) : null}
+
             {/* 3 Metric Summary Boxes */}
             <div className="grid grid-cols-3 gap-2.5 text-center">
               <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 dark:bg-white/[0.03] dark:border-white/10">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Duración</span>
-                <p className="text-lg font-black text-slate-900 dark:text-white font-mono mt-0.5">{formatStopwatch(sessionSeconds)}</p>
+                <p className="text-lg font-black text-slate-900 dark:text-white font-mono mt-0.5">
+                  {formatStopwatch(completedSummary ? completedSummary.durationSeconds : sessionSeconds)}
+                </p>
               </div>
               <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 dark:bg-white/[0.03] dark:border-white/10">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Volumen Total</span>
-                <p className="text-lg font-black text-slate-900 dark:text-white font-mono mt-0.5">{totalVolume.toLocaleString('es-ES')} kg</p>
+                <p className="text-lg font-black text-slate-900 dark:text-white font-mono mt-0.5">
+                  {(completedSummary ? completedSummary.totalVolumeKg : totalVolume).toLocaleString('es-ES')} kg
+                </p>
               </div>
               <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 dark:bg-white/[0.03] dark:border-white/10">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Series Ef.</span>
-                <p className="text-lg font-black text-emerald-600 dark:text-emerald-400 font-mono mt-0.5">{totalEffectiveSets}</p>
+                <p className="text-lg font-black text-emerald-600 dark:text-emerald-400 font-mono mt-0.5">
+                  {completedSummary ? completedSummary.effectiveSetsCount : totalEffectiveSets}
+                </p>
               </div>
             </div>
 
-            {/* Notas opcionales de la sesión */}
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Notas de la sesión / Sensaciones</label>
-              <textarea
-                value={sessionNotes}
-                onChange={(e) => setSessionNotes(e.target.value)}
-                placeholder="Ej: Buena congestión, subí 2.5kg en press de banca..."
-                className="w-full rounded-2xl border border-slate-200 bg-slate-50 dark:border-purple-500/20 dark:bg-white/[0.04] p-3 text-xs text-slate-900 dark:text-white outline-none focus:border-emerald-500 dark:focus:border-purple-500 h-20 resize-none"
-              />
+            {/* Resumen de ejercicios realizados */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                <span>
+                  Ejercicios realizados ({completedSummary ? completedSummary.exercises.length : sessionExercises.length})
+                </span>
+                <span className="font-mono text-emerald-600 dark:text-emerald-400">
+                  {completedSummary ? completedSummary.completedSetsCount : totalCompletedSets} series comp.
+                </span>
+              </div>
+              <div className="space-y-1 max-h-32 overflow-y-auto pr-1 custom-fitness-scroll">
+                {(completedSummary ? completedSummary.exercises : sessionExercises).map((ex, i) => {
+                  const completedSets = ex.sets.filter((s) => s.completed).length
+                  const exVolume = ex.sets
+                    .filter((s) => s.completed)
+                    .reduce((acc, s) => acc + (s.weightKg || 0) * (s.reps || 0), 0)
+                  return (
+                    <div
+                      key={i}
+                      className="flex items-center justify-between p-2 rounded-xl bg-slate-50 border border-slate-200 dark:bg-white/[0.02] dark:border-white/5 text-xs"
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <CheckCircle2 className={cn("size-3.5 shrink-0", completedSets === ex.sets.length ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400")} />
+                        <span className="font-bold text-slate-800 dark:text-white truncate">
+                          {ex.exerciseName}
+                        </span>
+                      </div>
+                      <span className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 shrink-0 font-mono">
+                        {completedSets}/{ex.sets.length} series · {exVolume.toLocaleString('es-ES')} kg
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
             </div>
 
+            {/* Notas opcionales de la sesión (solo para finalización manual) */}
+            {!completedSummary && (
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Notas de la sesión / Sensaciones</label>
+                <textarea
+                  value={sessionNotes}
+                  onChange={(e) => setSessionNotes(e.target.value)}
+                  placeholder="Ej: Buena congestión, subí 2.5kg en press de banca..."
+                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 dark:border-purple-500/20 dark:bg-white/[0.04] p-3 text-xs text-slate-900 dark:text-white outline-none focus:border-emerald-500 dark:focus:border-purple-500 h-16 resize-none"
+                />
+              </div>
+            )}
+
+            <p className="text-[10px] text-slate-500 dark:text-slate-400 text-center">
+              {completedSummary
+                ? 'El entrenamiento y su volumen han quedado guardados en tu historial y reflejados en el calendario.'
+                : 'Al guardar, los datos se registrarán en tu base de datos y calendario, y el cronómetro quedará reiniciado a 00:00 para la próxima sesión.'}
+            </p>
+
             <div className="pt-2 border-t border-slate-200 dark:border-purple-500/15 flex gap-2 justify-end">
-              <button
-                type="button"
-                onClick={() => setIsFinishModalOpen(false)}
-                className="rounded-2xl px-4 py-2.5 text-xs font-bold text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-colors dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-white"
-              >
-                Seguir entrenando
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirmFinishSession}
-                className="rounded-2xl bg-emerald-600 hover:bg-emerald-700 px-5 py-2.5 text-xs font-black text-white shadow-soft transition-transform active:scale-95"
-              >
-                Guardar y Sincronizar
-              </button>
+              {completedSummary ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsFinishModalOpen(false)
+                      setCompletedSummary(null)
+                    }}
+                    className="rounded-2xl px-4 py-2.5 text-xs font-bold text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-colors dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-white cursor-pointer"
+                  >
+                    Cerrar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsFinishModalOpen(false)
+                      setCompletedSummary(null)
+                      if (onNavigateToProgress) {
+                        onNavigateToProgress()
+                      }
+                    }}
+                    className="rounded-2xl bg-emerald-600 hover:bg-emerald-700 px-5 py-2.5 text-xs font-black text-white shadow-soft transition-transform active:scale-95 cursor-pointer flex items-center gap-1.5"
+                  >
+                    <TrendingUp className="size-4" />
+                    <span>Ver en Historial y Progreso</span>
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setIsFinishModalOpen(false)}
+                    className="rounded-2xl px-4 py-2.5 text-xs font-bold text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-colors dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-white cursor-pointer"
+                  >
+                    Seguir entrenando
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleConfirmFinishSession}
+                    className="rounded-2xl bg-emerald-600 hover:bg-emerald-700 px-5 py-2.5 text-xs font-black text-white shadow-soft transition-transform active:scale-95 cursor-pointer"
+                  >
+                    Finalizar y Guardar Sesión
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>

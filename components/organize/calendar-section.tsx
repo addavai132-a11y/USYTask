@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useMemo, useEffect, useRef } from 'react'
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import {
   ChevronLeft,
   ChevronRight,
@@ -128,8 +129,66 @@ export function CalendarSection({
   const [isYearPickerOpen, setIsYearPickerOpen] = useState(false)
 
   const monthRef = useRef<HTMLDivElement>(null)
+  const monthPanelRef = useRef<HTMLDivElement>(null)
   const yearRef = useRef<HTMLDivElement>(null)
   const yearListRef = useRef<HTMLDivElement>(null)
+
+  const [monthCoords, setMonthCoords] = useState<{ top: number; left: number } | null>(null)
+  const [yearCoords, setYearCoords] = useState<{ top: number; left: number; maxHeight: number } | null>(null)
+
+  const updateMonthCoords = useCallback(() => {
+    if (!monthRef.current) return
+    const rect = monthRef.current.getBoundingClientRect()
+    const viewportHeight = window.innerHeight
+    const viewportWidth = window.innerWidth
+    const safeMargin = 10
+    const panelWidth = Math.min(224, viewportWidth - safeMargin * 2)
+    const panelHeight = 220
+
+    const spaceBelow = Math.max(0, viewportHeight - rect.bottom - safeMargin)
+    const spaceAbove = Math.max(0, rect.top - safeMargin)
+    const placeAbove = spaceBelow < panelHeight && spaceAbove > spaceBelow
+
+    let left = rect.left
+    if (left + panelWidth > viewportWidth - safeMargin) {
+      left = Math.max(safeMargin, viewportWidth - panelWidth - safeMargin)
+    }
+    if (left < safeMargin) left = safeMargin
+
+    const top = placeAbove
+      ? Math.max(safeMargin, rect.top - panelHeight - 6)
+      : Math.min(viewportHeight - panelHeight - safeMargin, rect.bottom + 6)
+
+    setMonthCoords({ top, left })
+  }, [])
+
+  const updateYearCoords = useCallback(() => {
+    if (!yearRef.current) return
+    const rect = yearRef.current.getBoundingClientRect()
+    const viewportHeight = window.innerHeight
+    const viewportWidth = window.innerWidth
+    const safeMargin = 10
+    const panelWidth = Math.min(176, viewportWidth - safeMargin * 2)
+    const estPanelHeight = 240
+
+    const spaceBelow = Math.max(0, viewportHeight - rect.bottom - safeMargin)
+    const spaceAbove = Math.max(0, rect.top - safeMargin)
+    const placeAbove = spaceBelow < 180 && spaceAbove > spaceBelow
+    const availableHeight = placeAbove ? spaceAbove : spaceBelow
+    const maxHeight = Math.max(80, Math.min(estPanelHeight, availableHeight - 6))
+
+    let left = rect.left
+    if (left + panelWidth > viewportWidth - safeMargin) {
+      left = Math.max(safeMargin, viewportWidth - panelWidth - safeMargin)
+    }
+    if (left < safeMargin) left = safeMargin
+
+    const top = placeAbove
+      ? Math.max(safeMargin, rect.top - maxHeight - 6)
+      : Math.min(viewportHeight - maxHeight - safeMargin, rect.bottom + 6)
+
+    setYearCoords({ top, left, maxHeight })
+  }, [])
 
   const [selectedDateISO, setSelectedDateISO] = useState<string>(todayISO)
   const [selectedDayModalISO, setSelectedDayModalISO] = useState<string | null>(null)
@@ -147,19 +206,62 @@ export function CalendarSection({
     meal: true,
   })
 
-  // Close pickers on click outside
+  // Close pickers on click outside & track position
   useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (monthRef.current && !monthRef.current.contains(e.target as Node)) {
-        setIsMonthPickerOpen(false)
+    if (!isMonthPickerOpen && !isYearPickerOpen) return
+
+    if (isMonthPickerOpen) updateMonthCoords()
+    if (isYearPickerOpen) updateYearCoords()
+
+    const handleScrollOrResize = () => {
+      if (isMonthPickerOpen) updateMonthCoords()
+      if (isYearPickerOpen) updateYearCoords()
+    }
+
+    window.addEventListener('resize', handleScrollOrResize)
+    window.addEventListener('scroll', handleScrollOrResize, { capture: true, passive: true })
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', handleScrollOrResize)
+      window.visualViewport.addEventListener('scroll', handleScrollOrResize)
+    }
+
+    function handleClickOutside(e: MouseEvent | TouchEvent) {
+      const target = e.target as Node
+      if (isMonthPickerOpen) {
+        if (!monthRef.current?.contains(target) && !monthPanelRef.current?.contains(target)) {
+          setIsMonthPickerOpen(false)
+        }
       }
-      if (yearRef.current && !yearRef.current.contains(e.target as Node)) {
+      if (isYearPickerOpen) {
+        if (!yearRef.current?.contains(target) && !yearListRef.current?.contains(target)) {
+          setIsYearPickerOpen(false)
+        }
+      }
+    }
+
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        setIsMonthPickerOpen(false)
         setIsYearPickerOpen(false)
       }
     }
+
     document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
+    document.addEventListener('touchstart', handleClickOutside, { passive: true })
+    document.addEventListener('keydown', handleKeyDown)
+
+    return () => {
+      window.removeEventListener('resize', handleScrollOrResize)
+      window.removeEventListener('scroll', handleScrollOrResize, true)
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', handleScrollOrResize)
+        window.visualViewport.removeEventListener('scroll', handleScrollOrResize)
+      }
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('touchstart', handleClickOutside)
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [isMonthPickerOpen, isYearPickerOpen, updateMonthCoords, updateYearCoords])
 
   // Scroll to active year when year picker opens
   useEffect(() => {
@@ -355,7 +457,7 @@ export function CalendarSection({
       {/* ── CALENDARIO PRINCIPAL (Compacto max-w-xl) ── */}
       <Card className="p-3.5 sm:p-4 bg-white dark:bg-[#0e0d1d]/60 border border-slate-200 dark:border-purple-500/15 rounded-2xl backdrop-blur-xl shadow-sm">
         {/* Header: Pestañas interactivas de Mes / Año, Navegación y Botón Hoy */}
-        <div className="flex items-center justify-between mb-3 px-0.5 relative">
+        <div className="flex items-center justify-between mb-3 px-0.5 relative z-30">
           <div className="flex items-center gap-1.5 sm:gap-2">
             <div className="flex size-7 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 dark:bg-purple-500/15 dark:text-purple-400 shrink-0 border border-emerald-200 dark:border-purple-500/20">
               <CalendarIcon className="size-3.5" />
@@ -366,11 +468,12 @@ export function CalendarSection({
               <button
                 type="button"
                 onClick={() => {
+                  updateMonthCoords()
                   setIsMonthPickerOpen((v) => !v)
                   setIsYearPickerOpen(false)
                 }}
                 className={cn(
-                  'flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold transition-all shadow-sm',
+                  'flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold transition-all shadow-sm cursor-pointer',
                   isMonthPickerOpen
                     ? 'border-emerald-500 bg-emerald-50 text-emerald-800 dark:bg-purple-500/20 dark:text-purple-300'
                     : 'border-slate-200 dark:border-white/10 bg-white dark:bg-white/[0.04] text-slate-800 dark:text-white hover:bg-slate-50 dark:hover:bg-white/[0.08]'
@@ -380,9 +483,23 @@ export function CalendarSection({
                 <ChevronDown className={cn('size-3 text-slate-400 transition-transform duration-200', isMonthPickerOpen && 'rotate-180 text-emerald-600 dark:text-purple-400')} />
               </button>
 
-              {/* Menú de Selección de Mes (12 meses) */}
-              {isMonthPickerOpen && (
-                <div className="absolute left-0 top-full mt-1.5 z-50 w-56 rounded-2xl border border-slate-200 dark:border-purple-500/25 bg-white dark:bg-[#100e23] p-2 shadow-2xl backdrop-blur-xl grid grid-cols-2 gap-1 animate-in fade-in zoom-in-95 duration-150">
+              {/* Menú de Selección de Mes con Portal (12 meses) */}
+              {isMonthPickerOpen && typeof document !== 'undefined' && createPortal(
+                <div
+                  ref={monthPanelRef}
+                  style={
+                    monthCoords
+                      ? {
+                          position: 'fixed',
+                          top: `${monthCoords.top}px`,
+                          left: `${monthCoords.left}px`,
+                          width: '14rem',
+                          zIndex: 999999,
+                        }
+                      : undefined
+                  }
+                  className="rounded-2xl border border-slate-200 dark:border-purple-500/25 bg-white dark:bg-[#100e23] p-2 shadow-2xl backdrop-blur-xl grid grid-cols-2 gap-1 animate-in fade-in zoom-in-95 duration-150"
+                >
                   {monthNames.map((mName, idx) => {
                     const isSelected = viewMonth === idx
                     return (
@@ -394,7 +511,7 @@ export function CalendarSection({
                           setIsMonthPickerOpen(false)
                         }}
                         className={cn(
-                          'rounded-xl px-2.5 py-1.5 text-xs text-left transition-all',
+                          'rounded-xl px-2.5 py-1.5 text-xs text-left transition-all cursor-pointer',
                           isSelected
                             ? 'bg-emerald-50 border border-emerald-200 text-slate-900 font-bold dark:bg-purple-950/60 dark:border-purple-500/40 dark:text-white'
                             : 'text-slate-900 hover:text-black hover:bg-slate-100 font-medium dark:text-slate-200 dark:hover:bg-white/10'
@@ -404,7 +521,8 @@ export function CalendarSection({
                       </button>
                     )
                   })}
-                </div>
+                </div>,
+                document.body
               )}
             </div>
 
@@ -413,11 +531,12 @@ export function CalendarSection({
               <button
                 type="button"
                 onClick={() => {
+                  updateYearCoords()
                   setIsYearPickerOpen((v) => !v)
                   setIsMonthPickerOpen(false)
                 }}
                 className={cn(
-                  'flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold transition-all shadow-sm',
+                  'flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold transition-all shadow-sm cursor-pointer',
                   isYearPickerOpen
                     ? 'border-emerald-500 bg-emerald-50 text-emerald-800 dark:bg-purple-500/20 dark:text-purple-300'
                     : 'border-slate-200 dark:border-white/10 bg-white dark:bg-white/[0.04] text-slate-800 dark:text-white hover:bg-slate-50 dark:hover:bg-white/[0.08]'
@@ -427,11 +546,23 @@ export function CalendarSection({
                 <ChevronDown className={cn('size-3 text-slate-400 transition-transform duration-200', isYearPickerOpen && 'rotate-180 text-emerald-600 dark:text-purple-400')} />
               </button>
 
-              {/* Menú de Selección de Año Consecutivo (2024 - 2060) */}
-              {isYearPickerOpen && (
+              {/* Menú de Selección de Año Consecutivo con Portal (2024 - 2060) */}
+              {isYearPickerOpen && typeof document !== 'undefined' && createPortal(
                 <div
                   ref={yearListRef}
-                  className="absolute left-0 top-full mt-1.5 z-50 w-44 max-h-56 overflow-y-auto rounded-2xl border border-slate-200 dark:border-purple-500/25 bg-white dark:bg-[#100e23] p-1.5 shadow-2xl backdrop-blur-xl space-y-0.5 animate-in fade-in zoom-in-95 duration-150 dropdown-scroll"
+                  style={
+                    yearCoords
+                      ? {
+                          position: 'fixed',
+                          top: `${yearCoords.top}px`,
+                          left: `${yearCoords.left}px`,
+                          width: '11rem',
+                          maxHeight: `${yearCoords.maxHeight}px`,
+                          zIndex: 999999,
+                        }
+                      : undefined
+                  }
+                  className="overflow-y-auto rounded-2xl border border-slate-200 dark:border-purple-500/25 bg-white dark:bg-[#100e23] p-1.5 shadow-2xl backdrop-blur-xl space-y-0.5 animate-in fade-in zoom-in-95 duration-150 dropdown-scroll"
                 >
                   {yearsList.map((y) => {
                     const isSelected = viewYear === y
@@ -445,7 +576,7 @@ export function CalendarSection({
                           setIsYearPickerOpen(false)
                         }}
                         className={cn(
-                          'w-full rounded-xl px-3 py-1.5 text-xs text-left transition-all flex items-center justify-between',
+                          'w-full rounded-xl px-3 py-1.5 text-xs text-left transition-all flex items-center justify-between cursor-pointer',
                           isSelected
                             ? 'bg-emerald-50 border border-emerald-200 text-slate-900 font-bold dark:bg-purple-950/60 dark:border-purple-500/40 dark:text-white'
                             : 'text-slate-900 hover:text-black hover:bg-slate-100 font-medium dark:text-slate-200 dark:hover:bg-white/10'
@@ -456,7 +587,8 @@ export function CalendarSection({
                       </button>
                     )
                   })}
-                </div>
+                </div>,
+                document.body
               )}
             </div>
           </div>
@@ -793,7 +925,7 @@ function DayDetailModal({
                       <div className="min-w-0 flex-1">
                         <p
                           className={cn(
-                            'text-xs font-bold text-slate-900 dark:text-white truncate',
+                            'text-xs font-bold text-slate-900 dark:text-white leading-snug',
                             item.completed && 'line-through opacity-60'
                           )}
                         >
@@ -813,9 +945,9 @@ function DayDetailModal({
                             {cfg.label}
                           </span>
                           {item.location && (
-                            <span className="text-slate-400 flex items-center gap-0.5 truncate">
-                              <MapPin className="size-2.5" />
-                              {item.location}
+                            <span className="text-slate-400 flex items-center gap-0.5" title={item.location}>
+                              <MapPin className="size-2.5 shrink-0" />
+                              <span className="truncate max-w-[200px] sm:max-w-xs">{item.location}</span>
                             </span>
                           )}
                         </div>

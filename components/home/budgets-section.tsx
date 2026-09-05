@@ -12,10 +12,15 @@ import { getTodayISO } from '@/lib/date-utils'
 import {
   type Expense,
   type ExpenseCategory,
+  type ExpenseFrequency,
   EXPENSE_CATEGORIES,
+  EXPENSE_FREQUENCIES,
+  EXPENSE_FREQUENCY_CONFIG,
   expenseCategoryMeta,
   formatCurrency,
   getExpenseMemberIds,
+  getEffectiveExpensesForMonth,
+  getEffectiveBillsForMonth,
 } from '@/types/finances'
 import { cn } from '@/lib/utils'
 
@@ -24,6 +29,7 @@ export function BudgetsSection() {
   const {
     budgets,
     expenses,
+    bills,
     members,
     selectedMonthISO,
     saveBudget,
@@ -38,6 +44,7 @@ export function BudgetsSection() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState<ExpenseCategory>('alimentación')
   const [monthlyLimit, setMonthlyLimit] = useState('')
+  const [budgetNote, setBudgetNote] = useState('')
 
   // Modal Registrar/Editar Gasto en "Otros"
   const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false)
@@ -47,23 +54,30 @@ export function BudgetsSection() {
   const [expenseNote, setExpenseNote] = useState('')
   const [expenseMemberIds, setExpenseMemberIds] = useState<string[]>([])
   const [expenseDate, setExpenseDate] = useState(getTodayISO())
-  const [expenseIsRecurring, setExpenseIsRecurring] = useState(false)
+  const [expenseFrequency, setExpenseFrequency] = useState<ExpenseFrequency>('puntual')
   const [expenseBillingDay, setExpenseBillingDay] = useState('1')
 
   const currentMonthISO = selectedMonthISO || new Date().toISOString().slice(0, 7)
 
-  // Calculate spent per category (todos los gastos de 'otros' con cualquier nota se suman al presupuesto global de 'otros')
+  // Calculate spent per category (effective month expenses + unmaterialized effective bills)
+  const effectiveExpenses = getEffectiveExpensesForMonth(expenses, currentMonthISO)
+  const effectiveBills = getEffectiveBillsForMonth(bills || [], expenses, currentMonthISO)
+
   const categorySpentMap: Record<string, number> = {}
-  expenses
-    .filter((e) => !e.date || e.date.startsWith(currentMonthISO))
-    .forEach((e) => {
-      categorySpentMap[e.category] = (categorySpentMap[e.category] || 0) + e.amount
-    })
+  effectiveExpenses.forEach((e) => {
+    categorySpentMap[e.category] = (categorySpentMap[e.category] || 0) + (Number(e.amount) || 0)
+  })
+  effectiveBills.forEach((b) => {
+    const cat = b.category || 'hogar'
+    categorySpentMap[cat] = (categorySpentMap[cat] || 0) + (Number(b.amount) || 0)
+  })
 
   function handleOpenCreate(cat?: ExpenseCategory) {
-    setSelectedCategory(cat || 'alimentación')
-    const existing = budgets.find((b) => b.category === (cat || 'alimentación'))
+    const targetCat = cat || 'alimentación'
+    setSelectedCategory(targetCat)
+    const existing = budgets.find((b) => b.category === targetCat)
     setMonthlyLimit(existing ? existing.monthlyLimit.toString() : '300')
+    setBudgetNote(existing?.note || '')
     setIsModalOpen(true)
   }
 
@@ -74,7 +88,8 @@ export function BudgetsSection() {
       return
     }
 
-    saveBudget(selectedCategory, numLimit)
+    const cleanNote = selectedCategory === 'otros' ? budgetNote.trim() || undefined : undefined
+    saveBudget(selectedCategory, numLimit, cleanNote)
     toast(`Presupuesto para ${expenseCategoryMeta[selectedCategory].label} guardado`, '✅')
     setIsModalOpen(false)
   }
@@ -86,7 +101,7 @@ export function BudgetsSection() {
     setExpenseNote('')
     setExpenseMemberIds(members[0]?.id ? [members[0].id] : [])
     setExpenseDate(getTodayISO())
-    setExpenseIsRecurring(false)
+    setExpenseFrequency('puntual')
     setExpenseBillingDay(new Date().getDate().toString())
     setIsExpenseModalOpen(true)
   }
@@ -98,8 +113,9 @@ export function BudgetsSection() {
     setExpenseNote(exp.note || exp.customCategory || '')
     setExpenseMemberIds(getExpenseMemberIds(exp))
     setExpenseDate(exp.date || getTodayISO())
-    setExpenseIsRecurring(Boolean(exp.isRecurring))
-    setExpenseBillingDay((exp.billingDay || 1).toString())
+    const initialFreq: ExpenseFrequency = exp.frequency || (exp.isRecurring ? 'mensual' : 'puntual')
+    setExpenseFrequency(initialFreq)
+    setExpenseBillingDay((exp.billingDay || (exp.date ? parseInt(exp.date.split('-')[2] || '1', 10) : 1)).toString())
     setIsExpenseModalOpen(true)
   }
 
@@ -119,7 +135,8 @@ export function BudgetsSection() {
     }
 
     const cleanNote = expenseNote.trim() || undefined
-    const day = expenseIsRecurring ? Math.min(31, Math.max(1, parseInt(expenseBillingDay, 10) || 1)) : undefined
+    const isRec = expenseFrequency !== 'puntual'
+    const day = isRec ? Math.min(31, Math.max(1, parseInt(expenseBillingDay, 10) || 1)) : undefined
 
     if (editingExpenseId) {
       updateExpense({
@@ -133,7 +150,8 @@ export function BudgetsSection() {
         date: expenseDate,
         paidByMemberId: expenseMemberIds[0] || '',
         paidByMemberIds: expenseMemberIds,
-        isRecurring: expenseIsRecurring,
+        isRecurring: isRec,
+        frequency: expenseFrequency,
         billingDay: day,
       })
       toast('Gasto de Otros actualizado', '✅')
@@ -147,7 +165,8 @@ export function BudgetsSection() {
         date: expenseDate,
         paidByMemberId: expenseMemberIds[0] || '',
         paidByMemberIds: expenseMemberIds,
-        isRecurring: expenseIsRecurring,
+        isRecurring: isRec,
+        frequency: expenseFrequency,
         billingDay: day,
       })
       toast('Gasto registrado en Otros', '✅')
@@ -173,14 +192,14 @@ export function BudgetsSection() {
             title="Añadir gasto con nota en categoría Otros"
           >
             <Plus className="size-3.5 text-emerald-600 dark:text-purple-400" />
-            <span>+ Gasto en Otros</span>
+            <span>Gasto en Otros</span>
           </button>
           <button
             onClick={() => handleOpenCreate()}
             className="flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 text-xs font-bold transition-all active:scale-95 shadow-sm"
           >
             <Plus className="size-3.5" />
-            <span>+ Fijar presupuesto</span>
+            <span>Fijar presupuesto</span>
           </button>
         </div>
       </div>
@@ -212,6 +231,12 @@ export function BudgetsSection() {
                     <h4 className="text-sm font-bold text-slate-900 dark:text-white tracking-tight leading-snug capitalize">
                       {meta.label}
                     </h4>
+                    {b.note && (
+                      <p className="text-xs text-emerald-600 dark:text-purple-400 font-medium mt-0.5 flex items-center gap-1">
+                        <span className="text-[11px]">📝</span>
+                        <span className="italic">{b.note}</span>
+                      </p>
+                    )}
                     <span className="inline-block mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
                       Límite mensual: {formatCurrency(b.monthlyLimit)}
                     </span>
@@ -226,7 +251,7 @@ export function BudgetsSection() {
                         title="Añadir gasto con nota en Otros"
                       >
                         <Plus className="size-3" />
-                        <span>+ Gasto</span>
+                        <span>Gasto</span>
                       </button>
                     )}
                     <button
@@ -394,13 +419,41 @@ export function BudgetsSection() {
                 <label className="font-semibold text-slate-500 dark:text-slate-400">Categoría del gasto</label>
                 <CustomSelect<ExpenseCategory>
                   value={selectedCategory}
-                  onChange={(val) => setSelectedCategory(val)}
+                  onChange={(val) => {
+                    setSelectedCategory(val)
+                    const existing = budgets.find((b) => b.category === val)
+                    if (existing) {
+                      setMonthlyLimit(existing.monthlyLimit.toString())
+                      setBudgetNote(existing.note || '')
+                    } else if (val === 'otros') {
+                      setBudgetNote('')
+                    }
+                  }}
                   options={EXPENSE_CATEGORIES.map((c) => ({
                     value: c,
                     label: expenseCategoryMeta[c].label,
                   }))}
                 />
               </div>
+
+              {/* Campo dinámico para la categoría 'otros': nota descriptiva */}
+              {selectedCategory === 'otros' && (
+                <div className="flex flex-col gap-1 animate-in fade-in slide-in-from-top-1 duration-200">
+                  <label className="font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                    <span>📝</span> Anotación o propósito del presupuesto
+                  </label>
+                  <input
+                    type="text"
+                    value={budgetNote}
+                    onChange={(e) => setBudgetNote(e.target.value)}
+                    placeholder="Ej: Suscripciones streaming, imprevistos, compras varias..."
+                    className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-white/[0.04] py-2 px-3 text-xs font-medium text-slate-900 dark:text-white outline-none focus:border-emerald-500 dark:focus:border-purple-500"
+                  />
+                  <p className="text-[10px] text-slate-400 dark:text-slate-500">
+                    Indica el propósito o concepto de este presupuesto de Otros para identificarlo en la tarjeta.
+                  </p>
+                </div>
+              )}
 
               <div className="flex flex-col gap-1">
                 <label className="font-semibold text-slate-500 dark:text-slate-400">Límite mensual (€) <span className="text-red-500">*</span></label>
@@ -535,33 +588,44 @@ export function BudgetsSection() {
                 />
               </div>
 
-              {/* Recurrente */}
+              {/* Periodicidad del Gasto */}
               <div className="space-y-2">
-                <label className="flex items-center gap-2 p-2 rounded-xl bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/5 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={expenseIsRecurring}
-                    onChange={(e) => setExpenseIsRecurring(e.target.checked)}
-                    className="rounded accent-emerald-600"
+                <div className="flex flex-col gap-1">
+                  <label className="font-semibold text-slate-500 dark:text-slate-400">
+                    Periodicidad del gasto
+                  </label>
+                  <CustomSelect<ExpenseFrequency>
+                    value={expenseFrequency}
+                    onChange={setExpenseFrequency}
+                    options={EXPENSE_FREQUENCIES.map((freq) => ({
+                      value: freq.value,
+                      label: freq.label,
+                      badge: freq.value !== 'puntual' ? 'Periódico' : undefined,
+                      badgeVariant: (freq.value !== 'puntual' ? 'warning' : 'neutral') as 'warning' | 'neutral',
+                    }))}
                   />
-                  <span className="font-semibold text-slate-700 dark:text-slate-300">Gasto fijo mensual</span>
-                </label>
+                </div>
 
-                {expenseIsRecurring && (
-                  <div className="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 flex items-center justify-between gap-2">
+                {/* Selector dinámico de día exacto de cobro */}
+                {expenseFrequency !== 'puntual' && (
+                  <div className="p-3 rounded-xl bg-amber-50/80 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 flex items-center justify-between gap-3 animate-in fade-in slide-in-from-top-1 duration-200">
                     <div>
-                      <span className="font-bold text-amber-800 dark:text-amber-300 text-xs">Día de cobro del mes</span>
-                      <p className="text-[10px] text-slate-500 dark:text-slate-400">Generación recurrente</p>
+                      <span className="font-bold text-amber-800 dark:text-amber-300 text-xs flex items-center gap-1.5">
+                        <span>📅</span> Día exacto de cobro
+                      </span>
+                      <p className="text-[10px] text-amber-700/80 dark:text-amber-400/80 mt-0.5">
+                        Cobro el día {expenseBillingDay || '1'} · Cada {EXPENSE_FREQUENCY_CONFIG[expenseFrequency].monthsInterval} {EXPENSE_FREQUENCY_CONFIG[expenseFrequency].monthsInterval === 1 ? 'mes' : 'meses'}
+                      </p>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <span className="text-xs text-slate-500">Día</span>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">Día</span>
                       <input
                         type="number"
                         min={1}
                         max={31}
                         value={expenseBillingDay}
                         onChange={(e) => setExpenseBillingDay(e.target.value)}
-                        className="w-14 rounded-lg border border-amber-300 dark:border-amber-500/40 bg-white dark:bg-black/40 py-1 px-2 font-mono font-bold text-center text-xs text-slate-900 dark:text-white outline-none"
+                        className="w-14 rounded-lg border border-amber-300 dark:border-amber-500/40 bg-white dark:bg-black/50 py-1 px-2 font-mono font-bold text-center text-xs text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-amber-500"
                       />
                     </div>
                   </div>

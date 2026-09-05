@@ -1146,22 +1146,19 @@ export function NutritionTab({
               {/* Selector de Toma / Comida de Destino */}
               <div className="space-y-1">
                 <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Toma de Destino</label>
-                <select
+                <CustomSelect<string>
                   value={targetMealType}
-                  onChange={(e) => {
-                    const sId = e.target.value
+                  onChange={(sId) => {
                     setTargetMealType(sId)
                     const found = mealSections.find((s) => s.id === sId)
                     setTargetMealLabel(found ? found.name : sId)
                   }}
-                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 dark:border-purple-500/20 dark:bg-white/[0.04] py-2 px-3 text-xs font-semibold text-slate-900 dark:text-white outline-none focus:border-emerald-500 dark:focus:border-purple-500 cursor-pointer"
-                >
-                  {sortedMealSections.map((s) => (
-                    <option key={s.id} value={s.id} className="bg-white dark:bg-[#100e23] text-slate-900 dark:text-white">
-                      {s.icon} {s.name}
-                    </option>
-                  ))}
-                </select>
+                  options={sortedMealSections.map((s) => ({
+                    value: s.id,
+                    label: `${s.icon} ${s.name}`,
+                  }))}
+                  className="w-full"
+                />
               </div>
 
               {/* Presets Rápidos */}

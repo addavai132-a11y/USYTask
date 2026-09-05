@@ -285,7 +285,7 @@ export function RewardsTab() {
             className="flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 text-xs font-bold transition-all active:scale-95 shadow-sm dark:bg-purple-600 dark:hover:bg-purple-500"
           >
             <Plus className="size-3.5" />
-            <span className="hidden sm:inline">+ Nueva Recompensa</span>
+            <span className="hidden sm:inline">Nueva Recompensa</span>
             <span className="sm:hidden">Nueva</span>
           </button>
         </div>
