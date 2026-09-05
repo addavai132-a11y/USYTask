@@ -50,17 +50,18 @@ export function NotificationPreferencesModal({
     DEFAULT_NOTIFICATION_PREFERENCES
   )
   const [loadingPrefs, setLoadingPrefs] = useState(true)
-  const [savingPrefs, setSavingPrefs] = useState(false)
+  const [savingKey, setSavingKey] = useState<keyof NotificationPreferences | null>(null)
 
   // Cargar preferencias del usuario
   useEffect(() => {
     if (!isOpen) return
 
+    let mounted = true
     async function loadPreferences() {
       setLoadingPrefs(true)
       try {
         const res = await fetch('/api/push/preferences')
-        if (res.ok) {
+        if (res.ok && mounted) {
           const data = await res.json()
           if (data.preferences) {
             setPreferences(data.preferences)
@@ -69,21 +70,33 @@ export function NotificationPreferencesModal({
       } catch (err) {
         console.error('Error cargando preferencias de notificación:', err)
       } finally {
-        setLoadingPrefs(false)
+        if (mounted) setLoadingPrefs(false)
       }
     }
 
     loadPreferences()
+    return () => { mounted = false }
   }, [isOpen])
 
   // Actualizar un toggle individual y sincronizar con la base de datos
   const handleToggle = async (key: keyof NotificationPreferences) => {
+    if (permission === 'denied') {
+      toast('Permiso bloqueado. Habilita las notificaciones en el navegador.', '🔒')
+      return
+    }
+    if (permission === 'default' || !isSubscribed) {
+      toast('Activa las notificaciones en la parte superior primero.', '⚠️')
+      return
+    }
+    if (savingKey) return
+
+    const newValue = !preferences[key]
     const updated = {
       ...preferences,
-      [key]: !preferences[key],
+      [key]: newValue,
     }
     setPreferences(updated)
-    setSavingPrefs(true)
+    setSavingKey(key)
 
     try {
       const res = await fetch('/api/push/preferences', {
@@ -95,13 +108,15 @@ export function NotificationPreferencesModal({
       if (res.ok) {
         toast('Preferencias guardadas', '💾')
       } else {
+        setPreferences(preferences) // Revert on error
         toast('Error guardando en el servidor', '⚠️')
       }
     } catch (err) {
       console.error('Error guardando preferencias:', err)
+      setPreferences(preferences) // Revert on error
       toast('Error de conexión', '❌')
     } finally {
-      setSavingPrefs(false)
+      setSavingKey(null)
     }
   }
 
@@ -116,6 +131,8 @@ export function NotificationPreferencesModal({
   }
 
   if (!isOpen) return null
+
+  const isFullyEnabled = isSubscribed && permission === 'granted'
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-md p-3 sm:p-4 animate-fade-in">
@@ -220,20 +237,26 @@ export function NotificationPreferencesModal({
                   <ToggleItem
                     label="Eventos y reuniones programadas"
                     description="Aviso con 15 minutos de antelación para citas y calendarios"
-                    checked={preferences.organizacion_events}
+                    checked={isFullyEnabled && preferences.organizacion_events}
                     onChange={() => handleToggle('organizacion_events')}
+                    disabled={!!savingKey}
+                    loading={savingKey === 'organizacion_events'}
                   />
                   <ToggleItem
                     label="Lista de compras del hogar"
                     description="Avisar cuando un miembro añada productos urgentes o actualice la lista"
-                    checked={preferences.organizacion_shopping}
+                    checked={isFullyEnabled && preferences.organizacion_shopping}
                     onChange={() => handleToggle('organizacion_shopping')}
+                    disabled={!!savingKey}
+                    loading={savingKey === 'organizacion_shopping'}
                   />
                   <ToggleItem
                     label="Planificador de comidas y menús"
                     description="Recordatorio de la comida o receta planificada para el día"
-                    checked={preferences.organizacion_meals}
+                    checked={isFullyEnabled && preferences.organizacion_meals}
                     onChange={() => handleToggle('organizacion_meals')}
+                    disabled={!!savingKey}
+                    loading={savingKey === 'organizacion_meals'}
                   />
                 </div>
               </div>
@@ -249,20 +272,26 @@ export function NotificationPreferencesModal({
                   <ToggleItem
                     label="Recordatorio de entrenamiento diario"
                     description="Alerta vespertina si aún no has iniciado tu sesión programada"
-                    checked={preferences.fitness_workout}
+                    checked={isFullyEnabled && preferences.fitness_workout}
                     onChange={() => handleToggle('fitness_workout')}
+                    disabled={!!savingKey}
+                    loading={savingKey === 'fitness_workout'}
                   />
                   <ToggleItem
                     label="Nuevos récords personales (PRs)"
                     description="Celebración cuando tú o un miembro superéis vuestras marcas"
-                    checked={preferences.fitness_records}
+                    checked={isFullyEnabled && preferences.fitness_records}
                     onChange={() => handleToggle('fitness_records')}
+                    disabled={!!savingKey}
+                    loading={savingKey === 'fitness_records'}
                   />
                   <ToggleItem
                     label="Registro nutricional y calorías"
                     description="Aviso para registrar comidas y no perder el balance de macros"
-                    checked={preferences.fitness_nutrition}
+                    checked={isFullyEnabled && preferences.fitness_nutrition}
                     onChange={() => handleToggle('fitness_nutrition')}
+                    disabled={!!savingKey}
+                    loading={savingKey === 'fitness_nutrition'}
                   />
                 </div>
               </div>
@@ -278,20 +307,26 @@ export function NotificationPreferencesModal({
                   <ToggleItem
                     label="Vencimiento de facturas y recibos"
                     description="Aviso preventivo 2 días antes del cobro de una factura fija"
-                    checked={preferences.finanzas_bills}
+                    checked={isFullyEnabled && preferences.finanzas_bills}
                     onChange={() => handleToggle('finanzas_bills')}
+                    disabled={!!savingKey}
+                    loading={savingKey === 'finanzas_bills'}
                   />
                   <ToggleItem
                     label="Alertas de techo presupuestario"
                     description="Notificar cuando una categoría supere el 85% o el 100% mensual"
-                    checked={preferences.finanzas_budgets}
+                    checked={isFullyEnabled && preferences.finanzas_budgets}
                     onChange={() => handleToggle('finanzas_budgets')}
+                    disabled={!!savingKey}
+                    loading={savingKey === 'finanzas_budgets'}
                   />
                   <ToggleItem
                     label="Aportes a la Hucha Compartida"
                     description="Aviso al grupo cuando alguien realiza un nuevo ingreso de ahorro"
-                    checked={preferences.finanzas_piggy}
+                    checked={isFullyEnabled && preferences.finanzas_piggy}
                     onChange={() => handleToggle('finanzas_piggy')}
+                    disabled={!!savingKey}
+                    loading={savingKey === 'finanzas_piggy'}
                   />
                 </div>
               </div>
@@ -307,20 +342,26 @@ export function NotificationPreferencesModal({
                   <ToggleItem
                     label="Retos y misiones del hogar"
                     description="Avisar cuando te asignen un nuevo reto o tarea con puntos"
-                    checked={preferences.familia_challenges}
+                    checked={isFullyEnabled && preferences.familia_challenges}
                     onChange={() => handleToggle('familia_challenges')}
+                    disabled={!!savingKey}
+                    loading={savingKey === 'familia_challenges'}
                   />
                   <ToggleItem
                     label="Rachas activas y subida de nivel"
                     description="Celebrar logros de racha continuada (7, 14, 30 días) y puntos"
-                    checked={preferences.familia_streaks}
+                    checked={isFullyEnabled && preferences.familia_streaks}
                     onChange={() => handleToggle('familia_streaks')}
+                    disabled={!!savingKey}
+                    loading={savingKey === 'familia_streaks'}
                   />
                   <ToggleItem
                     label="Recuerdos y momentos compartidos"
                     description="Alerta cuando se añadan fotos o notas al baúl de recuerdos"
-                    checked={preferences.familia_memories}
+                    checked={isFullyEnabled && preferences.familia_memories}
                     onChange={() => handleToggle('familia_memories')}
+                    disabled={!!savingKey}
+                    loading={savingKey === 'familia_memories'}
                   />
                 </div>
               </div>
@@ -332,7 +373,7 @@ export function NotificationPreferencesModal({
         <div className="pt-3 border-t border-slate-200/80 dark:border-purple-500/20 flex items-center justify-between shrink-0">
           <span className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1">
             <Sparkles className="size-3 text-emerald-600 dark:text-purple-400" />
-            {savingPrefs ? 'Guardando cambios...' : 'Cambios guardados en tu perfil'}
+            {savingKey ? 'Guardando cambios...' : 'Cambios guardados en tu perfil'}
           </span>
 
           <button
@@ -353,11 +394,15 @@ function ToggleItem({
   description,
   checked,
   onChange,
+  disabled,
+  loading
 }: {
   label: string
   description: string
   checked: boolean
   onChange: () => void
+  disabled?: boolean
+  loading?: boolean
 }) {
   return (
     <div className="flex items-center justify-between gap-3 p-1.5">
@@ -370,20 +415,24 @@ function ToggleItem({
         type="button"
         role="switch"
         aria-checked={checked}
-        onClick={onChange}
+        onClick={disabled ? undefined : onChange}
+        disabled={disabled}
         className={cn(
           'relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none',
           checked
             ? 'bg-emerald-600 dark:bg-purple-600'
-            : 'bg-slate-300 dark:bg-white/20'
+            : 'bg-slate-300 dark:bg-white/20',
+          disabled && 'opacity-50 cursor-not-allowed'
         )}
       >
         <span
           className={cn(
-            'pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out',
+            'pointer-events-none inline-flex h-4 w-4 transform items-center justify-center rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out',
             checked ? 'translate-x-4' : 'translate-x-0'
           )}
-        />
+        >
+          {loading && <Loader2 className="size-2.5 animate-spin text-slate-400" />}
+        </span>
       </button>
     </div>
   )
