@@ -4,6 +4,7 @@ import { Plus_Jakarta_Sans } from 'next/font/google'
 import { ServiceWorkerRegister } from '@/components/pwa/service-worker-register'
 import { ThemeModeProvider } from '@/components/ui/theme-mode-context'
 import { HistoryLock } from '@/components/app/history-lock'
+import { TrustedTypesInit } from '@/components/security/trusted-types-init'
 import './globals.css'
 
 const fontSans = Plus_Jakarta_Sans({
@@ -100,6 +101,7 @@ export default function RootLayout({
 
           {children}
           <ServiceWorkerRegister />
+          <TrustedTypesInit />
           {process.env.NODE_ENV === 'production' && <Analytics />}
         </ThemeModeProvider>
       </body>

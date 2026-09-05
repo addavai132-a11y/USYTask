@@ -116,20 +116,21 @@ export function PromoCodeSection({ session, onSessionUpdate }: PromoCodeSectionP
     }
   }
 
-  const handleDevGenerate = async () => {
+  const handleDevGenerate = async (customCodeParam?: string) => {
     setIsGenerating(true)
     try {
       const duration = devPlanType === 'monthly' ? 30 : devPlanType === 'annual' ? 365 : null
       const res = await generatePromoCode({
-        code: devCustomCode || undefined,
+        code: (customCodeParam ?? devCustomCode) || undefined,
         planType: devPlanType,
         durationDays: duration,
         description: `Código generado en Localhost (${devPlanType})`,
       })
 
       if (res.success) {
-        toast(`Código creado: ${res.promoCode.code}`, '✨')
+        toast(`Código generado e insertado en Supabase: ${res.promoCode.code}`, '✨')
         setDevCustomCode('')
+        setCodeInput(res.promoCode.code)
         await loadDevCodes()
       } else {
         toast('Error al generar código', '❌')
@@ -421,16 +422,16 @@ export function PromoCodeSection({ session, onSessionUpdate }: PromoCodeSectionP
                     />
                     <button
                       type="button"
-                      onClick={handleDevGenerate}
+                      onClick={() => handleDevGenerate()}
                       disabled={isGenerating}
-                      className="rounded-xl bg-primary text-primary-foreground px-3 py-2 text-xs font-bold hover:bg-primary/90 transition-all shrink-0 flex items-center gap-1"
+                      className="rounded-xl bg-amber-500 hover:bg-amber-600 text-white px-3 py-2 text-xs font-bold transition-all shrink-0 flex items-center gap-1 shadow-sm active:scale-95"
                     >
                       {isGenerating ? (
                         <Loader2 className="size-3 animate-spin" />
                       ) : (
                         <Plus className="size-3.5" />
                       )}
-                      <span>Crear</span>
+                      <span>Crear en Supabase</span>
                     </button>
                   </div>
                 </div>
