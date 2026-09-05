@@ -90,9 +90,12 @@ export function NotificationPreferencesModal({
     }
     if (savingKey) return
 
-    const newValue = !preferences[key]
+    const safePreferences = preferences || DEFAULT_NOTIFICATION_PREFERENCES
+    const currentValue = safePreferences[key] ?? false
+    const newValue = !currentValue
+
     const updated = {
-      ...preferences,
+      ...safePreferences,
       [key]: newValue,
     }
     setPreferences(updated)
@@ -106,18 +109,32 @@ export function NotificationPreferencesModal({
       })
 
       if (res.ok) {
-        toast('Preferencias guardadas', '💾')
+        // Silencioso para evitar spam de toasts
       } else {
-        setPreferences(preferences) // Revert on error
+        setPreferences(safePreferences) // Revert on error
         toast('Error guardando en el servidor', '⚠️')
       }
     } catch (err) {
       console.error('Error guardando preferencias:', err)
-      setPreferences(preferences) // Revert on error
+      setPreferences(safePreferences) // Revert on error
       toast('Error de conexión', '❌')
     } finally {
       setSavingKey(null)
     }
+  }
+
+  const handleSaveAndClose = async () => {
+    try {
+      const safePreferences = preferences || DEFAULT_NOTIFICATION_PREFERENCES
+      await fetch('/api/push/preferences', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ preferences: safePreferences }),
+      })
+    } catch (e) {
+      console.warn('Silent save failed on close', e)
+    }
+    onClose()
   }
 
   // Activar notificaciones y enviar prueba en un solo paso
@@ -155,7 +172,7 @@ export function NotificationPreferencesModal({
 
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleSaveAndClose}
             className="rounded-full p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:text-white dark:hover:bg-white/10 transition-colors"
           >
             <X className="size-5" />
@@ -378,7 +395,7 @@ export function NotificationPreferencesModal({
 
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleSaveAndClose}
             className="px-5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs transition-colors dark:bg-purple-600 dark:hover:bg-purple-500"
           >
             Listo

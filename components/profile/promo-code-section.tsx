@@ -87,7 +87,7 @@ export function PromoCodeSection({ session, onSessionUpdate }: PromoCodeSectionP
 
       if (res.success) {
         setRedeemSuccessMsg(res.message || '¡Código canjeado con éxito!')
-        toast(res.message || '¡Acceso Premium activado!', '👑')
+        toast(res.message || '¡Código activado!', '✨')
         setCodeInput('')
         setShowAlternativeInput(false)
 
@@ -154,8 +154,8 @@ export function PromoCodeSection({ session, onSessionUpdate }: PromoCodeSectionP
   const handleToggleDevStatus = (target: boolean) => {
     toggleDevPremiumStatus(target)
     toast(
-      target ? 'Estatus cambiado a Premium (Modo Dev)' : 'Estatus restablecido a Estándar (Modo Dev)',
-      target ? '👑' : '🔄'
+      target ? 'Estatus cambiado a Promocional (Modo Dev)' : 'Estatus restablecido a Estándar (Modo Dev)',
+      target ? '✨' : '🔄'
     )
     if (onSessionUpdate && session) {
       onSessionUpdate({
@@ -171,21 +171,9 @@ export function PromoCodeSection({ session, onSessionUpdate }: PromoCodeSectionP
       <div className="absolute -right-12 -top-12 size-40 rounded-full bg-amber-500/10 dark:bg-amber-400/10 blur-2xl pointer-events-none" />
 
       <CardHeader
-        title="Canjear Código Premium / Acceso Anticipado"
+        title="Canjear Código"
         icon={<Crown className="size-5 text-amber-500 dark:text-amber-400 animate-pulse" />}
       />
-
-      {/* AVISO DIFERENCIADOR OBLIGATORIO: NO CONFUNDIR CON GRUPOS O FAMILIAS */}
-      <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 dark:bg-amber-500/5 p-3 flex items-start gap-2.5 text-xs text-amber-900 dark:text-amber-200">
-        <Info className="size-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-        <div className="leading-relaxed">
-          <p className="font-bold">Licencia individual de usuario</p>
-          <p className="text-[11px] text-amber-800/90 dark:text-amber-300/80 mt-0.5">
-            Este formulario es <strong>exclusivo para activar tu estatus Premium o pase de Acceso Anticipado</strong> en Usytask. 
-            No sirve para unirte a un hogar o grupo (para eso utiliza el código QR o enlace de <em>Invitaciones</em> más abajo).
-          </p>
-        </div>
-      </div>
 
       {/* ESTADO ACTUAL DEL PERFIL */}
       {isPremium ? (
@@ -197,17 +185,13 @@ export function PromoCodeSection({ session, onSessionUpdate }: PromoCodeSectionP
               </div>
               <div>
                 <h4 className="text-sm font-extrabold text-foreground flex items-center gap-1.5">
-                  <span>¡Eres Miembro Premium!</span>
+                  <span>¡Código Promocional Activo!</span>
                   <span className="rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30 px-2 py-0.2 text-[10px]">
                     Activo
                   </span>
                 </h4>
                 <p className="text-xs text-muted-foreground">
-                  {session?.premiumPlan === 'early_access'
-                    ? 'Pase de Acceso Anticipado VIP (Vitalicio)'
-                    : session?.premiumPlan === 'lifetime'
-                    ? 'Licencia Premium Vitalicia (Lifetime)'
-                    : 'Suscripción Premium Activa'}
+                  Ventajas especiales habilitadas para tu perfil.
                 </p>
               </div>
             </div>
@@ -215,7 +199,7 @@ export function PromoCodeSection({ session, onSessionUpdate }: PromoCodeSectionP
           </div>
 
           <div className="pt-2 border-t border-amber-500/20 text-[11px] text-slate-600 dark:text-slate-300 flex items-center justify-between">
-            <span>✨ Acceso ilimitado a todas las herramientas avanzadas</span>
+            <span>✨ Acceso desbloqueado a funciones exclusivas</span>
             {session?.premiumUntil ? (
               <span className="font-mono text-slate-500">
                 Caduca: {new Date(session.premiumUntil).toLocaleDateString()}
@@ -245,18 +229,7 @@ export function PromoCodeSection({ session, onSessionUpdate }: PromoCodeSectionP
             </button>
           )}
         </div>
-      ) : (
-        <div className="flex items-center justify-between p-3 rounded-2xl bg-secondary/50 border border-border text-xs">
-          <div className="flex items-center gap-2">
-            <span className="size-2.5 rounded-full bg-slate-400" />
-            <span className="font-semibold text-foreground">Estado actual:</span>
-            <span className="text-muted-foreground font-medium">Plan Básico / Estándar</span>
-          </div>
-          <span className="rounded-full bg-secondary border border-border px-2.5 py-0.5 text-[10px] font-bold text-muted-foreground">
-            Gratuito
-          </span>
-        </div>
-      )}
+      ) : null}
 
       {/* FORMULARIO DE CANJE (Visible si no es premium o si solicitó canjear otro código) */}
       {(!isPremium || showAlternativeInput) && (
@@ -264,9 +237,6 @@ export function PromoCodeSection({ session, onSessionUpdate }: PromoCodeSectionP
           <div className="space-y-1.5">
             <label className="text-xs font-bold text-foreground flex items-center justify-between">
               <span>Introduce tu código de activación</span>
-              <span className="text-[10px] font-normal text-muted-foreground">
-                (Formatos como USY-BETA-2026)
-              </span>
             </label>
 
             <div className="flex flex-col sm:flex-row gap-2">
@@ -281,7 +251,7 @@ export function PromoCodeSection({ session, onSessionUpdate }: PromoCodeSectionP
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') handleRedeem()
                   }}
-                  placeholder="EJ: USY-BETA-2026"
+                  placeholder="Introduce tu código"
                   maxLength={32}
                   className="w-full rounded-2xl border border-border bg-background py-2.5 px-3.5 text-xs sm:text-sm font-mono font-bold tracking-widest text-foreground outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 uppercase transition-all"
                 />
@@ -322,24 +292,6 @@ export function PromoCodeSection({ session, onSessionUpdate }: PromoCodeSectionP
               <span>{redeemErrorMsg}</span>
             </div>
           )}
-
-          {/* Sugerencias rápidas para pruebas */}
-          <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground pt-1">
-            <span>Prueba rápida:</span>
-            {['USY-BETA-2026', 'USY-PRO-DEV', 'USY-VIP-30D'].map((sample) => (
-              <button
-                key={sample}
-                type="button"
-                onClick={() => {
-                  setCodeInput(sample)
-                  handleRedeem(sample)
-                }}
-                className="rounded-lg bg-secondary/80 hover:bg-secondary border border-border px-2 py-0.5 font-mono text-[10px] font-bold text-foreground transition-colors hover:border-amber-500/50"
-              >
-                {sample}
-              </button>
-            ))}
-          </div>
         </div>
       )}
 
@@ -363,10 +315,10 @@ export function PromoCodeSection({ session, onSessionUpdate }: PromoCodeSectionP
               type="button"
               onClick={() => handleToggleDevStatus(!isPremium)}
               className="text-[10px] font-bold text-muted-foreground hover:text-foreground flex items-center gap-1 bg-secondary/80 border border-border px-2 py-1 rounded-lg transition-colors"
-              title="Alternar estado premium del perfil para pruebas"
+              title="Alternar estado de código promocional para pruebas"
             >
               <Zap className="size-3 text-amber-500" />
-              <span>{isPremium ? 'Quitar Premium' : 'Activar Premium'}</span>
+              <span>{isPremium ? 'Desactivar Código' : 'Activar Código'}</span>
             </button>
           </div>
 
