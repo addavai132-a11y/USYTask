@@ -71,6 +71,10 @@ export async function getActiveUserSession(): Promise<UserProfile | null> {
 
   const computedAge = calculateAge(dateOfBirth) ?? (meta.age ? Number(meta.age) : null)
 
+  const isPremium = Boolean(profile.is_premium || meta.is_premium || false)
+  const premiumUntil = profile.premium_until || meta.premium_until || null
+  const premiumPlan = profile.premium_plan || meta.premium_plan || (isPremium ? 'lifetime' : null)
+
   const userProfile: UserProfile = {
     id: user.id,
     fullName: meta.full_name || meta.name || user.email?.split('@')[0] || 'Usuario',
@@ -83,6 +87,9 @@ export async function getActiveUserSession(): Promise<UserProfile | null> {
     profileCompleted,
     createdAt: user.created_at || new Date().toISOString(),
     points: typeof profile.points === 'number' ? profile.points : 0,
+    isPremium,
+    premiumUntil,
+    premiumPlan,
   }
 
     setStoredSession(userProfile)

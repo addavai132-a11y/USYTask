@@ -10,6 +10,7 @@ import { UserProfile, calculateAge } from '@/lib/user-session'
 import { isDevModeActive, disableDevMode } from '@/lib/dev-mode'
 import { InviteSection } from './invite-section'
 import { SpacesManagementSection } from './spaces-management-section'
+import { PromoCodeSection } from './promo-code-section'
 import { NotificationPreferencesModal } from '@/components/notifications/notification-preferences-modal'
 import { ChangePasswordModal } from './change-password-modal'
 import { usePushNotifications } from '@/hooks/use-push-notifications'
@@ -45,6 +46,16 @@ export function ProfileScreen() {
       if (u) setSession(u)
     }
     loadUser()
+
+    const onSessionUpdate = (e: any) => {
+      if (e.detail) {
+        setSession(e.detail)
+      } else {
+        loadUser()
+      }
+    }
+    window.addEventListener('usytask_session_updated', onSessionUpdate)
+    return () => window.removeEventListener('usytask_session_updated', onSessionUpdate)
   }, [])
 
   const onSignOut = async () => {
@@ -141,6 +152,11 @@ export function ProfileScreen() {
                   <span>{userPoints} pts</span>
                 )}
               </span>
+              {session?.isPremium && (
+                <span className="rounded-full bg-gradient-to-r from-amber-500/20 to-yellow-500/20 border border-amber-500/40 px-2.5 py-0.5 text-[11px] font-black text-amber-600 dark:text-amber-300 flex items-center gap-1 shadow-xs animate-pulse">
+                  👑 Premium
+                </span>
+              )}
               {userStreak > 0 && (
                 <span className="rounded-full bg-orange-500/15 border border-orange-500/30 px-2.5 py-0.5 text-[11px] font-bold text-orange-600 dark:text-orange-300 flex items-center gap-1">
                   🔥 {userStreak} días de racha
@@ -150,6 +166,9 @@ export function ProfileScreen() {
           </div>
         </div>
       </Card>
+
+      {/* CANJEAR CÓDIGO PREMIUM / ACCESO ANTICIPADO */}
+      <PromoCodeSection session={session} onSessionUpdate={(u) => setSession(u)} />
 
       {/* GESTIÓN DE ESPACIOS / GRUPOS */}
       <SpacesManagementSection />

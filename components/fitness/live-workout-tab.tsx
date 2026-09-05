@@ -7,6 +7,7 @@ import {
   RotateCcw,
   Check,
   Plus,
+  Minus,
   Trash2,
   Clock,
   Dumbbell,
@@ -37,6 +38,7 @@ import {
   clearActiveWorkoutSession,
   getAllExercisesCatalog,
   saveCustomExercise,
+  saveRoutine,
   type ActiveWorkoutState,
 } from '@/lib/fitness-store'
 import { triggerRestTimer, FloatingRestTimer } from './floating-rest-timer'
@@ -527,6 +529,63 @@ export function LiveWorkoutTab({
     })
   }
 
+  // Formatear segundos de descanso de forma legible (ej. "1m 30s" o "45s")
+  const formatRestMinutesSeconds = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60)
+    const secs = seconds % 60
+    if (mins === 0) return `${secs}s`
+    if (secs === 0) return `${mins}m`
+    return `${mins}m ${secs}s`
+  }
+
+  // Modificar tiempo de descanso objetivo del ejercicio con sincronización inmediata a series y rutina
+  function handleUpdateExerciseRestSeconds(
+    exerciseIndex: number,
+    newRestSeconds: number,
+    propagateToPendingSets: boolean = true
+  ) {
+    const sanitized = Math.max(10, Math.min(600, newRestSeconds))
+    setSessionExercises((prev) => {
+      const updated = [...prev]
+      const ex = { ...updated[exerciseIndex] }
+      ex.targetRestSeconds = sanitized
+
+      // Propagar automáticamente a las series pendientes no completadas para que respeten este descanso
+      if (propagateToPendingSets) {
+        ex.sets = ex.sets.map((s) => {
+          if (!s.completed) {
+            return { ...s, restSeconds: sanitized }
+          }
+          return s
+        })
+      }
+      updated[exerciseIndex] = ex
+      return updated
+    })
+
+    // Actualizar también la rutina en memoria y en localStorage si hay una rutina activa seleccionada
+    if (selectedRoutineId && selectedRoutineId !== 'custom') {
+      try {
+        const routine = routines.find((r) => r.id === selectedRoutineId)
+        if (routine && routine.exercises) {
+          const exName = sessionExercises[exerciseIndex]?.exerciseName
+          const exId = sessionExercises[exerciseIndex]?.exerciseId
+          const updatedExercises = routine.exercises.map((e) =>
+            e.id === exId || e.name.toLowerCase() === exName.toLowerCase()
+              ? { ...e, restSeconds: sanitized }
+              : e
+          )
+          saveRoutine({ ...routine, exercises: updatedExercises })
+        }
+      } catch (err) {
+        console.error('Error saving updated restSeconds to routine:', err)
+      }
+    }
+
+    const exName = sessionExercises[exerciseIndex]?.exerciseName || 'Ejercicio'
+    toast(`⏱️ Descanso para "${exName}": ${sanitized}s (${formatRestMinutesSeconds(sanitized)})`, '⏳')
+  }
+
   // ── TOTAL CALCULATIONS ──
   const { totalVolume, totalCompletedSets, totalEffectiveSets } = useMemo(() => {
     let volume = 0
@@ -739,33 +798,128 @@ export function LiveWorkoutTab({
               key={`${exerciseSession.exerciseId}_${exIdx}`}
               className="p-4 bg-white border border-slate-200 rounded-2xl shadow-sm space-y-3 dark:bg-[#121026]/85 dark:border-purple-500/20 dark:shadow-xl dark:backdrop-blur-xl"
             >
-              {/* Header del Ejercicio */}
-              <div className="flex items-center justify-between gap-2 pb-2 border-b border-slate-200/80 dark:border-purple-500/15">
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <span className="text-xl shrink-0">{meta.icon}</span>
-                  <div className="min-w-0">
-                    <h4 className="text-sm font-extrabold text-slate-900 dark:text-white truncate">
-                      {exerciseSession.exerciseName}
-                    </h4>
-                    <span className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold">
-                      {meta.label} · Descanso objetivo: {exerciseSession.targetRestSeconds || 90}s
-                    </span>
+              {/* Header del Ejercicio con Control de Descanso Completo */}
+              <div className="space-y-2 pb-2 border-b border-slate-200/80 dark:border-purple-500/15">
+                {/* Fila superior: Icono, Nombre del Ejercicio y Datos Principales */}
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <span className="text-xl shrink-0">{meta.icon}</span>
+                    <div className="min-w-0">
+                      <h4 className="text-sm font-extrabold text-slate-900 dark:text-white truncate">
+                        {exerciseSession.exerciseName}
+                      </h4>
+                      <span className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold">
+                        {meta.label} · {equipmentLabels[exerciseSession.equipment] || 'Equipo estándar'}
+                      </span>
+                    </div>
                   </div>
+
+                  {/* Disparador rápido del temporizador de descanso */}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      triggerRestTimer(
+                        exerciseSession.targetRestSeconds || 90,
+                        exerciseSession.exerciseName
+                      )
+                    }
+                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-[11px] font-bold border border-emerald-200 transition-all active:scale-95 dark:bg-purple-500/15 dark:hover:bg-purple-500/25 dark:text-purple-300 dark:border-purple-500/30 shrink-0 cursor-pointer shadow-sm"
+                    title={`Iniciar descanso de ${exerciseSession.targetRestSeconds || 90}s ahora`}
+                  >
+                    <Timer className="size-3.5 text-emerald-600 dark:text-purple-400" />
+                    <span>Descanso {exerciseSession.targetRestSeconds || 90}s</span>
+                  </button>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() =>
-                    triggerRestTimer(
-                      exerciseSession.targetRestSeconds || 90,
-                      exerciseSession.exerciseName
-                    )
-                  }
-                  className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-900 text-[11px] font-bold border border-slate-300 transition-all active:scale-95 dark:bg-purple-500/10 dark:hover:bg-purple-500/20 dark:text-purple-300 dark:border-purple-500/25"
-                >
-                  <Timer className="size-3 text-emerald-600 dark:text-purple-400" />
-                  <span>Descanso {exerciseSession.targetRestSeconds || 90}s</span>
-                </button>
+                {/* Fila inferior: Barra de Configuración Fluida del Tiempo de Descanso */}
+                <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 pt-1.5 px-2.5 py-2 rounded-xl bg-slate-50/80 dark:bg-white/[0.03] border border-slate-200/80 dark:border-white/5">
+                  <div className="flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-300 font-bold min-w-0">
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400 font-semibold truncate">
+                      Descanso entre series:
+                    </span>
+                    <span className="text-[11px] font-mono font-black text-emerald-600 dark:text-purple-400 shrink-0">
+                      {exerciseSession.targetRestSeconds || 90}s
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-normal shrink-0">
+                      ({formatRestMinutesSeconds(exerciseSession.targetRestSeconds || 90)})
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    {/* Presets Rápidos en 1 Clic */}
+                    <div className="flex items-center gap-1">
+                      {[30, 60, 90, 120, 180].map((preset) => {
+                        const isCurrent = (exerciseSession.targetRestSeconds || 90) === preset
+                        return (
+                          <button
+                            key={preset}
+                            type="button"
+                            onClick={() => handleUpdateExerciseRestSeconds(exIdx, preset)}
+                            className={cn(
+                              'px-2 py-0.5 rounded-lg text-[10px] font-bold border transition-all cursor-pointer select-none',
+                              isCurrent
+                                ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm dark:bg-purple-600 dark:border-purple-500 font-black'
+                                : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100 hover:text-black dark:bg-white/[0.04] dark:text-slate-400 dark:border-white/10 dark:hover:bg-white/[0.08] dark:hover:text-white'
+                            )}
+                            title={`Fijar descanso de ${exerciseSession.exerciseName} en ${preset} segundos`}
+                          >
+                            {preset >= 60 && preset % 60 === 0 ? `${preset / 60}m` : `${preset}s`}
+                          </button>
+                        )
+                      })}
+                    </div>
+
+                    {/* Stepper +/- 15s con Input Numérico Directo */}
+                    <div className="flex items-center rounded-xl bg-white dark:bg-white/[0.06] border border-slate-200 dark:border-white/10 p-0.5 shadow-sm">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleUpdateExerciseRestSeconds(
+                            exIdx,
+                            (exerciseSession.targetRestSeconds || 90) - 15
+                          )
+                        }
+                        className="size-6 rounded-lg flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors active:scale-90 font-bold cursor-pointer"
+                        title="Restar 15 segundos"
+                      >
+                        <Minus className="size-3 stroke-[3]" />
+                      </button>
+
+                      <div className="flex items-center px-1">
+                        <input
+                          type="number"
+                          step="5"
+                          min="10"
+                          max="600"
+                          value={exerciseSession.targetRestSeconds || 90}
+                          onChange={(e) => {
+                            const val = parseInt(e.target.value, 10)
+                            if (!isNaN(val)) {
+                              handleUpdateExerciseRestSeconds(exIdx, val)
+                            }
+                          }}
+                          className="w-10 text-center font-mono font-black text-xs bg-transparent text-slate-900 dark:text-white outline-none"
+                          title="Introduce manualmente los segundos de descanso"
+                        />
+                        <span className="text-[9px] font-bold text-slate-400 select-none">s</span>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleUpdateExerciseRestSeconds(
+                            exIdx,
+                            (exerciseSession.targetRestSeconds || 90) + 15
+                          )
+                        }
+                        className="size-6 rounded-lg flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors active:scale-90 font-bold cursor-pointer"
+                        title="Sumar 15 segundos"
+                      >
+                        <Plus className="size-3 stroke-[3]" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               {/* Tabla de Series con scroll horizontal garantizado en móvil */}

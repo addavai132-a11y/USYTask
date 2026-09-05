@@ -10,6 +10,9 @@ export interface UserProfile {
   profileCompleted: boolean
   createdAt: string
   points?: number
+  isPremium?: boolean
+  premiumUntil?: string | null
+  premiumPlan?: string | null
 }
 
 const SESSION_KEY = 'usytask_user_session'

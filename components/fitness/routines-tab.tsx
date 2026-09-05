@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Plus, Dumbbell, Play, Edit2, Trash2, Search, X, Sparkles, Clock, Check, ChevronRight } from 'lucide-react'
+import { Plus, Minus, Dumbbell, Play, Edit2, Trash2, Search, X, Sparkles, Clock, Check, ChevronRight, Timer } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { CustomSelect } from '@/components/ui/custom-select'
 import { useToast } from '@/components/ui/toast'
@@ -535,12 +535,55 @@ export function RoutinesTab({
 
                           {/* Control de Descanso y Borrado */}
                           <div className="flex items-center gap-2 shrink-0">
-                            <div className="flex items-center gap-1 rounded-lg bg-white dark:bg-white/[0.06] border border-slate-200 dark:border-white/10 px-2 py-0.5 text-[10px]">
-                              <span className="text-slate-400 font-semibold hidden sm:inline">Descanso:</span>
+                            {/* Presets rápidos */}
+                            <div className="hidden sm:flex items-center gap-1">
+                              {[60, 90, 120].map((preset) => {
+                                const isCurrent = (ex.restSeconds ?? 90) === preset
+                                return (
+                                  <button
+                                    key={preset}
+                                    type="button"
+                                    onClick={() => {
+                                      setSelectedExercises((prev) =>
+                                        prev.map((item, i) => (i === idx ? { ...item, restSeconds: preset } : item))
+                                      )
+                                    }}
+                                    className={cn(
+                                      'px-1.5 py-0.5 rounded text-[9px] font-bold border transition-colors cursor-pointer',
+                                      isCurrent
+                                        ? 'bg-emerald-100 text-emerald-900 border-emerald-300 dark:bg-purple-500/30 dark:text-purple-200 dark:border-purple-500/40'
+                                        : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50 dark:bg-white/[0.04] dark:text-slate-400 dark:border-white/10'
+                                    )}
+                                    title={`Fijar en ${preset}s`}
+                                  >
+                                    {preset}s
+                                  </button>
+                                )
+                              })}
+                            </div>
+
+                            {/* Stepper +/- con input */}
+                            <div className="flex items-center rounded-lg bg-white dark:bg-white/[0.06] border border-slate-200 dark:border-white/10 p-0.5 text-[10px] shadow-sm">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const current = ex.restSeconds ?? 90
+                                  const newVal = Math.max(10, current - 15)
+                                  setSelectedExercises((prev) =>
+                                    prev.map((item, i) => (i === idx ? { ...item, restSeconds: newVal } : item))
+                                  )
+                                }}
+                                className="size-4.5 rounded flex items-center justify-center text-slate-500 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors font-bold cursor-pointer"
+                                title="Restar 15s"
+                              >
+                                <Minus className="size-2.5 stroke-[2.5]" />
+                              </button>
+
                               <input
                                 type="number"
                                 step="5"
-                                min="0"
+                                min="10"
+                                max="600"
                                 placeholder="90"
                                 value={ex.restSeconds ?? ''}
                                 onChange={(e) => {
@@ -549,9 +592,24 @@ export function RoutinesTab({
                                     prev.map((item, i) => (i === idx ? { ...item, restSeconds: val } : item))
                                   )
                                 }}
-                                className="w-9 text-center font-bold bg-transparent text-slate-900 dark:text-white outline-none"
+                                className="w-8 text-center font-bold bg-transparent text-slate-900 dark:text-white outline-none"
                               />
-                              <span className="text-slate-400 font-semibold">s</span>
+                              <span className="text-slate-400 font-semibold pr-0.5">s</span>
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const current = ex.restSeconds ?? 90
+                                  const newVal = Math.min(600, current + 15)
+                                  setSelectedExercises((prev) =>
+                                    prev.map((item, i) => (i === idx ? { ...item, restSeconds: newVal } : item))
+                                  )
+                                }}
+                                className="size-4.5 rounded flex items-center justify-center text-slate-500 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors font-bold cursor-pointer"
+                                title="Sumar 15s"
+                              >
+                                <Plus className="size-2.5 stroke-[2.5]" />
+                              </button>
                             </div>
 
                             <button
