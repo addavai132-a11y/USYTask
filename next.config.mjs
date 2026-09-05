@@ -69,14 +69,15 @@ const securityHeaders = [
     key: 'X-DNS-Prefetch-Control',
     value: 'on',
   },
-  // 10. Filtro XSS para clientes antiguos
+  // 10. Filtro XSS obsoleto (se recomienda 0 para evitar ataques de filtración que abusan del filtro)
   {
     key: 'X-XSS-Protection',
-    value: '1; mode=block',
+    value: '0',
   },
 ]
 
 const nextConfig = {
+  poweredByHeader: false,
   typescript: {
     ignoreBuildErrors: true,
   },
