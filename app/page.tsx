@@ -32,6 +32,11 @@ export default function LandingPage() {
   useEffect(() => {
     let mounted = true
     
+    // Safety timeout to always stop loading after 3 seconds
+    const safetyTimeout = setTimeout(() => {
+      if (mounted) setIsInitializing(false)
+    }, 3000)
+    
     async function checkInitialState() {
       try {
         if (isDevModeActive()) {
@@ -46,7 +51,14 @@ export default function LandingPage() {
         }
 
         const supabase = createClient()
-        const { data, error } = await supabase.auth.getSession()
+        // We use Promise.race to enforce the timeout on the Supabase call
+        const timeoutPromise = new Promise<{ data: any; error: any }>((resolve) =>
+          setTimeout(() => resolve({ data: null, error: new Error('Supabase timeout') }), 3000)
+        )
+        const { data, error } = await Promise.race([
+          supabase.auth.getSession(),
+          timeoutPromise
+        ])
         
         if (error) {
           console.warn('Error fetching Supabase session on landing:', error)
@@ -61,6 +73,7 @@ export default function LandingPage() {
         console.error('Initialization error:', err)
         // Fallback: stay on landing if something fails
       } finally {
+        clearTimeout(safetyTimeout)
         if (mounted) {
           setIsInitializing(false)
         }
@@ -71,6 +84,7 @@ export default function LandingPage() {
     
     return () => {
       mounted = false
+      clearTimeout(safetyTimeout)
     }
   }, [router])
 
@@ -84,11 +98,17 @@ export default function LandingPage() {
 
   if (isInitializing) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background text-foreground">
-        <div className="flex flex-col items-center gap-3 animate-pulse">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background text-foreground px-4">
+        <div className="flex flex-col items-center gap-4 animate-pulse mb-8">
           <Sparkles className="size-8 text-primary" />
           <p className="text-sm font-semibold text-muted-foreground">Cargando...</p>
         </div>
+        <button
+          onClick={() => setIsInitializing(false)}
+          className="text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2"
+        >
+          Saltar / Continuar como invitado
+        </button>
       </div>
     )
   }
