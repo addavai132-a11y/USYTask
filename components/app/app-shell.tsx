@@ -49,20 +49,9 @@ function Screens() {
 
 function AuthGate({ children }: { children: React.ReactNode }) {
   const router = useRouter()
-  const [checked, setChecked] = useState(false)
 
   useEffect(() => {
     let isMounted = true
-
-    // Safety timeout: If Supabase takes too long, we assume the user is a guest or just let them into the shell,
-    // or fallback to login. To prevent the app from being stuck on the loading screen, we'll let them into
-    // the local shell if they are just loading offline data, or redirect to login. We'll set checked(true).
-    const safetyTimeout = setTimeout(() => {
-      if (isMounted && !checked) {
-        console.warn('AuthGate verification timed out. Forcing shell to render.')
-        setChecked(true)
-      }
-    }, 3000)
 
     async function verifyAuth() {
       // Immediate local verification to avoid delays
@@ -70,7 +59,6 @@ function AuthGate({ children }: { children: React.ReactNode }) {
       const devMode = isDevModeActive()
 
       if (localSession || devMode) {
-        if (isMounted) setChecked(true)
         return
       }
 
@@ -92,22 +80,22 @@ function AuthGate({ children }: { children: React.ReactNode }) {
 
         if (session?.user) {
           await getActiveUserSession().catch(() => {})
-          if (isMounted) setChecked(true)
         } else {
           if (isMounted) {
-            router.replace('/login')
-            // Don't leave them hanging on the loading screen forever
-            setChecked(true)
+            const currentPath = window.location.pathname
+            if (currentPath !== '/login' && currentPath !== '/') {
+               router.replace('/login')
+            }
           }
         }
       } catch (err) {
         console.warn('Session verification fallback to stored session:', err)
         if (isMounted) {
-          router.replace('/login')
-          setChecked(true)
+           const currentPath = window.location.pathname
+           if (currentPath !== '/login' && currentPath !== '/') {
+              router.replace('/login')
+           }
         }
-      } finally {
-        clearTimeout(safetyTimeout)
       }
     }
 
@@ -121,12 +109,13 @@ function AuthGate({ children }: { children: React.ReactNode }) {
         if (event === 'SIGNED_OUT') {
           const local = getStoredSession()
           if (!local && !isDevModeActive() && isMounted) {
-            setChecked(false)
-            router.replace('/')
+            const currentPath = window.location.pathname
+            if (currentPath !== '/login' && currentPath !== '/') {
+               router.replace('/')
+            }
           }
         } else if (session?.user) {
           await getActiveUserSession().catch(() => {})
-          if (isMounted) setChecked(true)
         }
       } catch (err) {
         console.warn('onAuthStateChange error handled:', err)
@@ -135,29 +124,12 @@ function AuthGate({ children }: { children: React.ReactNode }) {
 
     return () => {
       isMounted = false
-      clearTimeout(safetyTimeout)
       subscription?.unsubscribe?.()
     }
-  }, [router, checked])
+  }, [router])
 
-  if (!checked) {
-    return (
-      <div className="flex min-h-screen min-h-[100dvh] w-full flex-col items-center justify-center bg-[#05050a] text-white relative overflow-hidden">
-        {/* Ambient Glows */}
-        <div className="pointer-events-none absolute -top-32 left-1/2 -translate-x-1/2 size-96 rounded-full bg-purple-600/15 blur-[120px]" />
-        <div className="pointer-events-none absolute -bottom-32 right-1/4 size-80 rounded-full bg-indigo-600/15 blur-[120px]" />
-
-        <div className="relative z-10 flex flex-col items-center gap-5 px-4 animate-fade-in">
-          <UsyTaskLogo size="lg" showSubtitle />
-          <div className="flex items-center gap-2 text-xs font-semibold text-slate-400">
-            <span className="size-2 rounded-full bg-purple-500 animate-ping" />
-            <span className="animate-pulse">Cargando tu espacio...</span>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
+  // Bypassed loading block
+  // The app will ALWAYS render children instantly.
   return <>{children}</>
 }
 

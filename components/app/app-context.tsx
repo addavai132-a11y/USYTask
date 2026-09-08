@@ -2017,36 +2017,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         confirmDelete,
       }}
     >
-      {!isInitialized ? (
-        <div className="flex min-h-screen min-h-[100dvh] w-full flex-col items-center justify-center bg-[#05050a] text-white relative overflow-hidden">
-          {/* Ambient Glows */}
-          <div className="pointer-events-none absolute -top-32 left-1/2 -translate-x-1/2 size-96 rounded-full bg-purple-600/15 blur-[120px]" />
-          <div className="pointer-events-none absolute -bottom-32 right-1/4 size-80 rounded-full bg-indigo-600/15 blur-[120px]" />
-
-          <div className="relative z-10 flex flex-col items-center gap-5 px-4 animate-fade-in">
-            <UsyTaskLogo size="lg" showSubtitle />
-            <div className="flex items-center gap-2 text-xs font-semibold text-slate-400">
-              <span className="size-2 rounded-full bg-emerald-500 animate-ping" />
-              <span className="animate-pulse">Preparando tu Centro de Control...</span>
-            </div>
-          </div>
-        </div>
-      ) : (
-        <>
-          {children}
-          <ConfirmDeleteModal
-            isOpen={confirmModalState.isOpen}
-            onClose={() => setConfirmModalState((prev) => ({ ...prev, isOpen: false }))}
-            onConfirm={confirmModalState.onConfirm}
-            title={confirmModalState.title}
-            description={confirmModalState.description}
-            itemName={confirmModalState.itemName}
-            confirmText={confirmModalState.confirmText}
-            cancelText={confirmModalState.cancelText}
-            isDestructive={confirmModalState.isDestructive}
-          />
-        </>
-      )}
+      <>
+        {children}
+        <ConfirmDeleteModal
+          isOpen={confirmModalState.isOpen}
+          onClose={() => setConfirmModalState((prev) => ({ ...prev, isOpen: false }))}
+          onConfirm={confirmModalState.onConfirm}
+          title={confirmModalState.title}
+          description={confirmModalState.description}
+          itemName={confirmModalState.itemName}
+          confirmText={confirmModalState.confirmText}
+          cancelText={confirmModalState.cancelText}
+          isDestructive={confirmModalState.isDestructive}
+        />
+      </>
     </AppContext.Provider>
   )
 }

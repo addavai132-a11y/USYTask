@@ -46,13 +46,18 @@ function LoginContent() {
           try {
             await syncFromSupabaseCloud()
             const { hasFamily } = await getUserFamilyStatus()
+            
+            // Prevent redirecting to login page if they are already on it or if nextTarget is login
+            const finalTarget = (nextTarget && nextTarget !== '/login' && nextTarget !== '/') ? nextTarget : '/app'
+            
             if (hasFamily) {
-              router.replace(nextTarget || '/app')
+              router.replace(finalTarget)
             } else {
               router.replace('/onboarding')
             }
           } catch {
-            router.replace(nextTarget || '/app')
+            const finalTarget = (nextTarget && nextTarget !== '/login' && nextTarget !== '/') ? nextTarget : '/app'
+            router.replace(finalTarget)
           }
         }
       } catch (err) {
