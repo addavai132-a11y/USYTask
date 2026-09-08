@@ -54,6 +54,16 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let isMounted = true
 
+    // Safety timeout: If Supabase takes too long, we assume the user is a guest or just let them into the shell,
+    // or fallback to login. To prevent the app from being stuck on the loading screen, we'll let them into
+    // the local shell if they are just loading offline data, or redirect to login. We'll set checked(true).
+    const safetyTimeout = setTimeout(() => {
+      if (isMounted && !checked) {
+        console.warn('AuthGate verification timed out. Forcing shell to render.')
+        setChecked(true)
+      }
+    }, 3000)
+
     async function verifyAuth() {
       // Immediate local verification to avoid delays
       const localSession = getStoredSession()
@@ -67,19 +77,37 @@ function AuthGate({ children }: { children: React.ReactNode }) {
       // Background verification against Supabase Auth session
       try {
         const supabase = createClient()
-        const {
-          data: { session },
-        } = await supabase.auth.getSession()
+        
+        const timeoutPromise = new Promise<{ data: any; error: any }>((resolve) =>
+          setTimeout(() => resolve({ data: { session: null }, error: new Error('Supabase timeout') }), 2500)
+        )
+        const { data: { session }, error } = await Promise.race([
+          supabase.auth.getSession(),
+          timeoutPromise
+        ])
+        
+        if (error) {
+          throw error
+        }
 
         if (session?.user) {
-          await getActiveUserSession()
+          await getActiveUserSession().catch(() => {})
           if (isMounted) setChecked(true)
         } else {
-          if (isMounted) router.replace('/login')
+          if (isMounted) {
+            router.replace('/login')
+            // Don't leave them hanging on the loading screen forever
+            setChecked(true)
+          }
         }
       } catch (err) {
         console.warn('Session verification fallback to stored session:', err)
-        if (isMounted) router.replace('/login')
+        if (isMounted) {
+          router.replace('/login')
+          setChecked(true)
+        }
+      } finally {
+        clearTimeout(safetyTimeout)
       }
     }
 
@@ -97,7 +125,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
             router.replace('/')
           }
         } else if (session?.user) {
-          await getActiveUserSession()
+          await getActiveUserSession().catch(() => {})
           if (isMounted) setChecked(true)
         }
       } catch (err) {
@@ -107,9 +135,10 @@ function AuthGate({ children }: { children: React.ReactNode }) {
 
     return () => {
       isMounted = false
+      clearTimeout(safetyTimeout)
       subscription?.unsubscribe?.()
     }
-  }, [router])
+  }, [router, checked])
 
   if (!checked) {
     return (
