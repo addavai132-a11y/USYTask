@@ -41,23 +41,44 @@ function RegisterContent() {
 
   // Auto redirect if already logged in
   useEffect(() => {
-    if (isDevModeActive()) {
-      router.replace(nextTarget || '/app')
-      return
-    }
-    const session = getStoredSession()
-    if (session) {
-      router.replace(nextTarget || '/app')
-      return
-    }
-    const supabase = createClient()
-    supabase.auth.getSession().then(({ data: { session: supaSession } }) => {
-      if (supaSession?.user) {
-        getActiveUserSession().then(() => {
+    let mounted = true
+    
+    async function checkAuth() {
+      try {
+        if (isDevModeActive()) {
           router.replace(nextTarget || '/app')
-        })
+          return
+        }
+        
+        const session = getStoredSession()
+        if (session) {
+          router.replace(nextTarget || '/app')
+          return
+        }
+        
+        const supabase = createClient()
+        const { data, error } = await supabase.auth.getSession()
+        
+        if (error) {
+          console.warn('Error fetching Supabase session on register:', error)
+          throw error
+        }
+        
+        if (data?.session?.user) {
+          await getActiveUserSession().catch(() => {})
+          router.replace(nextTarget || '/app')
+        }
+      } catch (err) {
+        console.error('Session check error on register:', err)
+        // Fallback: stay on register page
       }
-    })
+    }
+    
+    checkAuth()
+    
+    return () => {
+      mounted = false
+    }
   }, [router, nextTarget])
 
   const handleUsernameChange = (val: string) => {

@@ -25,6 +25,8 @@ function LoginContent() {
 
   // Auto redirect if already logged in
   useEffect(() => {
+    let mounted = true
+
     async function checkSessionAndFamily() {
       try {
         if (isDevModeActive()) {
@@ -33,7 +35,12 @@ function LoginContent() {
         }
         const session = getStoredSession()
         const supabase = createClient()
-        const { data: sessionData } = await supabase.auth.getSession()
+        const { data: sessionData, error } = await supabase.auth.getSession()
+
+        if (error) {
+          console.warn('Error fetching Supabase session on login:', error)
+          throw error
+        }
 
         if (session || sessionData?.session?.user) {
           try {
@@ -50,9 +57,15 @@ function LoginContent() {
         }
       } catch (err) {
         console.error('Error in login session verification:', err)
+        // Fallback: stay on login page
       }
     }
+    
     checkSessionAndFamily()
+
+    return () => {
+      mounted = false
+    }
   }, [router, nextTarget])
 
   const handleGoogleLogin = async () => {

@@ -26,9 +26,8 @@ export function LandingHeader() {
       e.preventDefault()
       enableDevMode()
       router.replace('/app')
-    } else {
-      router.push(targetUrl)
     }
+    // If not dev mode, let next/link handle the standard navigation natively
   }
 
   return (

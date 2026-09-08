@@ -27,23 +27,51 @@ import { createClient } from '@/lib/supabase'
 
 export default function LandingPage() {
   const router = useRouter()
+  const [isInitializing, setIsInitializing] = useState(true)
 
   useEffect(() => {
-    if (isDevModeActive()) {
-      router.replace('/app')
-      return
-    }
-    const session = getStoredSession()
-    if (session) {
-      router.replace('/app')
-      return
-    }
-    const supabase = createClient()
-    supabase.auth.getSession().then(({ data: { session: supaSession } }) => {
-      if (supaSession?.user) {
-        router.replace('/app')
+    let mounted = true
+    
+    async function checkInitialState() {
+      try {
+        if (isDevModeActive()) {
+          router.replace('/app')
+          return
+        }
+        
+        const session = getStoredSession()
+        if (session) {
+          router.replace('/app')
+          return
+        }
+
+        const supabase = createClient()
+        const { data, error } = await supabase.auth.getSession()
+        
+        if (error) {
+          console.warn('Error fetching Supabase session on landing:', error)
+          throw error
+        }
+
+        if (data?.session?.user) {
+          router.replace('/app')
+          return
+        }
+      } catch (err) {
+        console.error('Initialization error:', err)
+        // Fallback: stay on landing if something fails
+      } finally {
+        if (mounted) {
+          setIsInitializing(false)
+        }
       }
-    })
+    }
+
+    checkInitialState()
+    
+    return () => {
+      mounted = false
+    }
   }, [router])
 
   const handleCreateSpace = (e: React.MouseEvent) => {
@@ -52,6 +80,17 @@ export default function LandingPage() {
       enableDevMode()
       router.replace('/app')
     }
+  }
+
+  if (isInitializing) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background text-foreground">
+        <div className="flex flex-col items-center gap-3 animate-pulse">
+          <Sparkles className="size-8 text-primary" />
+          <p className="text-sm font-semibold text-muted-foreground">Cargando...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
