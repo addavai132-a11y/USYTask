@@ -32,10 +32,10 @@ export default function LandingPage() {
   useEffect(() => {
     let mounted = true
     
-    // Safety timeout to always stop loading after 3 seconds
+    // Mandatory safety timeout: strictly 1 second max
     const safetyTimeout = setTimeout(() => {
       if (mounted) setIsInitializing(false)
-    }, 3000)
+    }, 1000)
     
     async function checkInitialState() {
       try {
@@ -51,19 +51,14 @@ export default function LandingPage() {
         }
 
         const supabase = createClient()
-        // We use Promise.race to enforce the timeout on the Supabase call
+        // Extremely fast timeout to prevent any blocking
         const timeoutPromise = new Promise<{ data: any; error: any }>((resolve) =>
-          setTimeout(() => resolve({ data: null, error: new Error('Supabase timeout') }), 3000)
+          setTimeout(() => resolve({ data: null, error: new Error('Timeout') }), 800)
         )
         const { data, error } = await Promise.race([
-          supabase.auth.getSession(),
+          supabase.auth.getSession().catch(e => ({ data: null, error: e })),
           timeoutPromise
         ])
-        
-        if (error) {
-          console.warn('Error fetching Supabase session on landing:', error)
-          throw error
-        }
 
         if (data?.session?.user) {
           router.replace('/app')
@@ -71,9 +66,7 @@ export default function LandingPage() {
         }
       } catch (err) {
         console.error('Initialization error:', err)
-        // Fallback: stay on landing if something fails
       } finally {
-        clearTimeout(safetyTimeout)
         if (mounted) {
           setIsInitializing(false)
         }
@@ -103,12 +96,6 @@ export default function LandingPage() {
           <Sparkles className="size-8 text-primary" />
           <p className="text-sm font-semibold text-muted-foreground">Cargando...</p>
         </div>
-        <button
-          onClick={() => setIsInitializing(false)}
-          className="text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2"
-        >
-          Saltar / Continuar como invitado
-        </button>
       </div>
     )
   }
