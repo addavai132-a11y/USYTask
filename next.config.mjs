@@ -3,7 +3,7 @@
 const nextConfig = {
   poweredByHeader: false,
   typescript: {
-    ignoreBuildErrors: true,
+    // ignoreBuildErrors: true removed per security audit
   },
   images: {
     unoptimized: true,
