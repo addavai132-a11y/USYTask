@@ -60,6 +60,11 @@ export function NotificationPreferencesModal({
     async function loadPreferences() {
       setLoadingPrefs(true)
       try {
+        const localData = localStorage.getItem('usytask_notification_prefs')
+        if (localData && mounted) {
+           setPreferences(JSON.parse(localData))
+        }
+        /*
         const res = await fetch('/api/push/preferences')
         if (res.ok && mounted) {
           const data = await res.json()
@@ -67,6 +72,7 @@ export function NotificationPreferencesModal({
             setPreferences(data.preferences)
           }
         }
+        */
       } catch (err) {
         console.error('Error cargando preferencias de notificación:', err)
       } finally {
@@ -99,8 +105,15 @@ export function NotificationPreferencesModal({
       [key]: newValue,
     }
     setPreferences(updated)
-    setSavingKey(key)
+    
+    try {
+      localStorage.setItem('usytask_notification_prefs', JSON.stringify(updated))
+    } catch (e) {
+      console.warn('Could not save preferences to localStorage', e)
+    }
 
+    /* Backend call temporarily disabled
+    setSavingKey(key)
     try {
       const res = await fetch('/api/push/preferences', {
         method: 'POST',
@@ -123,9 +136,11 @@ export function NotificationPreferencesModal({
     } finally {
       setSavingKey(null)
     }
+    */
   }
 
   const handleSaveAndClose = async () => {
+    /* Backend call temporarily disabled
     try {
       const safePreferences = preferences || DEFAULT_NOTIFICATION_PREFERENCES
       await fetch('/api/push/preferences', {
@@ -136,6 +151,7 @@ export function NotificationPreferencesModal({
     } catch (e) {
       console.warn('Silent save failed on close', e)
     }
+    */
     onClose()
   }
 
