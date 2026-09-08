@@ -1,0 +1,63 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: #09070D;
+  --color-foreground: #FFF7F1;
+  
+  /* Brand Colors */
+  --color-vice-pink: #FF3EA5;
+  --color-vice-magenta: #E933FF;
+  --color-vice-purple: #8B5CF6;
+  --color-vice-orange: #FF7448;
+  --color-vice-coral: #FF5C67;
+  --color-vice-yellow: #FFC857;
+  --color-vice-blue: #38BDF8;
+  --color-vice-green: #35D07F;
+  --color-vice-surface: #12101A;
+  --color-vice-gray: #A9A5B3;
+  --color-vice-border: rgba(255, 255, 255, 0.08);
+  
+  --font-sans: var(--font-inter);
+  --font-display: var(--font-outfit);
+}
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans), sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Custom Scrollbar for maps and sidebars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Utilities */
+.glass-panel {
+  background: rgba(18, 16, 26, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--color-vice-border);
+}
+
+.text-gradient-neon {
+  background: linear-gradient(135deg, var(--color-vice-pink), var(--color-vice-magenta));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
