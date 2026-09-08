@@ -581,8 +581,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   // Initialize on mount: pull data from Supabase cloud first
   useEffect(() => {
+    let timeoutId: NodeJS.Timeout
+
     async function initCloudAndData() {
       try {
+        // Safety timeout: always initialize after 1 second to avoid infinite loading screens
+        timeoutId = setTimeout(() => {
+          console.warn('Forcing AppContext initialization due to timeout')
+          setIsInitialized(true)
+        }, 1000)
+
         await syncFromSupabaseCloud()
         const group = ensureDefaultGroup(userName)
         if (group?.id) {
@@ -599,10 +607,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           console.error('Fallback initialization error:', fallbackErr)
         }
       } finally {
+        clearTimeout(timeoutId)
         setIsInitialized(true)
       }
     }
     initCloudAndData()
+
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId)
+    }
   }, [userName, refreshData])
 
   // Listen for group change events and periodic auto-archive ticker
