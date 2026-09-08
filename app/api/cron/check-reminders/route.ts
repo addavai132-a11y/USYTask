@@ -7,6 +7,13 @@ export const dynamic = 'force-dynamic'
 
 export async function GET(req: Request) {
   try {
+    const authHeader = req.headers.get('authorization')
+    const cronSecret = process.env.CRON_SECRET
+
+    if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+      return NextResponse.json({ error: 'No autorizado.' }, { status: 401 })
+    }
+
     const supabase = await createClient()
 
     const now = new Date()
@@ -97,7 +104,7 @@ export async function GET(req: Request) {
   } catch (error: any) {
     console.error('Error en cron check-reminders:', error)
     return NextResponse.json(
-      { error: error?.message || 'Error en cron de recordatorios' },
+      { error: 'Error interno en cron de recordatorios' },
       { status: 500 }
     )
   }

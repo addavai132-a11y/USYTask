@@ -29,22 +29,25 @@ import { NextResponse, type NextRequest } from 'next/server'
 /** Abort Supabase getUser() after this many ms to avoid Vercel function timeouts */
 const GET_USER_TIMEOUT_MS = 4_000
 
+const PRIVATE_ROUTES = ['/app', '/complete-profile', '/onboarding', '/dev/promo-codes']
+
 // ── Helpers ────────────────────────────────────────────────────────────────
 
-function passthrough(request: NextRequest): NextResponse {
-  return NextResponse.next({ request })
+function isPrivateRoute(pathname: string): boolean {
+  return PRIVATE_ROUTES.some((route) => pathname.startsWith(route))
 }
 
-function isSafeInternalPath(path: string): boolean {
-  return path.startsWith('/') && !path.startsWith('//') && !path.includes('\\')
+function isSafeInternalPath(path: string, origin: string): boolean {
+  try {
+    const url = new URL(path, origin)
+    return url.origin === origin
+  } catch {
+    return false
+  }
 }
 
 /**
  * Minimal cookie options — deliberately omits maxAge/expires overrides.
- *
- * Supabase manages token lifetimes internally (access token ~1h, refresh
- * token session-length). Overriding with 1 year caused cookies to accumulate
- * across fragments and bloat request headers beyond Vercel's 8 KB limit.
  */
 function minimalCookieOptions(options?: Record<string, unknown>) {
   const { maxAge: _maxAge, expires: _expires, ...rest } = (options || {}) as Record<string, unknown>
@@ -56,17 +59,6 @@ function minimalCookieOptions(options?: Record<string, unknown>) {
   }
 }
 
-function escapeRegex(str: string): string {
-  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-}
-
-/**
- * Purge stale auth-token fragments (.1, .2, .3…) from a response.
- *
- * When the JWT fits in a single cookie (sb-*-auth-token or .0), any
- * leftover higher-numbered fragments from previous sessions inflate the
- * Cookie header unnecessarily. Expire them so they are cleared client-side.
- */
 function purgeStaleTokenFragments(
   response: NextResponse,
   incomingCookies: Array<{ name: string; value: string }>,
@@ -91,10 +83,6 @@ function purgeStaleTokenFragments(
   }
 }
 
-/**
- * Check whether the incoming cookies contain a Supabase session token.
- * Avoids the Supabase auth network round-trip for anonymous visitors.
- */
 function hasSupabaseAccessCookie(cookies: Array<{ name?: string }> | null | undefined): boolean {
   if (!Array.isArray(cookies)) return false
   return cookies.some((c) => {
@@ -107,10 +95,6 @@ function hasSupabaseAccessCookie(cookies: Array<{ name?: string }> | null | unde
   })
 }
 
-/**
- * Race Supabase getUser() against a timeout promise so a slow network or
- * cold Supabase instance cannot hang the proxy and trigger a 504 / 500.
- */
 async function getUserWithTimeout(
   getUser: () => Promise<{ data?: { user?: unknown } | null } | null>
 ): Promise<{ data?: { user?: { id?: string } | null } } | null> {
@@ -135,15 +119,49 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   try {
     const pathname = request.nextUrl?.pathname ?? ''
 
+    // Nonce generation for CSP
+    const nonce = Buffer.from(crypto.randomUUID()).toString('base64')
+    
+    // Create initial response with nonce header
+    let supabaseResponse = NextResponse.next({
+      request: {
+        headers: new Headers(request.headers),
+      },
+    })
+    supabaseResponse.headers.set('x-nonce', nonce)
+    
+    // Set CSP Header with nonce
+    const cspHeader = `
+      default-src 'self';
+      script-src 'self' 'nonce-${nonce}' 'strict-dynamic';
+      style-src 'self' 'unsafe-inline';
+      img-src 'self' data: blob: https:;
+      font-src 'self' data: https:;
+      connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.vercel.app;
+      object-src 'none';
+      base-uri 'self';
+      frame-src 'none';
+      frame-ancestors 'none';
+      form-action 'self';
+      upgrade-insecure-requests;
+      block-all-mixed-content;
+    `.replace(/\s{2,}/g, ' ').trim()
+    
+    supabaseResponse.headers.set('Content-Security-Policy', cspHeader)
+
     // 1. Skip session refresh for OAuth callback, signout, and API routes.
-    //    getUser() + PKCE code-verifier cookies is a frequent source of 500s.
     if (
       pathname.startsWith('/auth/callback') ||
       pathname.startsWith('/auth/signout') ||
       pathname.startsWith('/api/')
     ) {
-      return passthrough(request)
+      if (pathname.startsWith('/api/') && !pathname.startsWith('/api/promo-codes')) {
+         supabaseResponse.headers.set('Cache-Control', 'no-store, max-age=0')
+      }
+      return supabaseResponse
     }
+
+    const isPrivate = isPrivateRoute(pathname)
 
     // 2. Validate environment variables.
     const supabaseUrl = (process.env.NEXT_PUBLIC_SUPABASE_URL ?? '').trim()
@@ -154,8 +172,11 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     ).trim()
 
     if (!supabaseUrl || !supabaseKey) {
-      console.error('[Proxy] Missing Supabase environment variables — skipping auth check')
-      return passthrough(request)
+      console.error('[Proxy] Missing Supabase environment variables')
+      if (isPrivate) {
+        return NextResponse.redirect(new URL('/login', request.url))
+      }
+      return supabaseResponse
     }
 
     // 3. Read cookies safely.
@@ -167,14 +188,13 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     }
 
     // 4. Skip the network call for anonymous visitors (no session cookie).
-    //    This is the single biggest source of MIDDLEWARE_INVOCATION_FAILED
-    //    on first-time loads when the Edge network cold-starts.
     if (!hasSupabaseAccessCookie(incomingCookies)) {
-      return passthrough(request)
+      if (isPrivate) {
+        return NextResponse.redirect(new URL(`/login?next=${encodeURIComponent(pathname)}`, request.url))
+      }
+      return supabaseResponse
     }
 
-    // 5. Build the Supabase client with a mutable response object for cookies.
-    let supabaseResponse = NextResponse.next({ request })
     let sessionRefreshed = false
     let refreshedCookies = new Set<string>()
 
@@ -190,21 +210,14 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
         setAll(cookiesToSet) {
           try {
             sessionRefreshed = true
-            // Mutate request cookie bag (Node.js runtime — mutable)
             cookiesToSet?.forEach?.(({ name, value }) => {
               if (!name || typeof value !== 'string') return
               refreshedCookies.add(name)
               try {
                 request.cookies.set(name, value)
-              } catch {
-                // Ignore — response cookies are the authoritative path
-              }
+              } catch {}
             })
 
-            // Build a fresh response with updated cookies
-            supabaseResponse = NextResponse.next({ request })
-
-            // Apply minimal options — no year-long maxAge to avoid 494 bloat
             cookiesToSet?.forEach?.(({ name, value, options }) => {
               if (!name || typeof value !== 'string') return
               try {
@@ -213,13 +226,9 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
                   value,
                   minimalCookieOptions(options as Record<string, unknown>)
                 )
-              } catch (err) {
-                console.error('[Proxy] Cookie set error:', name, err)
-              }
+              } catch (err) {}
             })
-          } catch (err) {
-            console.error('[Proxy] setAll error:', err)
-          }
+          } catch (err) {}
         },
       },
     })
@@ -229,7 +238,13 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     const user =
       (userResponse as { data?: { user?: { id?: string } | null } } | null)?.data?.user ?? null
 
-    // 7. Purge stale auth-token fragments to keep Cookie headers slim (anti-494).
+    // Fail-Closed for private routes
+    if (!user && isPrivate) {
+      const redirectUrl = new URL(`/login?next=${encodeURIComponent(pathname)}`, request.url)
+      return NextResponse.redirect(redirectUrl)
+    }
+
+    // 7. Purge stale auth-token fragments
     if (sessionRefreshed) {
       purgeStaleTokenFragments(supabaseResponse, incomingCookies, refreshedCookies)
     }
@@ -237,29 +252,29 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     // 8. Redirect authenticated users away from public-only pages.
     if (user && (pathname === '/' || pathname === '/login' || pathname === '/register')) {
       const nextParam = request.nextUrl?.searchParams?.get?.('next') ?? '/app'
-      const nextTarget = isSafeInternalPath(nextParam) ? nextParam : '/app'
+      const nextTarget = isSafeInternalPath(nextParam, request.nextUrl.origin) ? nextParam : '/app'
       const redirectUrl = new URL(nextTarget, request.url)
+      
       const redirectResponse = NextResponse.redirect(redirectUrl)
+      
+      // Keep nonce and CSP on redirect response as well
+      redirectResponse.headers.set('x-nonce', nonce)
+      redirectResponse.headers.set('Content-Security-Policy', cspHeader)
 
-      // Forward any refreshed session cookies to the redirect destination
       try {
         supabaseResponse.cookies.getAll?.()?.forEach((cookie) => {
           if (!cookie?.name) return
           try {
+            // Unify options by pulling options from supabaseResponse if possible, or use minimal
             redirectResponse.cookies.set(
               cookie.name,
               cookie.value,
               minimalCookieOptions()
             )
-          } catch {
-            // Non-fatal
-          }
+          } catch {}
         })
-      } catch (err) {
-        console.error('[Proxy] Failed to copy cookies onto redirect:', err)
-      }
+      } catch (err) {}
 
-      // Also purge stale fragments on the redirect response
       if (sessionRefreshed) {
         purgeStaleTokenFragments(redirectResponse, incomingCookies, refreshedCookies)
       }
@@ -267,10 +282,17 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
       return redirectResponse
     }
 
+    if (isPrivate) {
+      supabaseResponse.headers.set('Cache-Control', 'no-store, max-age=0')
+    }
+
     return supabaseResponse
   } catch (error) {
-    // Last-resort catch: never let the proxy crash the entire request.
     console.error('[Proxy] Critical unhandled exception:', error)
+    // Fail-closed on error if it looks like a private route request
+    if (request.nextUrl?.pathname?.startsWith('/app')) {
+      return NextResponse.redirect(new URL('/login', request.url))
+    }
     return NextResponse.next({ request })
   }
 }
@@ -278,13 +300,6 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
 // ── Matcher ────────────────────────────────────────────────────────────────
 export const config = {
   matcher: [
-    /*
-     * Match all paths EXCEPT:
-     * - _next/static  (static JS/CSS bundles)
-     * - _next/image   (image optimisation)
-     * - favicon.ico, manifest.webmanifest, service worker, icons, apple-touch
-     * - Any static image/font extension
-     */
-    '/((?!_next/static|_next/image|favicon\\.ico|manifest\\.webmanifest|sw\\.js|icon-.*|apple-.*|.*\\.(?:svg|png|jpg|jpeg|gif|webp|woff2?)$).*)',
+    '/((?!_next/static|_next/image|favicon\\.ico|manifest\\.webmanifest|sw\\.js|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|woff2?)$).*)',
   ],
 }

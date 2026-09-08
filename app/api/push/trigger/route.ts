@@ -2,9 +2,30 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase-server'
 import { sendPushNotification } from '@/lib/push-service'
 import type { PushNotificationPayload, NotificationType } from '@/types/notifications'
+import { checkRateLimit } from '@/lib/rate-limit'
+import { z } from 'zod'
+
+const TriggerSchema = z.object({
+  userIds: z.array(z.string().uuid()).optional(),
+  userId: z.string().uuid().optional(),
+  payload: z.object({
+    title: z.string().max(100),
+    body: z.string().max(300),
+    icon: z.string().max(300).optional(),
+    badge: z.string().max(300).optional(),
+    tag: z.string().max(100).optional(),
+    data: z.record(z.any()).optional()
+  }),
+  type: z.string().max(50).optional()
+}).passthrough()
 
 export async function POST(req: Request) {
   try {
+    const ip = req.headers.get('x-forwarded-for') || 'unknown'
+    if (!checkRateLimit(ip, 20, 60000)) {
+      return NextResponse.json({ error: 'Demasiadas peticiones. Inténtalo de nuevo más tarde.' }, { status: 429 })
+    }
+
     const supabase = await createClient()
 
     // Autenticación requerida para usar este endpoint
@@ -17,7 +38,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
     }
 
-    const body = await req.json().catch(() => ({}))
+    const rawBody = await req.json().catch(() => ({}))
+    const parsed = TriggerSchema.safeParse(rawBody)
+
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Payload de notificación inválido.' }, { status: 400 })
+    }
+
+    const body = parsed.data
     const { userIds, userId, payload, type } = body as {
       userIds?: string[]
       userId?: string
@@ -60,7 +88,7 @@ export async function POST(req: Request) {
   } catch (error: any) {
     console.error('[/api/push/trigger] Error:', error)
     return NextResponse.json(
-      { error: error?.message || 'Error interno del servidor' },
+      { error: 'Error interno del servidor al procesar la notificación' },
       { status: 500 }
     )
   }

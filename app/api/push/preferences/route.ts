@@ -1,6 +1,18 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase-server'
 import { DEFAULT_NOTIFICATION_PREFERENCES, type NotificationPreferences } from '@/types/notifications'
+import { checkRateLimit } from '@/lib/rate-limit'
+import { z } from 'zod'
+
+const PreferencesSchema = z.object({
+  preferences: z.object({
+    taskAssignments: z.boolean().optional(),
+    taskUpdates: z.boolean().optional(),
+    eventInvites: z.boolean().optional(),
+    eventReminders: z.boolean().optional(),
+    systemAlerts: z.boolean().optional(),
+  }).optional()
+}).passthrough()
 
 export async function GET() {
   try {
@@ -43,6 +55,11 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
+    const ip = req.headers.get('x-forwarded-for') || 'unknown'
+    if (!checkRateLimit(ip, 20, 60000)) {
+      return NextResponse.json({ error: 'Demasiadas peticiones. Inténtalo de nuevo más tarde.' }, { status: 429 })
+    }
+
     const supabase = await createClient()
 
     const {
@@ -57,7 +74,14 @@ export async function POST(req: Request) {
       )
     }
 
-    const body = await req.json()
+    const rawBody = await req.json().catch(() => ({}))
+    const parsed = PreferencesSchema.safeParse(rawBody)
+
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Payload de preferencias inválido.' }, { status: 400 })
+    }
+
+    const body = parsed.data
     const preferences: NotificationPreferences = {
       ...DEFAULT_NOTIFICATION_PREFERENCES,
       ...(body?.preferences || {}),
@@ -83,7 +107,7 @@ export async function POST(req: Request) {
   } catch (error) {
     console.error('Error guardando preferencias en /api/push/preferences:', error)
     return NextResponse.json(
-      { success: false, message: 'No se pudieron guardar tus preferencias, inténtalo de nuevo.' },
+      { success: false, message: 'Error interno del servidor. No se pudieron guardar tus preferencias.' },
       { status: 500 }
     )
   }

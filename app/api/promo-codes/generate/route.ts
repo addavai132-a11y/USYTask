@@ -1,8 +1,22 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase-server'
+import { checkRateLimit } from '@/lib/rate-limit'
+import { z } from 'zod'
+
+const GeneratePromoSchema = z.object({
+  code: z.string().max(100).nullable().optional(),
+  planType: z.enum(['early_access', 'lifetime']).optional(),
+  durationDays: z.number().nullable().optional(),
+  description: z.string().max(200).optional()
+}).passthrough()
 
 export async function POST(req: Request) {
   try {
+    const ip = req.headers.get('x-forwarded-for') || 'unknown'
+    if (!checkRateLimit(ip, 10, 60000)) {
+      return NextResponse.json({ error: 'Demasiadas peticiones. Inténtalo de nuevo más tarde.' }, { status: 429 })
+    }
+
     const isDev = process.env.NODE_ENV === 'development'
     const host = req.headers.get('host') || ''
     const isLocalhost = host.includes('localhost') || host.includes('127.0.0.1')
@@ -14,7 +28,14 @@ export async function POST(req: Request) {
       )
     }
 
-    const body = await req.json()
+    const rawBody = await req.json().catch(() => ({}))
+    const parsed = GeneratePromoSchema.safeParse(rawBody)
+
+    if (!parsed.success) {
+      return NextResponse.json({ success: false, error: 'Payload de generación inválido.' }, { status: 400 })
+    }
+
+    const body = parsed.data
     const { code, planType = 'lifetime', durationDays = null, description = 'Generado en entorno dev' } = body
 
     const cleanCode =
@@ -45,7 +66,7 @@ export async function POST(req: Request) {
 
     if (error) {
       return NextResponse.json(
-        { success: false, error: error.message },
+        { success: false, error: 'Fallo al generar el código en base de datos.' }, // Sanitized error
         { status: 400 }
       )
     }
@@ -54,7 +75,7 @@ export async function POST(req: Request) {
   } catch (error: any) {
     console.error('Error en POST /api/promo-codes/generate:', error)
     return NextResponse.json(
-      { success: false, error: error?.message || 'Error al generar el código.' },
+      { success: false, error: 'Error interno al generar el código.' },
       { status: 500 }
     )
   }

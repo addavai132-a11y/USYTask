@@ -2,9 +2,37 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase-server'
 import { sendPushNotification } from '@/lib/push-service'
 import type { PushNotificationPayload, NotificationType } from '@/types/notifications'
+import { checkRateLimit } from '@/lib/rate-limit'
+import { z } from 'zod'
+
+const SendPushSchema = z.object({
+  title: z.string().max(100).optional(),
+  body: z.string().max(300).optional(),
+  url: z.string().max(500).optional(),
+  notificationType: z.string().max(50).optional(),
+  userIds: z.array(z.string().uuid()).max(100).optional(),
+  groupId: z.string().uuid().optional(),
+  payload: z.object({
+    title: z.string().max(100).optional(),
+    body: z.string().max(300).optional(),
+    icon: z.string().max(300).optional(),
+    badge: z.string().max(300).optional(),
+    tag: z.string().max(100).optional(),
+    data: z.record(z.any()).optional()
+  }).optional(),
+  icon: z.string().max(300).optional(),
+  badge: z.string().max(300).optional(),
+  tag: z.string().max(100).optional(),
+  data: z.record(z.any()).optional()
+}).passthrough()
 
 export async function POST(req: Request) {
   try {
+    const ip = req.headers.get('x-forwarded-for') || 'unknown'
+    if (!checkRateLimit(ip, 20, 60000)) {
+      return NextResponse.json({ error: 'Demasiadas peticiones. Inténtalo de nuevo más tarde.' }, { status: 429 })
+    }
+
     const supabase = await createClient()
 
     const {
@@ -16,7 +44,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'No autorizado.' }, { status: 401 })
     }
 
-    const body = await req.json()
+    const rawBody = await req.json().catch(() => ({}))
+    const parsed = SendPushSchema.safeParse(rawBody)
+
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Payload de notificación inválido.' }, { status: 400 })
+    }
+
+    const body = parsed.data
 
     // Accept both nested payload format and flattened direct format
     const title = body.payload?.title || body.title
@@ -46,18 +81,19 @@ export async function POST(req: Request) {
       },
     }
 
-    // Determine target userIds:
-    // 1. If explicit userIds provided: use them
-    // 2. If groupId provided: fetch all group members' auth user_ids
     let targetUserIds: string[] = []
 
     if (body.userIds && Array.isArray(body.userIds) && body.userIds.length > 0) {
       targetUserIds = body.userIds
     } else if (body.groupId) {
-      const { data: groupMembers } = await supabase
+      const { data: groupMembers, error: groupError } = await supabase
         .from('group_members')
         .select('user_id')
         .eq('group_id', body.groupId)
+
+      if (groupError) {
+        return NextResponse.json({ error: 'Fallo al buscar miembros del grupo.' }, { status: 400 })
+      }
 
       if (groupMembers && groupMembers.length > 0) {
         targetUserIds = groupMembers.map((m) => m.user_id).filter(id => id && id !== user.id)
@@ -78,7 +114,7 @@ export async function POST(req: Request) {
   } catch (error: any) {
     console.error('Error enviando notificación desde /api/push/send:', error)
     return NextResponse.json(
-      { error: error?.message || 'Error interno enviando notificación.' },
+      { error: 'Error interno enviando notificación.' },
       { status: 500 }
     )
   }

@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase-server'
+import { checkRateLimit } from '@/lib/rate-limit'
+import { z } from 'zod'
 
 export async function GET() {
   try {
@@ -37,14 +39,18 @@ export async function POST(req: Request) {
   try {
     const supabase = await createClient()
 
-    // 1. Obtener usuario autenticado
+    // 1. Rate Limiting based on IP
+    const ip = req.headers.get('x-forwarded-for') || 'unknown'
+    if (!checkRateLimit(ip, 10, 60000)) {
+      return NextResponse.json({ error: 'Demasiadas peticiones. Inténtalo de nuevo más tarde.' }, { status: 429 })
+    }
+
     const {
       data: { user },
       error: authError,
     } = await supabase.auth.getUser()
 
     if (authError || !user) {
-      // En modo local o sin sesión de Supabase Auth aún activa
       return NextResponse.json({
         success: true,
         localOnly: true,
@@ -52,18 +58,31 @@ export async function POST(req: Request) {
       })
     }
 
-    // 2. Extraer objeto subscription del payload
+    // 2. Validate body with Zod
     const body = await req.json().catch(() => ({}))
-    const { subscription } = body
+    
+    // Schema definition for push subscription
+    const SubscriptionSchema = z.object({
+      subscription: z.object({
+        endpoint: z.string().url().max(1000),
+        expirationTime: z.number().nullable().optional(),
+        keys: z.object({
+          p256dh: z.string().max(200),
+          auth: z.string().max(200)
+        })
+      })
+    })
 
-    if (!subscription || !subscription.endpoint) {
+    const parsed = SubscriptionSchema.safeParse(body)
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: 'Objeto de suscripción Push inválido o faltante.' },
+        { error: 'Formato de suscripción Push inválido.' },
         { status: 400 }
       )
     }
 
-    const endpoint = subscription.endpoint
+    const endpoint = parsed.data.subscription.endpoint
+    const subscription = parsed.data.subscription
 
     // 3. Upsert en la tabla push_subscriptions
     try {
@@ -177,7 +196,7 @@ export async function DELETE(req: Request) {
     if (deleteError) {
       console.error('Error eliminando suscripción Push:', deleteError)
       return NextResponse.json(
-        { error: 'Fallo al eliminar suscripción Push.' },
+        { error: 'Fallo al eliminar suscripción Push. Error interno.' },
         { status: 500 }
       )
     }
