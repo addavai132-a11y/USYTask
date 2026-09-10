@@ -137,9 +137,10 @@ export function validateInvitationToken(token: string): {
   return { valid: false, error: 'El código de invitación no existe o no es válido.' }
 }
 
-export function getInvitationUrl(token: string): string {
+export function getInvitationUrl(tokenOrHouseholdId: string): string {
   if (typeof window !== 'undefined') {
-    return `${window.location.origin}/invite/${token}`
+    return `${window.location.origin}/join?household_id=${encodeURIComponent(tokenOrHouseholdId)}`
   }
-  return `http://localhost:3000/invite/${token}`
+  return `http://localhost:3000/join?household_id=${encodeURIComponent(tokenOrHouseholdId)}`
 }
+
