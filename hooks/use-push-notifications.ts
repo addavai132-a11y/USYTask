@@ -73,41 +73,69 @@ export async function enableNotifications(): Promise<boolean> {
   }
 }
 
+/**
+ * Detecta si el dispositivo es iOS y si la PWA está en modo standalone.
+ * En iOS, el Push API solo existe si la PWA está instalada (Añadir a pantalla
+ * de inicio) — iOS 16.4+. No funciona en pestaña normal de Safari.
+ */
+function checkIOSSupport(): { isIOS: boolean; isStandalone: boolean } {
+  if (typeof window === 'undefined') return { isIOS: false, isStandalone: false }
+
+  const isIOS = /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase())
+  const isStandalone =
+    window.matchMedia('(display-mode: standalone)').matches ||
+    (window.navigator as any).standalone === true
+
+  return { isIOS, isStandalone }
+}
+
 export function usePushNotifications() {
   const [isSupported, setIsSupported] = useState(false)
   const [permission, setPermission] = useState<NotificationPermission>('default')
   const [isSubscribed, setIsSubscribed] = useState(false)
   const [subscription, setSubscription] = useState<PushSubscription | null>(null)
   const [loading, setLoading] = useState(false)
+  // Indica si el dispositivo iOS no está en standalone (PWA no instalada)
+  const [iosNeedsInstall, setIosNeedsInstall] = useState(false)
 
   // 1. Verificar soporte y suscripción activa al montar
   const checkSubscription = useCallback(async () => {
     if (typeof window === 'undefined') return
 
     const hasNotification = 'Notification' in window
-    setIsSupported(hasNotification)
 
-    if (!hasNotification) return
+    // Verificar caso especial iOS
+    const { isIOS, isStandalone } = checkIOSSupport()
+    if (isIOS && !isStandalone) {
+      setIsSupported(false)
+      setIosNeedsInstall(true)
+      return
+    }
 
+    if (!hasNotification || !('serviceWorker' in navigator) || !('PushManager' in window)) {
+      setIsSupported(hasNotification) // puede tener Notification API pero no Push
+      return
+    }
+
+    setIsSupported(true)
     setPermission(Notification.permission)
 
     if (Notification.permission === 'granted') {
       setIsSubscribed(true)
     }
 
-    if ('serviceWorker' in navigator && 'PushManager' in window) {
-      try {
-        const reg = await navigator.serviceWorker.getRegistration('/sw.js')
-        if (reg) {
-          const sub = await reg.pushManager.getSubscription()
-          setSubscription(sub)
-          if (sub) {
-            setIsSubscribed(true)
-          }
+    // Verificar suscripción push real
+    try {
+      const reg = await navigator.serviceWorker.getRegistration('/sw.js')
+      if (reg) {
+        const sub = await reg.pushManager.getSubscription()
+        setSubscription(sub)
+        if (sub) {
+          setIsSubscribed(true)
         }
-      } catch (err) {
-        console.warn('Error al comprobar suscripción Push remota:', err)
       }
+    } catch (err) {
+      console.warn('Error al comprobar suscripción Push remota:', err)
     }
   }, [])
 
@@ -146,10 +174,17 @@ export function usePushNotifications() {
           const sub = await reg.pushManager.getSubscription()
           if (sub) {
             setSubscription(sub)
+            // Sincronizar suscripción con el backend
             await fetch('/api/push/subscribe', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ subscription: sub }),
+              body: JSON.stringify({
+                subscription: sub.toJSON(),
+                deviceInfo: {
+                  userAgent: navigator.userAgent,
+                  platform: navigator.platform,
+                },
+              }),
             }).catch(() => ({}))
           }
         } catch (e) {
@@ -311,6 +346,7 @@ export function usePushNotifications() {
     isSubscribed,
     subscription,
     loading,
+    iosNeedsInstall,
     subscribe,
     unsubscribe,
     sendTestNotification,
@@ -318,5 +354,3 @@ export function usePushNotifications() {
     checkSubscription,
   }
 }
-
-

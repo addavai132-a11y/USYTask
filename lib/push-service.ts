@@ -1,14 +1,8 @@
 import webpush from 'web-push'
-import { createClient as createSupabaseClient } from '@supabase/supabase-js'
+import { createAdminClient } from '@/lib/supabase-admin'
 import type { PushNotificationPayload, NotificationType, NotificationPreferences } from '@/types/notifications'
 import { DEFAULT_NOTIFICATION_PREFERENCES } from '@/types/notifications'
 
-// Cliente de Supabase Admin (Bypass RLS para poder leer las suscripciones de otros usuarios)
-function getSupabaseAdmin() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-  return createSupabaseClient(supabaseUrl, serviceRoleKey)
-}
 
 // Inicializar configuración VAPID
 function ensureVapidConfig(): boolean {
@@ -64,7 +58,7 @@ export async function sendPushNotification(
   }
 
   // Usar admin client para bypassear RLS y poder leer y borrar subscripciones de otros usuarios
-  const supabaseAdmin = getSupabaseAdmin()
+  const supabaseAdmin = createAdminClient()
 
   // 1. Filtrar usuarios que tengan silenciada esta categoría de notificación
   let targetUserIds = [...userIds]

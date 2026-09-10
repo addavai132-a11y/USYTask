@@ -127,8 +127,8 @@ export function checkProximityAndRecurringAlerts(groupId: string, _members: Memb
             : `Mañana tienes el evento "${event.title}"${timeStr}`,
           type: 'event',
           actionUrl: '/app?tab=organizar',
-          sendPush: false, // avoid spamming push for proximity checks; only in-app
-          data: { proximityKey: notifKey, eventId: event.id, tab: 'organizar', subTab: 'calendario' },
+          sendPush: true,
+          data: { proximityKey: notifKey, eventId: event.id, tab: 'organizar', subTab: 'calendario', type: isToday ? 'events_reminder_15m' : 'events_reminder_24h' },
         })
       } catch (err) {
         console.warn('[checkProximity] Single event error:', err)
@@ -156,8 +156,8 @@ export function checkProximityAndRecurringAlerts(groupId: string, _members: Memb
           type: 'task',
           recipientMemberIds: task.assignedMemberIds,
           actionUrl: '/app?tab=organizar',
-          sendPush: false,
-          data: { proximityKey: notifKey, taskId: task.id, tab: 'organizar', subTab: 'tareas' },
+          sendPush: true,
+          data: { proximityKey: notifKey, taskId: task.id, tab: 'organizar', subTab: 'tareas', type: 'tasks_due_today' },
         })
       } catch (err) {
         console.warn('[checkProximity] Single task error:', err)
@@ -185,8 +185,8 @@ export function checkProximityAndRecurringAlerts(groupId: string, _members: Memb
           type: 'reminder',
           recipientMemberIds: rem.assignedMemberIds,
           actionUrl: '/app?tab=organizar',
-          sendPush: false,
-          data: { proximityKey: notifKey, reminderId: rem.id, tab: 'organizar', subTab: 'recordatorios' },
+          sendPush: true,
+          data: { proximityKey: notifKey, reminderId: rem.id, tab: 'organizar', subTab: 'recordatorios', type: 'organizacion_events' },
         })
       } catch (err) {
         console.warn('[checkProximity] Single reminder error:', err)
@@ -219,8 +219,8 @@ export function checkProximityAndRecurringAlerts(groupId: string, _members: Memb
           body: `Hoy es el día de cobro de ${bill.name} (${safeCurrency(bill.amount)})`,
           type: 'finance',
           actionUrl: '/app?tab=hogar',
-          sendPush: false,
-          data: { proximityKey: notifKey, billId: bill.id, tab: 'hogar', subTab: 'facturas' },
+          sendPush: true,
+          data: { proximityKey: notifKey, billId: bill.id, tab: 'hogar', subTab: 'facturas', type: 'finanzas_bills' },
         })
       } catch (err) {
         console.warn('[checkProximity] Single bill error:', err)

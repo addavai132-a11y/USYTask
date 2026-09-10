@@ -10,10 +10,13 @@ import {
   Users,
   CheckCircle2,
   AlertTriangle,
-  Send,
   Loader2,
   Sparkles,
   ShieldCheck,
+  ListChecks,
+  Clock,
+  ShoppingCart,
+  Smartphone,
 } from 'lucide-react'
 import { usePushNotifications } from '@/hooks/use-push-notifications'
 import {
@@ -40,6 +43,7 @@ export function NotificationPreferencesModal({
     permission,
     isSubscribed,
     loading: pushLoading,
+    iosNeedsInstall,
     subscribe,
     unsubscribe,
     sendTestNotification,
@@ -52,7 +56,7 @@ export function NotificationPreferencesModal({
   const [loadingPrefs, setLoadingPrefs] = useState(true)
   const [savingKey, setSavingKey] = useState<keyof NotificationPreferences | null>(null)
 
-  // Cargar preferencias del usuario
+  // Cargar preferencias del usuario (localStorage + backend)
   useEffect(() => {
     if (!isOpen) return
 
@@ -60,19 +64,27 @@ export function NotificationPreferencesModal({
     async function loadPreferences() {
       setLoadingPrefs(true)
       try {
+        // Cargar desde localStorage como fallback rápido
         const localData = localStorage.getItem('usytask_notification_prefs')
         if (localData && mounted) {
-           setPreferences(JSON.parse(localData))
+          setPreferences({ ...DEFAULT_NOTIFICATION_PREFERENCES, ...JSON.parse(localData) })
         }
-        /*
-        const res = await fetch('/api/push/preferences')
-        if (res.ok && mounted) {
-          const data = await res.json()
-          if (data.preferences) {
-            setPreferences(data.preferences)
+
+        // Intentar cargar desde el backend (fuente de verdad)
+        try {
+          const res = await fetch('/api/push/preferences')
+          if (res.ok && mounted) {
+            const data = await res.json()
+            if (data.preferences) {
+              const merged = { ...DEFAULT_NOTIFICATION_PREFERENCES, ...data.preferences }
+              setPreferences(merged)
+              // Sincronizar localStorage con backend
+              localStorage.setItem('usytask_notification_prefs', JSON.stringify(merged))
+            }
           }
+        } catch {
+          // Si el backend falla, nos quedamos con los datos locales
         }
-        */
       } catch (err) {
         console.error('Error cargando preferencias de notificación:', err)
       } finally {
@@ -106,13 +118,14 @@ export function NotificationPreferencesModal({
     }
     setPreferences(updated)
     
+    // Guardar en localStorage inmediatamente
     try {
       localStorage.setItem('usytask_notification_prefs', JSON.stringify(updated))
     } catch (e) {
       console.warn('Could not save preferences to localStorage', e)
     }
 
-    /* Backend call temporarily disabled
+    // Sincronizar con el backend
     setSavingKey(key)
     try {
       const res = await fetch('/api/push/preferences', {
@@ -123,24 +136,21 @@ export function NotificationPreferencesModal({
 
       const data = await res.json().catch(() => ({}))
 
-      if (res.ok && data.success !== false) {
-        // Silencioso para evitar spam de toasts
-      } else {
+      if (!res.ok || data.success === false) {
         setPreferences(safePreferences) // Revert on error
+        localStorage.setItem('usytask_notification_prefs', JSON.stringify(safePreferences))
         toast(data.message || 'Error guardando en el servidor', '⚠️')
       }
     } catch (err) {
       console.error('Error guardando preferencias:', err)
-      setPreferences(safePreferences) // Revert on error
-      toast('Error de conexión', '❌')
+      // No revertir en error de red — mantener el cambio local
     } finally {
       setSavingKey(null)
     }
-    */
   }
 
   const handleSaveAndClose = async () => {
-    /* Backend call temporarily disabled
+    // Sincronizar silenciosamente al cerrar
     try {
       const safePreferences = preferences || DEFAULT_NOTIFICATION_PREFERENCES
       await fetch('/api/push/preferences', {
@@ -151,7 +161,6 @@ export function NotificationPreferencesModal({
     } catch (e) {
       console.warn('Silent save failed on close', e)
     }
-    */
     onClose()
   }
 
@@ -222,7 +231,7 @@ export function NotificationPreferencesModal({
                 )}
               </div>
 
-              {/* Botón Acción Dispositivo: Siempre llamado 'Activar notificaciones' y siempre visible */}
+              {/* Botón Acción Dispositivo */}
               <div className="flex items-center gap-2">
                 <button
                   type="button"
@@ -241,10 +250,19 @@ export function NotificationPreferencesModal({
               </div>
             </div>
 
-            {!isSupported && (
+            {!isSupported && !iosNeedsInstall && (
               <p className="text-[11px] text-amber-700 dark:text-amber-400">
                 Tu navegador actual no admite notificaciones Web Push o estás en modo incógnito.
               </p>
+            )}
+            {iosNeedsInstall && (
+              <div className="flex items-start gap-2 p-2.5 rounded-xl bg-amber-50 border border-amber-200 dark:bg-amber-500/10 dark:border-amber-500/20">
+                <Smartphone className="size-4 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+                <p className="text-[11px] text-amber-700 dark:text-amber-400 leading-relaxed">
+                  Para recibir notificaciones en iPhone/iPad, primero añade USYTask a tu pantalla de inicio desde Safari
+                  (Compartir → Añadir a pantalla de inicio) y vuelve a abrirla desde ahí.
+                </p>
+              </div>
             )}
             {permission === 'denied' && (
               <p className="text-[11px] text-rose-600 dark:text-rose-400">
@@ -261,25 +279,157 @@ export function NotificationPreferencesModal({
             </div>
           ) : (
             <div className="space-y-3.5">
-              {/* SECTOR ORGANIZACIÓN */}
+              {/* SECTOR: TAREAS Y RUTINAS */}
               <div className="p-3.5 rounded-2xl bg-white border border-slate-200 shadow-2xs dark:bg-white/[0.02] dark:border-white/5 space-y-2.5">
                 <div className="flex items-center gap-2 pb-1 border-b border-slate-100 dark:border-white/5 text-slate-900 dark:text-white font-bold">
-                  <Calendar className="size-4 text-emerald-600 dark:text-purple-400" />
-                  <span>Organización & Centro de Control</span>
+                  <ListChecks className="size-4 text-emerald-600 dark:text-purple-400" />
+                  <span>Tareas y rutinas</span>
                 </div>
 
                 <div className="space-y-2 pt-1">
                   <ToggleItem
-                    label="Eventos y reuniones programadas"
-                    description="Aviso con 15 minutos de antelación para citas y calendarios"
+                    label="Cuando me asignen una tarea"
+                    description="Notificación al ser asignado a una tarea nueva"
+                    checked={isFullyEnabled && preferences.tasks_assigned}
+                    onChange={() => handleToggle('tasks_assigned')}
+                    disabled={!!savingKey}
+                    loading={savingKey === 'tasks_assigned'}
+                  />
+                  <ToggleItem
+                    label="Tareas que vencen hoy"
+                    description="Recordatorio para tareas pendientes con fecha límite hoy"
+                    checked={isFullyEnabled && preferences.tasks_due_today}
+                    onChange={() => handleToggle('tasks_due_today')}
+                    disabled={!!savingKey}
+                    loading={savingKey === 'tasks_due_today'}
+                  />
+                  <ToggleItem
+                    label="Cuando completen una tarea que creé"
+                    description="Aviso cuando alguien finaliza una tarea que tú asignaste"
+                    checked={isFullyEnabled && preferences.tasks_completed}
+                    onChange={() => handleToggle('tasks_completed')}
+                    disabled={!!savingKey}
+                    loading={savingKey === 'tasks_completed'}
+                  />
+                </div>
+              </div>
+
+              {/* SECTOR: EVENTOS Y CALENDARIO */}
+              <div className="p-3.5 rounded-2xl bg-white border border-slate-200 shadow-2xs dark:bg-white/[0.02] dark:border-white/5 space-y-2.5">
+                <div className="flex items-center gap-2 pb-1 border-b border-slate-100 dark:border-white/5 text-slate-900 dark:text-white font-bold">
+                  <Calendar className="size-4 text-emerald-600 dark:text-purple-400" />
+                  <span>Eventos y calendario</span>
+                </div>
+
+                <div className="space-y-2 pt-1">
+                  <ToggleItem
+                    label="Nuevos eventos en el calendario familiar"
+                    description="Aviso cuando se añade un nuevo evento al calendario"
+                    checked={isFullyEnabled && preferences.events_new}
+                    onChange={() => handleToggle('events_new')}
+                    disabled={!!savingKey}
+                    loading={savingKey === 'events_new'}
+                  />
+                  <ToggleItem
+                    label="Recordatorio 24 horas antes"
+                    description="Recordatorio el día anterior al evento"
+                    checked={isFullyEnabled && preferences.events_reminder_24h}
+                    onChange={() => handleToggle('events_reminder_24h')}
+                    disabled={!!savingKey}
+                    loading={savingKey === 'events_reminder_24h'}
+                  />
+                  <ToggleItem
+                    label="Recordatorio 15 minutos antes"
+                    description="Alerta inmediata antes de que comience el evento"
+                    checked={isFullyEnabled && preferences.events_reminder_15m}
+                    onChange={() => handleToggle('events_reminder_15m')}
+                    disabled={!!savingKey}
+                    loading={savingKey === 'events_reminder_15m'}
+                  />
+                  <ToggleItem
+                    label="Cambios de hora o cancelaciones"
+                    description="Avisar cuando se modifique o cancele un evento"
+                    checked={isFullyEnabled && preferences.events_changes}
+                    onChange={() => handleToggle('events_changes')}
+                    disabled={!!savingKey}
+                    loading={savingKey === 'events_changes'}
+                  />
+                </div>
+              </div>
+
+              {/* SECTOR: FINANZAS Y FACTURAS */}
+              <div className="p-3.5 rounded-2xl bg-white border border-slate-200 shadow-2xs dark:bg-white/[0.02] dark:border-white/5 space-y-2.5">
+                <div className="flex items-center gap-2 pb-1 border-b border-slate-100 dark:border-white/5 text-slate-900 dark:text-white font-bold">
+                  <PiggyBank className="size-4 text-emerald-600 dark:text-purple-400" />
+                  <span>Finanzas y facturas</span>
+                </div>
+
+                <div className="space-y-2 pt-1">
+                  <ToggleItem
+                    label="Nuevas facturas subidas"
+                    description="Aviso cuando un miembro sube una nueva factura al grupo"
+                    checked={isFullyEnabled && preferences.finance_new_invoice}
+                    onChange={() => handleToggle('finance_new_invoice')}
+                    disabled={!!savingKey}
+                    loading={savingKey === 'finance_new_invoice'}
+                  />
+                  <ToggleItem
+                    label="Aviso de vencimiento (3 días antes)"
+                    description="Alerta preventiva antes del cobro de una factura"
+                    checked={isFullyEnabled && preferences.finance_due_soon}
+                    onChange={() => handleToggle('finance_due_soon')}
+                    disabled={!!savingKey}
+                    loading={savingKey === 'finance_due_soon'}
+                  />
+                  <ToggleItem
+                    label="Cuando alguien liquida su parte"
+                    description="Aviso cuando un miembro marca su parte como pagada"
+                    checked={isFullyEnabled && preferences.finance_paid}
+                    onChange={() => handleToggle('finance_paid')}
+                    disabled={!!savingKey}
+                    loading={savingKey === 'finance_paid'}
+                  />
+                </div>
+              </div>
+
+              {/* SECTOR: COMPRAS Y HOGAR */}
+              <div className="p-3.5 rounded-2xl bg-white border border-slate-200 shadow-2xs dark:bg-white/[0.02] dark:border-white/5 space-y-2.5">
+                <div className="flex items-center gap-2 pb-1 border-b border-slate-100 dark:border-white/5 text-slate-900 dark:text-white font-bold">
+                  <ShoppingCart className="size-4 text-emerald-600 dark:text-purple-400" />
+                  <span>Compras y hogar</span>
+                </div>
+
+                <div className="space-y-2 pt-1">
+                  <ToggleItem
+                    label="Artículos urgentes en la lista de la compra"
+                    description="Aviso cuando se marque un artículo como urgente o se añadan muchos de golpe"
+                    checked={isFullyEnabled && preferences.shopping_urgent}
+                    onChange={() => handleToggle('shopping_urgent')}
+                    disabled={!!savingKey}
+                    loading={savingKey === 'shopping_urgent'}
+                  />
+                </div>
+              </div>
+
+              {/* SECTOR ORGANIZACIÓN (legacy) */}
+              <div className="p-3.5 rounded-2xl bg-white border border-slate-200 shadow-2xs dark:bg-white/[0.02] dark:border-white/5 space-y-2.5">
+                <div className="flex items-center gap-2 pb-1 border-b border-slate-100 dark:border-white/5 text-slate-900 dark:text-white font-bold">
+                  <Clock className="size-4 text-emerald-600 dark:text-purple-400" />
+                  <span>Organización general</span>
+                </div>
+
+                <div className="space-y-2 pt-1">
+                  <ToggleItem
+                    label="Eventos y reuniones (general)"
+                    description="Aviso general para eventos del calendario"
                     checked={isFullyEnabled && preferences.organizacion_events}
                     onChange={() => handleToggle('organizacion_events')}
                     disabled={!!savingKey}
                     loading={savingKey === 'organizacion_events'}
                   />
                   <ToggleItem
-                    label="Lista de compras del hogar"
-                    description="Avisar cuando un miembro añada productos urgentes o actualice la lista"
+                    label="Lista de compras (general)"
+                    description="Avisar cuando un miembro actualice la lista de compras"
                     checked={isFullyEnabled && preferences.organizacion_shopping}
                     onChange={() => handleToggle('organizacion_shopping')}
                     disabled={!!savingKey}
@@ -327,41 +477,6 @@ export function NotificationPreferencesModal({
                     onChange={() => handleToggle('fitness_nutrition')}
                     disabled={!!savingKey}
                     loading={savingKey === 'fitness_nutrition'}
-                  />
-                </div>
-              </div>
-
-              {/* SECTOR FINANZAS */}
-              <div className="p-3.5 rounded-2xl bg-white border border-slate-200 shadow-2xs dark:bg-white/[0.02] dark:border-white/5 space-y-2.5">
-                <div className="flex items-center gap-2 pb-1 border-b border-slate-100 dark:border-white/5 text-slate-900 dark:text-white font-bold">
-                  <PiggyBank className="size-4 text-emerald-600 dark:text-purple-400" />
-                  <span>Finanzas & Hucha Familiar</span>
-                </div>
-
-                <div className="space-y-2 pt-1">
-                  <ToggleItem
-                    label="Vencimiento de facturas y recibos"
-                    description="Aviso preventivo 2 días antes del cobro de una factura fija"
-                    checked={isFullyEnabled && preferences.finanzas_bills}
-                    onChange={() => handleToggle('finanzas_bills')}
-                    disabled={!!savingKey}
-                    loading={savingKey === 'finanzas_bills'}
-                  />
-                  <ToggleItem
-                    label="Alertas de techo presupuestario"
-                    description="Notificar cuando una categoría supere el 85% o el 100% mensual"
-                    checked={isFullyEnabled && preferences.finanzas_budgets}
-                    onChange={() => handleToggle('finanzas_budgets')}
-                    disabled={!!savingKey}
-                    loading={savingKey === 'finanzas_budgets'}
-                  />
-                  <ToggleItem
-                    label="Aportes a la Hucha Compartida"
-                    description="Aviso al grupo cuando alguien realiza un nuevo ingreso de ahorro"
-                    checked={isFullyEnabled && preferences.finanzas_piggy}
-                    onChange={() => handleToggle('finanzas_piggy')}
-                    disabled={!!savingKey}
-                    loading={savingKey === 'finanzas_piggy'}
                   />
                 </div>
               </div>

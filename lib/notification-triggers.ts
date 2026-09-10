@@ -407,3 +407,229 @@ export async function notifySharedMemory(params: {
     'familia_memories'
   )
 }
+
+// =========================================================================
+// E. DISPARADORES INMEDIATOS — Notificaciones Push granulares (Fase 6)
+//    Cada función mapea a una categoría de notification_preferences.
+// =========================================================================
+
+/**
+ * #1 — Tarea asignada a uno o más usuarios.
+ * Destinatarios: usuarios asignados (excluyendo al autor si se autoasigna).
+ */
+export async function notifyTaskAssigned(params: {
+  taskTitle: string
+  taskId: string
+  assignerName?: string
+  userIds: string[]
+}) {
+  const { taskTitle, taskId, assignerName, userIds } = params
+  return dispatchPush(
+    userIds,
+    {
+      title: '📋 Nueva tarea asignada',
+      body: assignerName
+        ? `${assignerName} te ha asignado la tarea: "${taskTitle}"`
+        : `Te han asignado la tarea: "${taskTitle}"`,
+      tag: `task-assigned-${taskId}`,
+      data: {
+        url: '/app?tab=organizar',
+        type: 'tasks_assigned',
+        category: 'organizacion',
+        taskId,
+      },
+    },
+    'tasks_assigned'
+  )
+}
+
+/**
+ * #3 — Tarea completada por alguien distinto al creador.
+ * Destinatario: creador de la tarea.
+ */
+export async function notifyTaskCompletedByOther(params: {
+  taskTitle: string
+  taskId: string
+  completedByName: string
+  userIds: string[]
+}) {
+  const { taskTitle, taskId, completedByName, userIds } = params
+  return dispatchPush(
+    userIds,
+    {
+      title: '✅ Tarea completada',
+      body: `${completedByName} ha completado la tarea "${taskTitle}"`,
+      tag: `task-completed-${taskId}`,
+      data: {
+        url: '/app?tab=organizar',
+        type: 'tasks_completed',
+        category: 'organizacion',
+        taskId,
+      },
+    },
+    'tasks_completed'
+  )
+}
+
+/**
+ * #4 — Nuevo evento creado en el calendario familiar.
+ * Destinatarios: miembros del grupo (excepto creador).
+ */
+export async function notifyEventCreated(params: {
+  eventTitle: string
+  eventId: string
+  creatorName?: string
+  userIds: string[]
+}) {
+  const { eventTitle, eventId, creatorName, userIds } = params
+  return dispatchPush(
+    userIds,
+    {
+      title: '🗓️ Nuevo evento en el calendario',
+      body: creatorName
+        ? `${creatorName} ha añadido "${eventTitle}" al calendario familiar`
+        : `Se ha añadido "${eventTitle}" al calendario familiar`,
+      tag: `event-new-${eventId}`,
+      data: {
+        url: '/app?tab=organizar',
+        type: 'events_new',
+        category: 'organizacion',
+        eventId,
+      },
+    },
+    'events_new'
+  )
+}
+
+/**
+ * #7 — Cambio de hora o cancelación de un evento.
+ * Destinatarios: asistentes / miembros del grupo.
+ */
+export async function notifyEventChanged(params: {
+  eventTitle: string
+  eventId: string
+  changeType: 'modified' | 'cancelled'
+  userIds: string[]
+}) {
+  const { eventTitle, eventId, changeType, userIds } = params
+  const isCancelled = changeType === 'cancelled'
+  return dispatchPush(
+    userIds,
+    {
+      title: isCancelled ? '❌ Evento cancelado' : '📅 Evento modificado',
+      body: isCancelled
+        ? `Se ha cancelado "${eventTitle}"`
+        : `Se ha modificado la hora de "${eventTitle}"`,
+      tag: `event-changed-${eventId}`,
+      data: {
+        url: '/app?tab=organizar',
+        type: 'events_changes',
+        category: 'organizacion',
+        eventId,
+      },
+    },
+    'events_changes'
+  )
+}
+
+/**
+ * #8 — Nueva factura / gasto subido.
+ * Destinatarios: miembros del grupo (excepto quien la sube).
+ */
+export async function notifyNewInvoice(params: {
+  invoiceTitle: string
+  invoiceId: string
+  amount?: number
+  uploaderName?: string
+  userIds: string[]
+}) {
+  const { invoiceTitle, invoiceId, amount, uploaderName, userIds } = params
+  const amountStr = amount ? ` (${amount.toFixed(2)} €)` : ''
+  return dispatchPush(
+    userIds,
+    {
+      title: '💰 Nueva factura subida',
+      body: uploaderName
+        ? `${uploaderName} ha subido la factura de "${invoiceTitle}"${amountStr}`
+        : `Se ha subido la factura de "${invoiceTitle}"${amountStr}`,
+      tag: `finance-new-${invoiceId}`,
+      data: {
+        url: '/app?tab=hogar',
+        type: 'finance_new_invoice',
+        category: 'finanzas',
+        invoiceId,
+      },
+    },
+    'finance_new_invoice'
+  )
+}
+
+/**
+ * #10 — Un miembro ha marcado su parte como pagada.
+ * Destinatarios: resto de miembros implicados en la factura.
+ */
+export async function notifyInvoicePaid(params: {
+  invoiceTitle: string
+  invoiceId: string
+  paidByName: string
+  userIds: string[]
+}) {
+  const { invoiceTitle, invoiceId, paidByName, userIds } = params
+  return dispatchPush(
+    userIds,
+    {
+      title: '✅ Pago registrado',
+      body: `${paidByName} ha marcado su parte de "${invoiceTitle}" como pagada`,
+      tag: `finance-paid-${invoiceId}`,
+      data: {
+        url: '/app?tab=hogar',
+        type: 'finance_paid',
+        category: 'finanzas',
+        invoiceId,
+      },
+    },
+    'finance_paid'
+  )
+}
+
+/**
+ * #11 — Artículo urgente o inserción masiva en la lista de la compra.
+ * Destinatarios: miembros del grupo (excepto quien añade).
+ */
+export async function notifyShoppingUrgent(params: {
+  productName?: string
+  itemCount?: number
+  authorName?: string
+  userIds: string[]
+}) {
+  const { productName, itemCount, authorName, userIds } = params
+
+  // Decidir mensaje según si es un artículo urgente individual o inserción masiva
+  let body: string
+  if (itemCount && itemCount > 5) {
+    body = authorName
+      ? `${authorName} ha añadido ${itemCount} artículos a la lista de la compra`
+      : `Se han añadido ${itemCount} artículos a la lista de la compra`
+  } else if (productName) {
+    body = authorName
+      ? `${authorName} ha marcado "${productName}" como urgente en la lista de la compra`
+      : `"${productName}" marcado como urgente en la lista de la compra`
+  } else {
+    body = 'La lista de la compra se ha actualizado con artículos urgentes'
+  }
+
+  return dispatchPush(
+    userIds,
+    {
+      title: '🛒 Lista de la compra actualizada',
+      body,
+      tag: 'shopping-urgent',
+      data: {
+        url: '/app?tab=organizar',
+        type: 'shopping_urgent',
+        category: 'organizacion',
+      },
+    },
+    'shopping_urgent'
+  )
+}

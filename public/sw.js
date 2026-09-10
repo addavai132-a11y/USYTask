@@ -7,11 +7,13 @@ self.addEventListener('activate', (event) => {
 })
 
 self.addEventListener('push', (event) => {
+  if (!event.data) return
+
   let data = {}
   try {
-    data = event.data ? event.data.json() : {}
+    data = event.data.json()
   } catch {
-    data = { title: 'USYTask', body: event.data ? event.data.text() : '' }
+    data = { title: 'USYTask', body: event.data.text() }
   }
 
   const title = data.title || 'USYTask / Life OS'
@@ -19,13 +21,16 @@ self.addEventListener('push', (event) => {
     body: data.body || 'Tienes una nueva actualización en tu espacio.',
     icon: data.icon || '/icon-192x192.png',
     badge: data.badge || '/icon-192x192.png',
-    tag: data.tag || `usyatask-${Date.now()}`,
+    tag: data.tag || `usytask-${data.category || data.data?.type || 'general'}-${Date.now()}`,
     renotify: true,
-    vibrate: [100, 50, 100],
+    vibrate: [200, 100, 200],
     data: {
       url: data.data?.url || data.url || '/app',
+      category: data.category || data.data?.category,
+      referenceId: data.referenceId || data.data?.referenceId,
       ...data.data,
     },
+    actions: data.actions || [],
   }
 
   event.waitUntil(self.registration.showNotification(title, options))
@@ -51,5 +56,21 @@ self.addEventListener('notificationclick', (event) => {
         return clients.openWindow(targetUrl)
       }
     })
+  )
+})
+
+// Renovación automática de la suscripción cuando el navegador la invalida
+// (importante: ocurre con cierta frecuencia en Android/Chrome)
+self.addEventListener('pushsubscriptionchange', (event) => {
+  event.waitUntil(
+    self.registration.pushManager
+      .subscribe(event.oldSubscription ? event.oldSubscription.options : { userVisibleOnly: true })
+      .then((subscription) =>
+        fetch('/api/push/subscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ subscription: subscription.toJSON() }),
+        })
+      )
   )
 })
