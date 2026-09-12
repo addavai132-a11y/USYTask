@@ -16,12 +16,15 @@ import {
   RefreshCw,
   Copy,
   Check,
+  Smartphone,
+  ExternalLink,
 } from 'lucide-react'
 import { UsyTaskLogo } from '@/components/ui/usytask-logo'
 import { createClient } from '@/lib/supabase'
 import { getHouseholdDetails, joinHousehold } from '@/app/actions/household'
 import { useToast } from '@/components/ui/toast'
 import { syncFromSupabaseCloud } from '@/lib/cloud-sync'
+import { getStoredSession } from '@/lib/user-session'
 
 /**
  * Limpia y normaliza el identificador de la familia para evitar fallos si
@@ -32,7 +35,6 @@ function extractHouseholdId(raw: string | null | undefined): string {
   let val = raw.trim()
   if (!val) return ''
 
-  // Si contiene formato de URL o path
   if (val.includes('/join/')) {
     val = val.split('/join/')[1]?.split('?')[0]?.split('#')[0] || val
   }
@@ -55,7 +57,7 @@ export function JoinInvitationContent({ paramHouseholdId }: { paramHouseholdId?:
   const searchParams = useSearchParams()
   const { toast } = useToast()
 
-  // 1. Leer el household_id desde params o searchParams (con soporte para múltiples alias)
+  // Leer household_id desde props (ruta /join/[id]) o searchParams (/join?household_id=...)
   const rawSearchId =
     searchParams?.get('household_id') ||
     searchParams?.get('h') ||
@@ -67,11 +69,13 @@ export function JoinInvitationContent({ paramHouseholdId }: { paramHouseholdId?:
   const householdId = extractHouseholdId(paramHouseholdId || rawSearchId)
 
   const [loading, setLoading] = useState(true)
+  const [isStandalone, setIsStandalone] = useState(true)
   const [householdName, setHouseholdName] = useState<string>('')
   const [resolvedId, setResolvedId] = useState<string>('')
   const [currentUser, setCurrentUser] = useState<any>(null)
   const [alreadyMember, setAlreadyMember] = useState(false)
-  
+  const [needsAuth, setNeedsAuth] = useState(false)
+
   // Errores de carga inicial (ej: ID no existe)
   const [loadError, setLoadError] = useState<{
     code?: string
@@ -79,7 +83,7 @@ export function JoinInvitationContent({ paramHouseholdId }: { paramHouseholdId?:
     details?: string
   } | null>(null)
 
-  // Errores específicos ocurridos durante la acción de unirse (INSERT)
+  // Errores específicos durante el INSERT
   const [joinError, setJoinError] = useState<{
     code?: string
     message: string
@@ -91,7 +95,18 @@ export function JoinInvitationContent({ paramHouseholdId }: { paramHouseholdId?:
   const [joinedSuccess, setJoinedSuccess] = useState(false)
   const [copiedError, setCopiedError] = useState(false)
 
-  // Verificación de autenticación y carga de la familia
+  // 1. Detectar si se está ejecutando dentro de la PWA instalada (standalone) o en el navegador móvil
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const standaloneMode =
+        window.matchMedia('(display-mode: standalone)').matches ||
+        (window.navigator as any).standalone === true ||
+        document.referrer.includes('android-app://')
+      setIsStandalone(Boolean(standaloneMode))
+    }
+  }, [])
+
+  // 2. Verificación de autenticación y carga de datos de la familia
   useEffect(() => {
     let isMounted = true
 
@@ -108,29 +123,42 @@ export function JoinInvitationContent({ paramHouseholdId }: { paramHouseholdId?:
       try {
         const supabase = createClient()
 
-        // 1. Verificar si el usuario está autenticado en Supabase
+        // Comprobar sesión de Supabase Auth
         const {
-          data: { user },
-          error: authError,
+          data: { user: supabaseUser },
         } = await supabase.auth.getUser()
 
-        if (authError || !user) {
-          // Redirigir a login guardando el parámetro exacto para regresar tras iniciar sesión
-          const currentPath = `/join?household_id=${encodeURIComponent(householdId)}`
-          router.replace(`/login?next=${encodeURIComponent(currentPath)}`)
+        const localUser = getStoredSession()
+        const activeUser = supabaseUser || (localUser ? { id: localUser.id, email: localUser.email, user_metadata: { full_name: localUser.fullName, name: localUser.fullName, username: localUser.username } } : null)
+
+        // Si no hay ningún usuario autenticado
+        if (!activeUser) {
+          if (!isMounted) return
+          setNeedsAuth(true)
+          setLoading(false)
+
+          // Prevenir bucle infinito (flickering): comprobar si ya se redirigió hace menos de 3 segundos
+          const lastRedirect = sessionStorage.getItem('usytask_join_redirect_ts')
+          const now = Date.now()
+          if (!lastRedirect || now - Number(lastRedirect) > 3000) {
+            sessionStorage.setItem('usytask_join_redirect_ts', String(now))
+            const currentPath = `/join?household_id=${encodeURIComponent(householdId)}`
+            router.replace(`/login?next=${encodeURIComponent(currentPath)}`)
+          }
           return
         }
 
         if (!isMounted) return
-        setCurrentUser(user)
+        setCurrentUser(activeUser)
+        setNeedsAuth(false)
 
-        // Obtener access token para que la consulta al server respete auth.uid() en RLS
+        // Obtener el access token si existe
         const {
           data: { session },
         } = await supabase.auth.getSession()
         const token = session?.access_token
 
-        // 2. Obtener el nombre REAL de la familia en Supabase
+        // Obtener los detalles del hogar en Supabase
         const details = await getHouseholdDetails(householdId, token)
 
         if (!isMounted) return
@@ -148,7 +176,6 @@ export function JoinInvitationContent({ paramHouseholdId }: { paramHouseholdId?:
         setHouseholdName(details.household.name)
         setResolvedId(details.household.id)
 
-        // 3. Verificar si el usuario ya pertenece a esta familia
         if (details.isMember) {
           setAlreadyMember(true)
         }
@@ -157,7 +184,7 @@ export function JoinInvitationContent({ paramHouseholdId }: { paramHouseholdId?:
         if (isMounted) {
           setLoadError({
             code: 'EXCEPTION',
-            message: err?.message || 'Error de conexión al procesar la invitación.',
+            message: err?.message || 'Error al conectar con el servidor.',
           })
         }
       } finally {
@@ -174,7 +201,7 @@ export function JoinInvitationContent({ paramHouseholdId }: { paramHouseholdId?:
     }
   }, [householdId, router])
 
-  // Ejecutar el Server Action de unión con reporte exacto de errores
+  // 3. Ejecutar el Server Action de unión a la familia
   const handleAcceptJoin = async () => {
     const targetId = resolvedId || householdId
     if (!targetId) return
@@ -185,26 +212,25 @@ export function JoinInvitationContent({ paramHouseholdId }: { paramHouseholdId?:
     try {
       const supabase = createClient()
 
-      // Re-verificar autenticación antes del INSERT
+      // Verificar que el usuario sigue autenticado antes de insertar
       const {
         data: { user: verifiedUser },
-        error: verifyError,
       } = await supabase.auth.getUser()
 
-      if (verifyError || !verifiedUser) {
+      const localUser = getStoredSession()
+      if (!verifiedUser && !localUser) {
         toast('Debes iniciar sesión para unirte a la familia.', '🔒')
         const currentPath = `/join?household_id=${encodeURIComponent(targetId)}`
         router.replace(`/login?next=${encodeURIComponent(currentPath)}`)
         return
       }
 
-      // Obtener el JWT activo
       const {
         data: { session },
       } = await supabase.auth.getSession()
       const token = session?.access_token
 
-      // Ejecutar Server Action pasando token de autenticación
+      // Llamada al Server Action
       const res = await joinHousehold(targetId, token)
 
       if (!res.success) {
@@ -220,10 +246,9 @@ export function JoinInvitationContent({ paramHouseholdId }: { paramHouseholdId?:
           return
         }
 
-        // Registrar el error exacto de Supabase para mostrar en la interfaz
         const errObj = {
           code: res.errorCode || 'UNKNOWN',
-          message: res.errorMessage || res.error || 'Error al procesar el INSERT en la base de datos.',
+          message: res.errorMessage || res.error || 'Error al procesar la unión a la familia.',
           details: res.errorDetails,
           hint: res.errorHint,
         }
@@ -233,7 +258,7 @@ export function JoinInvitationContent({ paramHouseholdId }: { paramHouseholdId?:
         return
       }
 
-      // Éxito
+      // Éxito en la unión
       setJoinedSuccess(true)
       toast(res.message || `¡Bienvenido a ${householdName}!`, '🎉')
 
@@ -241,6 +266,7 @@ export function JoinInvitationContent({ paramHouseholdId }: { paramHouseholdId?:
         await syncFromSupabaseCloud()
       } catch {}
 
+      // Redirigir a la aplicación principal (/app)
       setTimeout(() => {
         router.replace('/app')
       }, 1200)
@@ -269,7 +295,7 @@ export function JoinInvitationContent({ paramHouseholdId }: { paramHouseholdId?:
     setTimeout(() => setCopiedError(false), 2000)
   }
 
-  // 1. Estado de carga inicial
+  // A) Estado de carga inicial
   if (loading) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center p-6 text-center">
@@ -277,14 +303,47 @@ export function JoinInvitationContent({ paramHouseholdId }: { paramHouseholdId?:
           <UsyTaskLogo size="md" />
           <div className="flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-4 py-2 text-xs font-bold text-primary">
             <Loader2 className="size-4 animate-spin" />
-            <span>Verificando autenticación y familia...</span>
+            <span>Verificando invitación y familia...</span>
           </div>
         </div>
       </div>
     )
   }
 
-  // 2. Estado de error de carga inicial (ej: ID inexistente o RLS al hacer SELECT)
+  // B) Si no está autenticado y se evitó el bucle de redirección
+  if (needsAuth && !currentUser) {
+    const currentPath = `/join?household_id=${encodeURIComponent(householdId)}`
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center p-4 sm:p-6 text-center">
+        <div className="w-full max-w-md rounded-3xl border border-primary/30 bg-card p-6 sm:p-8 shadow-xl">
+          <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-primary/10 text-primary mb-4">
+            <Users className="size-7" />
+          </div>
+          <h2 className="text-xl font-black text-foreground">Inicia Sesión para Unirte</h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Has recibido una invitación familiar. Inicia sesión o crea tu cuenta en USYTask para unirte al hogar.
+          </p>
+          <div className="mt-6 flex flex-col gap-2.5">
+            <Link
+              href={`/login?next=${encodeURIComponent(currentPath)}`}
+              className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-primary text-sm font-bold text-primary-foreground shadow-soft transition-transform active:scale-95"
+            >
+              <span>Iniciar Sesión</span>
+              <ArrowRight className="size-4" />
+            </Link>
+            <Link
+              href={`/register?next=${encodeURIComponent(currentPath)}`}
+              className="py-2 text-xs font-bold text-muted-foreground hover:text-foreground transition-colors"
+            >
+              ¿No tienes cuenta? Regístrate gratis
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // C) Estado de error de carga inicial
   if (loadError && !joinedSuccess) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center p-4 sm:p-6 text-center">
@@ -302,12 +361,6 @@ export function JoinInvitationContent({ paramHouseholdId }: { paramHouseholdId?:
             <p className="mt-2 text-xs font-mono text-muted-foreground bg-secondary/70 p-2 rounded-xl text-left break-all">
               {loadError.details}
             </p>
-          )}
-
-          {loadError.code === '42501' && (
-            <div className="mt-3 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-300 text-xs text-left font-medium">
-              ⚠️ <strong>Error de políticas RLS:</strong> La tabla <code>households</code> no permite lectura pública o a usuarios autenticados. Ejecuta la política SELECT en Supabase.
-            </div>
           )}
 
           <div className="mt-6 flex flex-col gap-3">
@@ -330,7 +383,7 @@ export function JoinInvitationContent({ paramHouseholdId }: { paramHouseholdId?:
     )
   }
 
-  // 3. Estado de éxito tras unirse
+  // D) Estado de éxito tras unirse
   if (joinedSuccess) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center p-4 sm:p-6 text-center animate-fade-in">
@@ -357,7 +410,7 @@ export function JoinInvitationContent({ paramHouseholdId }: { paramHouseholdId?:
     )
   }
 
-  // 4. Estado: Ya es miembro de la familia
+  // E) Ya es miembro de la familia
   if (alreadyMember) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center p-4 sm:p-6 text-center animate-fade-in">
@@ -389,7 +442,7 @@ export function JoinInvitationContent({ paramHouseholdId }: { paramHouseholdId?:
     )
   }
 
-  // 5. Pantalla Principal de Aceptación de Invitación
+  // F) Pantalla Principal de Aceptación de Invitación
   const userName =
     currentUser?.user_metadata?.full_name ||
     currentUser?.user_metadata?.name ||
@@ -407,6 +460,33 @@ export function JoinInvitationContent({ paramHouseholdId }: { paramHouseholdId?:
 
       {/* Tarjeta de Aceptación */}
       <div className="w-full max-w-md my-auto rounded-[32px] border border-emerald-500/30 bg-card p-6 sm:p-8 shadow-2xl flex flex-col items-center text-center">
+        
+        {/* BANNER DE APERTURA NATIVA EN PWA (si se abre en navegador web) */}
+        {!isStandalone && (
+          <div className="w-full mb-4 p-3 rounded-2xl bg-purple-500/10 border border-purple-500/20 text-purple-400 text-xs flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 text-left">
+              <Smartphone className="size-4 text-purple-400 shrink-0" />
+              <span className="text-[11px] font-semibold leading-tight">
+                ¿Tienes la app instalada en tu móvil?
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                const url = window.location.href
+                if (typeof navigator !== 'undefined' && (navigator as any).share) {
+                  navigator.share({ title: 'Invitación USYTask', url })
+                } else {
+                  window.location.reload()
+                }
+              }}
+              className="rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-bold text-[10px] px-2.5 py-1 transition-transform active:scale-95 shrink-0"
+            >
+              Abrir en App
+            </button>
+          </div>
+        )}
+
         <div className="flex size-14 items-center justify-center rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 mb-3">
           <Users className="size-7" />
         </div>
@@ -419,7 +499,7 @@ export function JoinInvitationContent({ paramHouseholdId }: { paramHouseholdId?:
           Has sido invitado a unirte a
         </p>
 
-        {/* Nombre REAL de la familia obtenido de Supabase */}
+        {/* Nombre REAL de la familia */}
         <h1 className="text-2xl sm:text-3xl font-black text-foreground mt-1 text-balance">
           {householdName}
         </h1>
@@ -428,7 +508,7 @@ export function JoinInvitationContent({ paramHouseholdId }: { paramHouseholdId?:
           Comparte tareas del hogar, listas de la compra, calendario familiar y finanzas en tiempo real.
         </p>
 
-        {/* Identidad del usuario autenticado */}
+        {/* Usuario actual */}
         <div className="w-full mt-5 rounded-2xl border border-border bg-secondary/50 p-3.5 flex items-center gap-3 text-left">
           <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary font-black text-sm">
             {userName.charAt(0).toUpperCase()}
@@ -440,7 +520,7 @@ export function JoinInvitationContent({ paramHouseholdId }: { paramHouseholdId?:
           <UserCheck className="size-4 text-emerald-500 shrink-0" />
         </div>
 
-        {/* ALERTA ROJA DESTACADA EN CASO DE ERROR DE SUPABASE / RLS */}
+        {/* ALERTA ROJA EN CASO DE ERROR DE SUPABASE / RLS */}
         {joinError && (
           <div className="w-full mt-4 p-4 rounded-2xl border border-destructive/40 bg-destructive/10 text-left text-destructive animate-in fade-in zoom-in-95 duration-200">
             <div className="flex items-start gap-2.5">
@@ -475,12 +555,6 @@ export function JoinInvitationContent({ paramHouseholdId }: { paramHouseholdId?:
                   <p className="mt-1 text-[10px] opacity-80">
                     <strong>Sugerencia:</strong> {joinError.hint}
                   </p>
-                )}
-
-                {joinError.code === '42501' && (
-                  <div className="mt-2.5 p-2 rounded-xl bg-destructive/20 border border-destructive/30 text-[11px] font-medium text-foreground">
-                    ⚠️ <strong>Causa identificada:</strong> Faltan permisos de Row Level Security (RLS) en Supabase para <code>household_members</code>. Ejecuta la sentencia SQL <code>CREATE POLICY ... FOR INSERT ... WITH CHECK (auth.uid() = user_id)</code> en el SQL Editor.
-                  </div>
                 )}
               </div>
             </div>

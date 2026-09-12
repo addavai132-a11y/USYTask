@@ -11,10 +11,12 @@ import {
  * Initiates Google OAuth login via Supabase Auth.
  * Includes queryParams: { prompt: 'select_account' } to force account selection even if logged in.
  */
-export async function handleGoogleAuth() {
+export async function handleGoogleAuth(nextTarget?: string) {
   const supabase = createClient()
   const origin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000'
-  const redirectUrl = `${origin}/auth/callback`
+  const redirectUrl = nextTarget
+    ? `${origin}/auth/callback?next=${encodeURIComponent(nextTarget)}`
+    : `${origin}/auth/callback`
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',

@@ -33,39 +33,44 @@ function LoginContent() {
           router.replace(nextTarget || '/app')
           return
         }
-        const session = getStoredSession()
+
         const supabase = createClient()
-        const { data: sessionData, error } = await supabase.auth.getSession()
+        const { data: sessionData } = await supabase.auth.getSession()
+        const storedUser = getStoredSession()
+        const hasActiveSession = Boolean(sessionData?.session?.user || storedUser)
 
-        if (error) {
-          console.warn('Error fetching Supabase session on login:', error)
-          throw error
-        }
+        if (hasActiveSession) {
+          // Si el usuario viene de un enlace de invitación (/join), respetar 'next' prioritariamente
+          if (nextTarget && nextTarget.startsWith('/join')) {
+            router.replace(nextTarget)
+            return
+          }
 
-        if (session || sessionData?.session?.user) {
           try {
             await syncFromSupabaseCloud()
             const { hasFamily } = await getUserFamilyStatus()
-            
-            // Prevent redirecting to login page if they are already on it or if nextTarget is login
-            const finalTarget = (nextTarget && nextTarget !== '/login' && nextTarget !== '/') ? nextTarget : '/app'
-            
-            if (hasFamily) {
-              router.replace(finalTarget)
-            } else {
-              router.replace('/onboarding')
-            }
+
+            const finalTarget =
+              nextTarget && nextTarget !== '/login' && nextTarget !== '/'
+                ? nextTarget
+                : hasFamily
+                ? '/app'
+                : '/onboarding'
+
+            router.replace(finalTarget)
           } catch {
-            const finalTarget = (nextTarget && nextTarget !== '/login' && nextTarget !== '/') ? nextTarget : '/app'
+            const finalTarget =
+              nextTarget && nextTarget !== '/login' && nextTarget !== '/'
+                ? nextTarget
+                : '/app'
             router.replace(finalTarget)
           }
         }
       } catch (err) {
         console.error('Error in login session verification:', err)
-        // Fallback: stay on login page
       }
     }
-    
+
     checkSessionAndFamily()
 
     return () => {
@@ -82,8 +87,9 @@ function LoginContent() {
     setError('')
     setGoogleLoading(true)
     try {
-      await handleGoogleAuth()
-    } catch (err) {
+      // Pasar nextTarget para que Supabase OAuth redirija de vuelta a /join tras autenticar
+      await handleGoogleAuth(nextTarget || undefined)
+    } catch (err: any) {
       setGoogleLoading(false)
       setError('Error al conectar con Google. Por favor intenta de nuevo.')
     }
@@ -101,22 +107,49 @@ function LoginContent() {
     setLoading(true)
 
     try {
-      // Find user or create active session
-      let user = findUserByEmail(email)
-      if (!user) {
-        user = {
-          id: generateUserId(),
-          fullName: email.split('@')[0],
-          username: email.split('@')[0],
-          dateOfBirth: '1996-01-01',
-          email: email.trim(),
+      const supabase = createClient()
+
+      // 1. Intentar iniciar sesión real en Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      })
+
+      if (!authError && authData.user) {
+        const u = authData.user
+        setStoredSession({
+          id: u.id,
+          fullName: u.user_metadata?.full_name || u.email?.split('@')[0] || 'Usuario',
+          username: u.user_metadata?.username || u.email?.split('@')[0] || 'usuario',
+          dateOfBirth: u.user_metadata?.date_of_birth || '1996-01-01',
+          email: u.email || email.trim(),
           authProvider: 'email',
           profileCompleted: true,
-          createdAt: new Date().toISOString(),
+          createdAt: u.created_at,
+        })
+      } else {
+        // Fallback: buscar usuario en almacén local
+        let user = findUserByEmail(email)
+        if (!user) {
+          user = {
+            id: generateUserId(),
+            fullName: email.split('@')[0],
+            username: email.split('@')[0],
+            dateOfBirth: '1996-01-01',
+            email: email.trim(),
+            authProvider: 'email',
+            profileCompleted: true,
+            createdAt: new Date().toISOString(),
+          }
         }
+        setStoredSession(user)
       }
 
-      setStoredSession(user)
+      // 2. Determinar destino de redirección respetando 'next'
+      if (nextTarget && nextTarget.startsWith('/join')) {
+        router.replace(nextTarget)
+        return
+      }
 
       let hasFamily = false
       try {
@@ -129,8 +162,10 @@ function LoginContent() {
 
       setTimeout(() => {
         setLoading(false)
-        if (hasFamily) {
-          router.replace(nextTarget || '/app')
+        if (nextTarget && nextTarget !== '/login' && nextTarget !== '/') {
+          router.replace(nextTarget)
+        } else if (hasFamily) {
+          router.replace('/app')
         } else {
           router.replace('/onboarding')
         }
@@ -161,123 +196,123 @@ function LoginContent() {
         </Link>
       </div>
 
-      {/* Floating Central Dark Glass Card */}
+      {/* Main Card */}
       <div className="relative z-10 mx-auto w-full max-w-md my-auto">
-        <div className="rounded-3xl border border-purple-500/20 bg-[#0e0d1d]/75 p-6 sm:p-8 backdrop-blur-2xl shadow-2xl shadow-black/80 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]">
-          <div className="mb-6 flex flex-col items-center text-center">
-            <UsyTaskLogo size="lg" showSubtitle className="mb-3" />
-            <h1 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl mt-1">
+        <div className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur-xl p-6 sm:p-8 shadow-2xl shadow-purple-950/20">
+          <div className="space-y-1.5 mb-6">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
               Bienvenido de nuevo
             </h1>
-            <p className="mt-1 text-xs font-medium text-slate-400">
-              Todo sigue exactamente donde lo dejaste.
+            <p className="text-xs sm:text-sm text-slate-400">
+              {nextTarget?.startsWith('/join')
+                ? 'Inicia sesión para unirte a la familia compartida'
+                : 'Introduce tus datos para acceder a tu hogar'}
             </p>
           </div>
 
-          {/* Botón Google */}
-          <button
-            type="button"
-            onClick={handleGoogleLogin}
-            disabled={googleLoading}
-            className="flex h-12 w-full items-center justify-center gap-3 rounded-xl border border-white/10 bg-black/40 font-semibold text-slate-200 shadow-sm transition-all active:scale-[0.98] hover:border-purple-500/30 hover:bg-white/[0.04]"
-          >
-            <GoogleIcon className="size-5 shrink-0" />
-            <span className="text-xs">{googleLoading ? 'Conectando...' : 'Continuar con Google'}</span>
-          </button>
-
-          {/* Separador */}
-          <div className="my-5 flex items-center gap-3">
-            <div className="h-[1px] flex-1 bg-white/10" />
-            <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">
-              o inicia sesión con email
-            </span>
-            <div className="h-[1px] flex-1 bg-white/10" />
-          </div>
-
           {error && (
-            <div className="mb-4 rounded-xl bg-rose-500/10 border border-rose-500/20 p-3 text-center text-xs font-bold text-rose-400 animate-fade-in">
+            <div className="mb-4 rounded-xl border border-rose-500/20 bg-rose-500/10 p-3 text-xs text-rose-300 font-medium animate-shake">
               {error}
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            {/* Email */}
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="login-email" className="text-xs font-semibold text-slate-400">
+          {/* Social Logins */}
+          <div className="space-y-3 mb-6">
+            <button
+              type="button"
+              onClick={handleGoogleLogin}
+              disabled={googleLoading}
+              className="w-full flex items-center justify-center gap-3 rounded-2xl border border-white/10 bg-white/5 py-3 px-4 text-xs sm:text-sm font-semibold text-white transition-all duration-200 hover:bg-white/10 hover:border-white/20 active:scale-[0.99] disabled:opacity-50"
+            >
+              {googleLoading ? (
+                <div className="size-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+              ) : (
+                <GoogleIcon className="size-4" />
+              )}
+              <span>Continuar con Google</span>
+            </button>
+          </div>
+
+          <div className="relative my-6 text-center">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-white/10" />
+            </div>
+            <span className="relative bg-[#0b0b14] px-3 text-[11px] font-medium uppercase tracking-wider text-slate-500">
+              O con tu email
+            </span>
+          </div>
+
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-300">
                 Correo electrónico
               </label>
               <div className="relative">
-                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-slate-500" />
                 <input
-                  id="login-email"
-                  name="email"
                   type="email"
-                  autoComplete="username email"
-                  required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="tu@email.com"
-                  className="w-full rounded-xl border border-white/10 bg-black/50 py-2.5 pl-10 pr-4 text-xs font-semibold text-white placeholder:text-slate-500 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500/40 transition-all"
+                  placeholder="ejemplo@correo.com"
+                  required
+                  className="w-full rounded-2xl border border-white/10 bg-white/5 py-3 pl-10 pr-4 text-sm text-white placeholder:text-slate-500 focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500 transition-colors"
                 />
+                <Mail className="absolute left-3.5 top-3.5 size-4 text-slate-400" />
               </div>
             </div>
 
-            {/* Password */}
-            <div className="flex flex-col gap-1.5">
-              <div className="flex items-center justify-between">
-                <label htmlFor="login-password" className="text-xs font-semibold text-slate-400">
+            <div className="space-y-1.5">
+              <div className="flex justify-between items-center">
+                <label className="text-xs font-semibold text-slate-300">
                   Contraseña
                 </label>
                 <Link
                   href="/forgot-password"
-                  className="text-[11px] font-semibold text-purple-400 hover:text-purple-300 hover:underline transition-colors"
+                  className="text-[11px] text-purple-400 hover:text-purple-300 transition-colors"
                 >
-                  ¿Has olvidado tu contraseña?
+                  ¿Olvidaste tu contraseña?
                 </Link>
               </div>
               <div className="relative">
-                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-slate-500" />
                 <input
-                  id="login-password"
-                  name="password"
                   type="password"
-                  autoComplete="current-password"
-                  required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full rounded-xl border border-white/10 bg-black/50 py-2.5 pl-10 pr-4 text-xs font-semibold text-white placeholder:text-slate-500 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500/40 transition-all"
+                  required
+                  className="w-full rounded-2xl border border-white/10 bg-white/5 py-3 pl-10 pr-4 text-sm text-white placeholder:text-slate-500 focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500 transition-colors"
                 />
+                <Lock className="absolute left-3.5 top-3.5 size-4 text-slate-400" />
               </div>
             </div>
 
-            {/* Submit button */}
             <button
               type="submit"
               disabled={loading}
-              className="mt-2 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 font-semibold text-white shadow-lg shadow-purple-950/60 transition-all active:scale-[0.98] hover:from-purple-500 hover:to-indigo-500 hover:shadow-purple-600/30 disabled:opacity-50"
+              className="w-full flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 py-3.5 px-4 text-sm font-semibold text-white shadow-lg shadow-purple-900/30 hover:shadow-purple-900/50 hover:brightness-110 active:scale-[0.99] transition-all duration-200 disabled:opacity-50 mt-2"
             >
-              <span className="text-xs">{loading ? 'Iniciando sesión...' : 'Iniciar sesión'}</span>
-              <ArrowRight className="size-4" />
+              {loading ? (
+                <div className="size-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+              ) : (
+                <>
+                  <span>Iniciar sesión</span>
+                  <ArrowRight className="size-4" />
+                </>
+              )}
             </button>
           </form>
-
-          {/* Footer Link */}
-          <div className="mt-6 text-center text-xs font-medium text-slate-400 pt-4 border-t border-white/10">
-            ¿No tienes cuenta?{' '}
-            <Link
-              href={nextTarget ? `/register?next=${encodeURIComponent(nextTarget)}` : '/register'}
-              className="font-semibold text-purple-400 hover:underline"
-            >
-              Crear cuenta gratis
-            </Link>
-          </div>
         </div>
       </div>
 
-      {/* Footer */}
-      <div className="relative z-10 mx-auto w-full max-w-md text-center text-[11px] font-medium text-slate-500 pt-6">
-        USYTask — Universal System for Tasks
+      {/* Bottom Footer */}
+      <div className="relative z-10 mx-auto w-full max-w-md pt-6 text-center text-xs text-slate-500">
+        ¿No tienes cuenta?{' '}
+        <Link
+          href={nextTarget ? `/register?next=${encodeURIComponent(nextTarget)}` : '/register'}
+          className="font-semibold text-purple-400 hover:text-purple-300 transition-colors"
+        >
+          Regístrate gratis
+        </Link>
       </div>
     </div>
   )
@@ -287,11 +322,8 @@ export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center bg-[#05050a] text-white">
-          <div className="flex flex-col items-center gap-3">
-            <UsyTaskLogo size="md" />
-            <p className="text-xs font-semibold text-slate-400 animate-pulse">Cargando...</p>
-          </div>
+        <div className="min-h-screen bg-[#05050a] flex items-center justify-center">
+          <div className="size-6 animate-spin rounded-full border-2 border-purple-500 border-t-transparent" />
         </div>
       }
     >
