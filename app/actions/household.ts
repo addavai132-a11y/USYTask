@@ -2,10 +2,15 @@
 
 import { createClient } from '@/lib/supabase-server'
 import { createAdminClient } from '@/lib/supabase-admin'
+import { createClient as createSupabaseJsClient } from '@supabase/supabase-js'
 
 export interface JoinHouseholdResult {
   success: boolean
   error?: string
+  errorCode?: string
+  errorMessage?: string
+  errorDetails?: string
+  errorHint?: string
   message?: string
   alreadyMember?: boolean
   requiresAuth?: boolean
@@ -16,6 +21,10 @@ export interface JoinHouseholdResult {
 export interface HouseholdDetailsResult {
   success: boolean
   error?: string
+  errorCode?: string
+  errorMessage?: string
+  errorDetails?: string
+  errorHint?: string
   household?: {
     id: string
     name: string
@@ -26,50 +35,131 @@ export interface HouseholdDetailsResult {
 export interface UserHouseholdResult {
   success: boolean
   error?: string
+  errorCode?: string
+  errorMessage?: string
   householdId?: string
   householdName?: string
 }
 
 /**
  * Obtiene el cliente Supabase adecuado:
- * Utiliza service_role si está configurado para evitar bloqueos por RLS,
- * o el cliente de servidor autenticado en su defecto.
+ * 1. Si se proporciona accessToken, crea cliente autenticado con Bearer token.
+ * 2. Si hay SUPABASE_SERVICE_ROLE_KEY, crea cliente privilegiado.
+ * 3. En su defecto, utiliza createClient() basado en cookies de next/headers.
  */
-async function getDbClient() {
+async function resolveSupabaseClient(accessToken?: string) {
+  const supabaseUrl = (process.env.NEXT_PUBLIC_SUPABASE_URL || '').trim()
+  const supabaseKey = (
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+    ''
+  ).trim()
+
+  // 1. Si viene accessToken del cliente, usarlo directamente para que auth.uid() en Postgres sea exacto
+  if (accessToken && typeof accessToken === 'string' && accessToken.length > 20) {
+    try {
+      const userClient = createSupabaseJsClient(supabaseUrl, supabaseKey, {
+        auth: {
+          persistSession: false,
+          autoRefreshToken: false,
+        },
+        global: {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        },
+      })
+      const { data: userData, error: userError } = await userClient.auth.getUser(accessToken)
+      if (!userError && userData?.user) {
+        return { client: userClient, user: userData.user, authMethod: 'bearer' as const }
+      }
+    } catch (e) {
+      console.warn('[resolveSupabaseClient] Fallo al autenticar con Bearer token:', e)
+    }
+  }
+
+  // 2. Cliente de servidor basado en cookies
   const serverClient = await createClient()
+  const {
+    data: { user: cookieUser },
+  } = await serverClient.auth.getUser()
+
+  // 3. Si hay service role key configurada, podemos usarla para operaciones seguras
   if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
     try {
-      const admin = createAdminClient()
-      return { client: admin, isPrivileged: true, serverClient }
+      const adminClient = createAdminClient()
+      return {
+        client: adminClient,
+        user: cookieUser || null,
+        authMethod: 'admin' as const,
+        serverClient,
+      }
     } catch {
       // Fallback a cliente autenticado
     }
   }
-  return { client: serverClient, isPrivileged: false, serverClient }
+
+  return {
+    client: serverClient,
+    user: cookieUser || null,
+    authMethod: 'cookie' as const,
+    serverClient,
+  }
+}
+
+/**
+ * Formatea un error de Supabase/Postgrest con código, mensaje, detalles y sugerencias.
+ */
+function formatSupabaseError(error: any): {
+  formatted: string
+  code: string
+  message: string
+  details?: string
+  hint?: string
+} {
+  const code = String(error?.code || 'UNKNOWN')
+  const message = String(error?.message || 'Error desconocido de Supabase')
+  const details = error?.details ? String(error.details) : undefined
+  const hint = error?.hint ? String(error.hint) : undefined
+
+  let formatted = `[${code}] ${message}`
+  if (details) formatted += ` — Detalles: ${details}`
+  if (hint) formatted += ` — Sugerencia: ${hint}`
+
+  return { formatted, code, message, details, hint }
 }
 
 /**
  * Obtiene los detalles de un hogar / familia dado su ID.
  */
-export async function getHouseholdDetails(householdId: string): Promise<HouseholdDetailsResult> {
+export async function getHouseholdDetails(
+  householdId: string,
+  accessToken?: string
+): Promise<HouseholdDetailsResult> {
   if (!householdId || typeof householdId !== 'string') {
-    return { success: false, error: 'ID de familia no válido o ausente' }
+    return {
+      success: false,
+      error: '[INVALID_ID] ID de familia no proporcionado o vacío.',
+      errorCode: 'INVALID_ID',
+      errorMessage: 'ID de familia no válido.',
+    }
   }
 
+  const cleanId = householdId.trim()
+
   try {
-    const { client, serverClient } = await getDbClient()
-    const { data: authData } = await serverClient.auth.getUser()
-    const currentUserId = authData?.user?.id
+    const { client, user } = await resolveSupabaseClient(accessToken)
+    const currentUserId = user?.id
 
     let householdName: string | null = null
-    let targetId: string = householdId
+    let targetId: string = cleanId
     let isMember = false
 
     // 1. Intentar buscar en tabla 'households'
     const { data: hData, error: hErr } = await client
       .from('households')
       .select('id, name')
-      .eq('id', householdId)
+      .eq('id', cleanId)
       .maybeSingle()
 
     if (!hErr && hData) {
@@ -86,11 +176,25 @@ export async function getHouseholdDetails(householdId: string): Promise<Househol
         if (member) isMember = true
       }
     } else {
+      // Si el error no es de tabla inexistente (42P01), registrar posible fallo RLS
+      if (hErr && hErr.code === '42501') {
+        const errFmt = formatSupabaseError(hErr)
+        console.error('[getHouseholdDetails] Error RLS en tabla households:', errFmt)
+        return {
+          success: false,
+          error: `[42501] Permiso denegado por políticas RLS en tabla 'households': ${hErr.message}`,
+          errorCode: '42501',
+          errorMessage: hErr.message,
+          errorDetails: hErr.details || undefined,
+          errorHint: hErr.hint || undefined,
+        }
+      }
+
       // 2. Intentar buscar en tabla 'groups' (compatibilidad con esquema groups)
       const { data: gData, error: gErr } = await client
         .from('groups')
         .select('id, name')
-        .eq('id', householdId)
+        .eq('id', cleanId)
         .maybeSingle()
 
       if (!gErr && gData) {
@@ -107,11 +211,22 @@ export async function getHouseholdDetails(householdId: string): Promise<Househol
           if (member) isMember = true
         }
       } else {
+        if (gErr && gErr.code === '42501') {
+          return {
+            success: false,
+            error: `[42501] Permiso denegado por políticas RLS en tabla 'groups': ${gErr.message}`,
+            errorCode: '42501',
+            errorMessage: gErr.message,
+            errorDetails: gErr.details || undefined,
+            errorHint: gErr.hint || undefined,
+          }
+        }
+
         // 3. Intentar buscar por invite_code si el ID pasado fuese un código
         const { data: gCode } = await client
           .from('groups')
           .select('id, name')
-          .eq('invite_code', householdId)
+          .eq('invite_code', cleanId)
           .maybeSingle()
 
         if (gCode) {
@@ -132,7 +247,12 @@ export async function getHouseholdDetails(householdId: string): Promise<Househol
     }
 
     if (!householdName) {
-      return { success: false, error: 'No se encontró la familia con el identificador proporcionado.' }
+      return {
+        success: false,
+        error: `[PGRST116] No se encontró ninguna familia con el identificador "${cleanId}". Verifica que el enlace sea correcto y que las políticas RLS permitan lectura.`,
+        errorCode: 'PGRST116',
+        errorMessage: 'Familia no encontrada',
+      }
     }
 
     return {
@@ -144,8 +264,16 @@ export async function getHouseholdDetails(householdId: string): Promise<Househol
       isMember,
     }
   } catch (err: any) {
+    const errFmt = formatSupabaseError(err)
     console.error('Error al obtener detalles del hogar:', err)
-    return { success: false, error: err?.message || 'Error al conectar con la base de datos' }
+    return {
+      success: false,
+      error: errFmt.formatted,
+      errorCode: errFmt.code,
+      errorMessage: errFmt.message,
+      errorDetails: errFmt.details,
+      errorHint: errFmt.hint,
+    }
   }
 }
 
@@ -153,19 +281,19 @@ export async function getHouseholdDetails(householdId: string): Promise<Househol
  * Obtiene el household_id al que pertenece el usuario actualmente autenticado.
  * Si el usuario no tiene ningún hogar en la base de datos, crea uno automáticamente.
  */
-export async function getCurrentUserHousehold(): Promise<UserHouseholdResult> {
+export async function getCurrentUserHousehold(accessToken?: string): Promise<UserHouseholdResult> {
   try {
-    const serverClient = await createClient()
-    const {
-      data: { user },
-      error: authErr,
-    } = await serverClient.auth.getUser()
+    const { client, user } = await resolveSupabaseClient(accessToken)
 
-    if (authErr || !user) {
-      return { success: false, error: 'Usuario no autenticado' }
+    if (!user) {
+      return {
+        success: false,
+        error: '[AUTH_REQUIRED] Usuario no autenticado en Supabase.',
+        errorCode: 'AUTH_REQUIRED',
+        errorMessage: 'Usuario no autenticado.',
+      }
     }
 
-    const { client } = await getDbClient()
     const userName =
       user.user_metadata?.full_name ||
       user.user_metadata?.name ||
@@ -174,7 +302,7 @@ export async function getCurrentUserHousehold(): Promise<UserHouseholdResult> {
       'Mi Familia'
 
     // 1. Comprobar en household_members
-    const { data: hmData } = await client
+    const { data: hmData, error: hmErr } = await client
       .from('household_members')
       .select('household_id, households(id, name)')
       .eq('user_id', user.id)
@@ -187,7 +315,7 @@ export async function getCurrentUserHousehold(): Promise<UserHouseholdResult> {
     }
 
     // 2. Comprobar en group_members
-    const { data: gmData } = await client
+    const { data: gmData, error: gmErr } = await client
       .from('group_members')
       .select('group_id, groups(id, name)')
       .eq('user_id', user.id)
@@ -200,7 +328,7 @@ export async function getCurrentUserHousehold(): Promise<UserHouseholdResult> {
     }
 
     // 3. Comprobar si el usuario ha creado un household
-    const { data: createdH } = await client
+    const { data: createdH, error: chErr } = await client
       .from('households')
       .select('id, name')
       .eq('created_by', user.id)
@@ -208,7 +336,6 @@ export async function getCurrentUserHousehold(): Promise<UserHouseholdResult> {
       .maybeSingle()
 
     if (createdH?.id) {
-      // Asegurar que también está como miembro
       await client.from('household_members').upsert(
         {
           household_id: createdH.id,
@@ -244,10 +371,8 @@ export async function getCurrentUserHousehold(): Promise<UserHouseholdResult> {
       return { success: true, householdId: createdG.id, householdName: createdG.name }
     }
 
-    // 5. Si no tiene hogar en la base de datos, crearlo dinámicamente
+    // 5. Crear dinámicamente si no existe ningún hogar
     const defaultName = `Familia de ${userName}`
-    
-    // Probar insertar en households
     const { data: newHousehold, error: insertHErr } = await client
       .from('households')
       .insert({
@@ -267,7 +392,7 @@ export async function getCurrentUserHousehold(): Promise<UserHouseholdResult> {
       return { success: true, householdId: newHousehold.id, householdName: newHousehold.name }
     }
 
-    // Si la tabla households no existe, intentar en groups
+    // Si households falla (ej. tabla no creada), intentar con groups
     const { data: newGroup, error: insertGErr } = await client
       .from('groups')
       .insert({
@@ -291,47 +416,57 @@ export async function getCurrentUserHousehold(): Promise<UserHouseholdResult> {
       return { success: true, householdId: newGroup.id, householdName: newGroup.name }
     }
 
-    // Si ninguna tabla existe en la BD aún, retornar un UUID determinista o error explicativo
+    const firstErr = insertHErr || insertGErr
+    const errFmt = formatSupabaseError(firstErr)
     return {
       success: false,
-      error: 'No se pudo crear o recuperar el hogar en la base de datos de Supabase.',
+      error: `Error al crear hogar en Supabase: ${errFmt.formatted}`,
+      errorCode: errFmt.code,
+      errorMessage: errFmt.message,
     }
   } catch (err: any) {
-    console.error('Error al recuperar o crear el hogar del usuario:', err)
-    return { success: false, error: err?.message || 'Error de conexión' }
+    const errFmt = formatSupabaseError(err)
+    return {
+      success: false,
+      error: errFmt.formatted,
+      errorCode: errFmt.code,
+      errorMessage: errFmt.message,
+    }
   }
 }
 
 /**
  * Server Action para procesar la unión de un usuario a un hogar / familia.
- * - Verifica autenticación
- * - Verifica si el usuario ya es miembro
- * - Inserta el nuevo miembro en la base de datos
+ * Devuelve el código y mensaje EXACTOS de Supabase en caso de error.
  */
-export async function joinHousehold(householdId: string): Promise<JoinHouseholdResult> {
+export async function joinHousehold(
+  householdId: string,
+  accessToken?: string
+): Promise<JoinHouseholdResult> {
   if (!householdId || typeof householdId !== 'string') {
     return {
       success: false,
-      error: 'ID de invitación no válido o no proporcionado.',
+      error: '[INVALID_ID] ID de invitación no válido o no proporcionado.',
+      errorCode: 'INVALID_ID',
+      errorMessage: 'ID de invitación no proporcionado.',
     }
   }
 
-  try {
-    const serverClient = await createClient()
-    const {
-      data: { user },
-      error: authError,
-    } = await serverClient.auth.getUser()
+  const cleanId = householdId.trim()
 
-    if (authError || !user) {
+  try {
+    const { client, user, authMethod } = await resolveSupabaseClient(accessToken)
+
+    if (!user) {
       return {
         success: false,
-        error: 'Debes iniciar sesión para unirte a esta familia.',
+        error: '[AUTH_REQUIRED] No se encontró una sesión activa de Supabase Auth en el servidor. Inicia sesión para unirte.',
+        errorCode: 'AUTH_REQUIRED',
+        errorMessage: 'Debes iniciar sesión para unirte a esta familia.',
         requiresAuth: true,
       }
     }
 
-    const { client } = await getDbClient()
     const userName =
       user.user_metadata?.full_name ||
       user.user_metadata?.name ||
@@ -340,14 +475,14 @@ export async function joinHousehold(householdId: string): Promise<JoinHouseholdR
       'Nuevo Integrante'
 
     let householdName = 'la familia'
-    let resolvedId = householdId
+    let resolvedId = cleanId
     let isHouseholdTable = true
 
     // 1. Identificar si corresponde a 'households' o a 'groups'
     const { data: hData, error: hErr } = await client
       .from('households')
       .select('id, name')
-      .eq('id', householdId)
+      .eq('id', cleanId)
       .maybeSingle()
 
     if (!hErr && hData) {
@@ -355,11 +490,24 @@ export async function joinHousehold(householdId: string): Promise<JoinHouseholdR
       resolvedId = hData.id
       isHouseholdTable = true
     } else {
+      if (hErr && hErr.code === '42501') {
+        const errFmt = formatSupabaseError(hErr)
+        console.error('[joinHousehold] RLS error en households:', errFmt)
+        return {
+          success: false,
+          error: `[42501] RLS Error en 'households': ${hErr.message}. Verifica que la tabla permita SELECT a authenticated.`,
+          errorCode: '42501',
+          errorMessage: hErr.message,
+          errorDetails: hErr.details || undefined,
+          errorHint: hErr.hint || undefined,
+        }
+      }
+
       // Buscar en groups
       const { data: gData, error: gErr } = await client
         .from('groups')
         .select('id, name')
-        .eq('id', householdId)
+        .eq('id', cleanId)
         .maybeSingle()
 
       if (!gErr && gData) {
@@ -367,11 +515,22 @@ export async function joinHousehold(householdId: string): Promise<JoinHouseholdR
         resolvedId = gData.id
         isHouseholdTable = false
       } else {
+        if (gErr && gErr.code === '42501') {
+          return {
+            success: false,
+            error: `[42501] RLS Error en 'groups': ${gErr.message}.`,
+            errorCode: '42501',
+            errorMessage: gErr.message,
+            errorDetails: gErr.details || undefined,
+            errorHint: gErr.hint || undefined,
+          }
+        }
+
         // Buscar por invite_code
         const { data: gCode } = await client
           .from('groups')
           .select('id, name')
-          .eq('invite_code', householdId)
+          .eq('invite_code', cleanId)
           .maybeSingle()
 
         if (gCode) {
@@ -381,7 +540,9 @@ export async function joinHousehold(householdId: string): Promise<JoinHouseholdR
         } else {
           return {
             success: false,
-            error: 'No se encontró ninguna familia asociada a este enlace de invitación.',
+            error: `[NOT_FOUND] No se encontró ninguna familia asociada al ID "${cleanId}". Asegúrate de que las políticas RLS permitan SELECT a usuarios autenticados.`,
+            errorCode: 'NOT_FOUND',
+            errorMessage: 'Familia no encontrada en Supabase.',
           }
         }
       }
@@ -389,7 +550,7 @@ export async function joinHousehold(householdId: string): Promise<JoinHouseholdR
 
     // 2. Verificar si el usuario ya es miembro
     if (isHouseholdTable) {
-      const { data: existingMember } = await client
+      const { data: existingMember, error: checkErr } = await client
         .from('household_members')
         .select('id')
         .eq('household_id', resolvedId)
@@ -399,40 +560,65 @@ export async function joinHousehold(householdId: string): Promise<JoinHouseholdR
       if (existingMember) {
         return {
           success: false,
-          error: 'Ya perteneces a esta familia.',
+          error: `[ALREADY_MEMBER] Ya perteneces a "${householdName}".`,
+          errorCode: 'ALREADY_MEMBER',
+          errorMessage: 'Ya perteneces a esta familia.',
           alreadyMember: true,
           householdName,
           householdId: resolvedId,
         }
       }
 
-      // 3. Insertar en household_members
-      const { error: insertError } = await client.from('household_members').insert({
-        household_id: resolvedId,
-        user_id: user.id,
-        name: userName,
-        role: 'member',
-      })
+      // 3. INSERT en household_members vinculando user.id con household_id
+      const { data: insertData, error: insertError } = await client
+        .from('household_members')
+        .insert({
+          household_id: resolvedId,
+          user_id: user.id,
+          name: userName,
+          role: 'member',
+        })
+        .select('id')
+        .single()
 
       if (insertError) {
-        // Error de clave única (duplicado)
+        const errFmt = formatSupabaseError(insertError)
+        console.error('[joinHousehold] Error exacto de Supabase al insertar miembro:', errFmt)
+
         if (insertError.code === '23505') {
           return {
             success: false,
-            error: 'Ya perteneces a esta familia.',
+            error: `[23505] Ya perteneces a "${householdName}".`,
+            errorCode: '23505',
+            errorMessage: 'Ya perteneces a esta familia (registro duplicado).',
             alreadyMember: true,
             householdName,
             householdId: resolvedId,
           }
         }
-        console.error('Error al insertar en household_members:', insertError)
+
+        if (insertError.code === '42501') {
+          return {
+            success: false,
+            error: `[42501] Error de políticas RLS: Tu usuario autenticado (${user.id}) no tiene permisos para insertar en 'household_members'. Revisa la política INSERT WITH CHECK (auth.uid() = user_id). Mensaje: ${insertError.message}`,
+            errorCode: '42501',
+            errorMessage: insertError.message,
+            errorDetails: insertError.details || undefined,
+            errorHint: insertError.hint || undefined,
+          }
+        }
+
         return {
           success: false,
-          error: `Error al unirse a la familia: ${insertError.message}`,
+          error: `[${errFmt.code}] ${errFmt.message}${errFmt.details ? ' — ' + errFmt.details : ''}`,
+          errorCode: errFmt.code,
+          errorMessage: errFmt.message,
+          errorDetails: errFmt.details,
+          errorHint: errFmt.hint,
         }
       }
     } else {
-      // Tabla groups / group_members
+      // Esquema alternativo: groups / group_members
       const { data: existingMember } = await client
         .from('group_members')
         .select('id')
@@ -443,39 +629,65 @@ export async function joinHousehold(householdId: string): Promise<JoinHouseholdR
       if (existingMember) {
         return {
           success: false,
-          error: 'Ya perteneces a esta familia.',
+          error: `[ALREADY_MEMBER] Ya perteneces a "${householdName}".`,
+          errorCode: 'ALREADY_MEMBER',
+          errorMessage: 'Ya perteneces a esta familia.',
           alreadyMember: true,
           householdName,
           householdId: resolvedId,
         }
       }
 
-      // 3. Insertar en group_members
-      const { error: insertError } = await client.from('group_members').insert({
-        group_id: resolvedId,
-        user_id: user.id,
-        name: userName,
-        role: 'adult',
-        is_admin: false,
-        is_owner: false,
-        points: 0,
-        streak: 0,
-      })
+      // 3. INSERT en group_members
+      const { data: insertData, error: insertError } = await client
+        .from('group_members')
+        .insert({
+          group_id: resolvedId,
+          user_id: user.id,
+          name: userName,
+          role: 'adult',
+          is_admin: false,
+          is_owner: false,
+          points: 0,
+          streak: 0,
+        })
+        .select('id')
+        .single()
 
       if (insertError) {
+        const errFmt = formatSupabaseError(insertError)
+        console.error('[joinHousehold] Error exacto de Supabase en group_members:', errFmt)
+
         if (insertError.code === '23505') {
           return {
             success: false,
-            error: 'Ya perteneces a esta familia.',
+            error: `[23505] Ya perteneces a "${householdName}".`,
+            errorCode: '23505',
+            errorMessage: 'Ya perteneces a esta familia.',
             alreadyMember: true,
             householdName,
             householdId: resolvedId,
           }
         }
-        console.error('Error al insertar en group_members:', insertError)
+
+        if (insertError.code === '42501') {
+          return {
+            success: false,
+            error: `[42501] Error de políticas RLS: Permiso denegado para insertar en 'group_members': ${insertError.message}`,
+            errorCode: '42501',
+            errorMessage: insertError.message,
+            errorDetails: insertError.details || undefined,
+            errorHint: insertError.hint || undefined,
+          }
+        }
+
         return {
           success: false,
-          error: `Error al unirse a la familia: ${insertError.message}`,
+          error: `[${errFmt.code}] ${errFmt.message}`,
+          errorCode: errFmt.code,
+          errorMessage: errFmt.message,
+          errorDetails: errFmt.details,
+          errorHint: errFmt.hint,
         }
       }
     }
@@ -487,10 +699,14 @@ export async function joinHousehold(householdId: string): Promise<JoinHouseholdR
       householdId: resolvedId,
     }
   } catch (err: any) {
-    console.error('Error en Server Action joinHousehold:', err)
+    const errFmt = formatSupabaseError(err)
+    console.error('Error inesperado en Server Action joinHousehold:', err)
     return {
       success: false,
-      error: err?.message || 'Error inesperado al procesar la solicitud.',
+      error: `[EXCEPTION] ${errFmt.message}`,
+      errorCode: 'EXCEPTION',
+      errorMessage: errFmt.message,
+      errorDetails: errFmt.details,
     }
   }
 }
