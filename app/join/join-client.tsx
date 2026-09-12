@@ -1,0 +1,663 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import Link from 'next/link'
+import {
+  Users,
+  CheckCircle2,
+  AlertTriangle,
+  ArrowRight,
+  ShieldCheck,
+  UserCheck,
+  Loader2,
+  Sparkles,
+  Home,
+  RefreshCw,
+  Copy,
+  Check,
+  Smartphone,
+} from 'lucide-react'
+import { UsyTaskLogo } from '@/components/ui/usytask-logo'
+import { createClient } from '@/lib/supabase'
+import { getHouseholdDetails, joinHousehold } from '@/app/actions/household'
+import { useToast } from '@/components/ui/toast'
+import { syncFromSupabaseCloud } from '@/lib/cloud-sync'
+import { getStoredSession } from '@/lib/user-session'
+
+export interface JoinInvitationClientProps {
+  paramHouseholdId?: string
+  initialHousehold?: { id: string; name: string } | null
+  initialError?: {
+    code?: string
+    message: string
+    details?: string
+  } | null
+}
+
+/**
+ * Limpia y normaliza el identificador de la familia para evitar fallos si
+ * se pasa una URL completa o parámetros malformados.
+ */
+export function extractHouseholdId(raw: string | null | undefined): string {
+  if (!raw) return ''
+  let val = raw.trim()
+  if (!val) return ''
+
+  if (val.includes('/join/')) {
+    val = val.split('/join/')[1]?.split('?')[0]?.split('#')[0] || val
+  }
+  if (val.includes('household_id=')) {
+    val = val.split('household_id=')[1]?.split('&')[0]?.split('#')[0] || val
+  }
+  if (val.includes('h=')) {
+    val = val.split('h=')[1]?.split('&')[0]?.split('#')[0] || val
+  }
+
+  try {
+    return decodeURIComponent(val.trim())
+  } catch {
+    return val.trim()
+  }
+}
+
+export function JoinInvitationClient({
+  paramHouseholdId,
+  initialHousehold,
+  initialError,
+}: JoinInvitationClientProps) {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const { toast } = useToast()
+
+  // Leer household_id desde props o searchParams
+  const rawSearchId =
+    searchParams?.get('household_id') ||
+    searchParams?.get('h') ||
+    searchParams?.get('id') ||
+    searchParams?.get('groupId') ||
+    searchParams?.get('code') ||
+    ''
+
+  const householdId = extractHouseholdId(paramHouseholdId || rawSearchId)
+
+  // Si ya vino pre-renderizado del Server Component (Opción A), no mostramos spinner inicial
+  const [loading, setLoading] = useState<boolean>(!initialHousehold && !initialError)
+  const [isStandalone, setIsStandalone] = useState(true)
+  const [householdName, setHouseholdName] = useState<string>(initialHousehold?.name || '')
+  const [resolvedId, setResolvedId] = useState<string>(initialHousehold?.id || '')
+  const [currentUser, setCurrentUser] = useState<any>(null)
+  const [alreadyMember, setAlreadyMember] = useState(false)
+  const [needsAuth, setNeedsAuth] = useState(false)
+
+  // Errores de carga inicial (ej: ID no existe o RLS bloquea)
+  const [loadError, setLoadError] = useState<{
+    code?: string
+    message: string
+    details?: string
+  } | null>(initialError || null)
+
+  // Errores específicos durante el INSERT
+  const [joinError, setJoinError] = useState<{
+    code?: string
+    message: string
+    details?: string
+    hint?: string
+  } | null>(null)
+
+  const [joining, setJoining] = useState(false)
+  const [joinedSuccess, setJoinedSuccess] = useState(false)
+  const [copiedError, setCopiedError] = useState(false)
+
+  // 1. Detectar si se está ejecutando dentro de la PWA instalada (standalone)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const standaloneMode =
+        window.matchMedia('(display-mode: standalone)').matches ||
+        (window.navigator as any).standalone === true ||
+        document.referrer.includes('android-app://')
+      setIsStandalone(Boolean(standaloneMode))
+    }
+  }, [])
+
+  // 2. Verificación de autenticación y membresía del usuario
+  useEffect(() => {
+    let isMounted = true
+
+    async function verifyAuthAndHousehold() {
+      const targetId = householdId || initialHousehold?.id
+      if (!targetId) {
+        if (!initialError) {
+          setLoadError({
+            code: 'NO_ID',
+            message: 'El enlace de invitación no incluye un identificador de familia válido.',
+          })
+        }
+        setLoading(false)
+        return
+      }
+
+      try {
+        const supabase = createClient()
+
+        // Comprobar sesión de Supabase Auth
+        const {
+          data: { user: supabaseUser },
+        } = await supabase.auth.getUser()
+
+        const localUser = getStoredSession()
+        const activeUser =
+          supabaseUser ||
+          (localUser
+            ? {
+                id: localUser.id,
+                email: localUser.email,
+                user_metadata: {
+                  full_name: localUser.fullName,
+                  name: localUser.fullName,
+                  username: localUser.username,
+                },
+              }
+            : null)
+
+        // Si no hay ningún usuario autenticado
+        if (!activeUser) {
+          if (!isMounted) return
+          setNeedsAuth(true)
+          setLoading(false)
+
+          // Prevenir bucle infinito (flickering): comprobar si ya se redirigió hace menos de 3 segundos
+          const lastRedirect = sessionStorage.getItem('usytask_join_redirect_ts')
+          const now = Date.now()
+          if (!lastRedirect || now - Number(lastRedirect) > 3000) {
+            sessionStorage.setItem('usytask_join_redirect_ts', String(now))
+            const currentPath = `/join?household_id=${encodeURIComponent(targetId)}`
+            router.replace(`/login?next=${encodeURIComponent(currentPath)}`)
+          }
+          return
+        }
+
+        if (!isMounted) return
+        setCurrentUser(activeUser)
+        setNeedsAuth(false)
+
+        // Si ya tenemos los datos de la familia desde el Server Component (Opción A),
+        // solo verificamos si el usuario actual ya es miembro de esta familia
+        if (initialHousehold?.id) {
+          try {
+            const { data: member } = await supabase
+              .from('household_members')
+              .select('id')
+              .eq('household_id', initialHousehold.id)
+              .eq('user_id', activeUser.id)
+              .maybeSingle()
+
+            if (member && isMounted) {
+              setAlreadyMember(true)
+            }
+          } catch {
+            // Ignorar error secundario de verificación
+          }
+
+          if (isMounted) {
+            setLoading(false)
+          }
+          return
+        }
+
+        // Si no vino pre-cargado del servidor, consultar detalles en el backend
+        const {
+          data: { session },
+        } = await supabase.auth.getSession()
+        const token = session?.access_token
+
+        const details = await getHouseholdDetails(targetId, token)
+
+        if (!isMounted) return
+
+        if (!details.success || !details.household) {
+          setLoadError({
+            code: details.errorCode || 'LOOKUP_FAILED',
+            message:
+              details.errorMessage || details.error || 'No se pudo encontrar la familia especificada.',
+            details: details.errorDetails,
+          })
+          setLoading(false)
+          return
+        }
+
+        setHouseholdName(details.household.name)
+        setResolvedId(details.household.id)
+
+        if (details.isMember) {
+          setAlreadyMember(true)
+        }
+      } catch (err: any) {
+        console.error('Error verificando invitación:', err)
+        if (isMounted) {
+          setLoadError({
+            code: 'EXCEPTION',
+            message: err?.message || 'Error al conectar con el servidor.',
+          })
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false)
+        }
+      }
+    }
+
+    verifyAuthAndHousehold()
+
+    return () => {
+      isMounted = false
+    }
+  }, [householdId, initialHousehold, initialError, router])
+
+  // 3. Ejecutar el Server Action de unión a la familia
+  const handleAcceptJoin = async () => {
+    const targetId = resolvedId || householdId || initialHousehold?.id
+    if (!targetId) return
+
+    setJoining(true)
+    setJoinError(null)
+
+    try {
+      const supabase = createClient()
+
+      // Verificar que el usuario sigue autenticado antes de insertar
+      const {
+        data: { user: verifiedUser },
+      } = await supabase.auth.getUser()
+
+      const localUser = getStoredSession()
+      if (!verifiedUser && !localUser) {
+        toast('Debes iniciar sesión para unirte a la familia.', '🔒')
+        const currentPath = `/join?household_id=${encodeURIComponent(targetId)}`
+        router.replace(`/login?next=${encodeURIComponent(currentPath)}`)
+        return
+      }
+
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
+      const token = session?.access_token
+
+      // Llamada al Server Action seguro
+      const res = await joinHousehold(targetId, token)
+
+      if (!res.success) {
+        if (res.requiresAuth) {
+          const currentPath = `/join?household_id=${encodeURIComponent(targetId)}`
+          router.replace(`/login?next=${encodeURIComponent(currentPath)}`)
+          return
+        }
+
+        if (res.alreadyMember) {
+          setAlreadyMember(true)
+          toast('Ya perteneces a esta familia.', 'ℹ️')
+          return
+        }
+
+        const errObj = {
+          code: res.errorCode || 'UNKNOWN',
+          message: res.errorMessage || res.error || 'Error al procesar la unión a la familia.',
+          details: res.errorDetails,
+          hint: res.errorHint,
+        }
+
+        setJoinError(errObj)
+        toast(`Error [${errObj.code}]: ${errObj.message}`, '❌')
+        return
+      }
+
+      // Éxito en la unión
+      setJoinedSuccess(true)
+      toast(res.message || `¡Bienvenido a ${householdName}!`, '🎉')
+
+      try {
+        await syncFromSupabaseCloud()
+      } catch {}
+
+      // Redirigir a la aplicación principal (/app)
+      setTimeout(() => {
+        router.replace('/app')
+      }, 1200)
+    } catch (err: any) {
+      console.error('Error al unirse:', err)
+      const errObj = {
+        code: 'CLIENT_EXCEPTION',
+        message: err?.message || 'Error inesperado al conectar con el servidor.',
+      }
+      setJoinError(errObj)
+      toast(`Error inesperado: ${errObj.message}`, '❌')
+    } finally {
+      setJoining(false)
+    }
+  }
+
+  const copyErrorToClipboard = () => {
+    if (!joinError && !loadError) return
+    const activeErr = joinError || loadError
+    const text = `Error Supabase [${activeErr?.code || 'NO_CODE'}]: ${activeErr?.message}\nDetalles: ${activeErr?.details || 'N/A'}`
+    if (typeof navigator !== 'undefined') {
+      navigator.clipboard.writeText(text)
+    }
+    setCopiedError(true)
+    toast('Error copiado al portapapeles', '📋')
+    setTimeout(() => setCopiedError(false), 2000)
+  }
+
+  // A) Estado de carga inicial
+  if (loading) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center p-6 text-center">
+        <div className="flex flex-col items-center gap-4">
+          <UsyTaskLogo size="md" />
+          <div className="flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-4 py-2 text-xs font-bold text-primary">
+            <Loader2 className="size-4 animate-spin" />
+            <span>Verificando invitación y familia...</span>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // B) Si no está autenticado y se evitó el bucle de redirección
+  if (needsAuth && !currentUser) {
+    const currentPath = `/join?household_id=${encodeURIComponent(householdId || resolvedId)}`
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center p-4 sm:p-6 text-center">
+        <div className="w-full max-w-md rounded-3xl border border-primary/30 bg-card p-6 sm:p-8 shadow-xl">
+          <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-primary/10 text-primary mb-4">
+            <Users className="size-7" />
+          </div>
+          <h2 className="text-xl font-black text-foreground">Inicia Sesión para Unirte</h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Has recibido una invitación familiar{householdName ? ` para unirte a "${householdName}"` : ''}. Inicia sesión o crea tu cuenta en USYTask para continuar.
+          </p>
+          <div className="mt-6 flex flex-col gap-2.5">
+            <Link
+              href={`/login?next=${encodeURIComponent(currentPath)}`}
+              className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-primary text-sm font-bold text-primary-foreground shadow-soft transition-transform active:scale-95"
+            >
+              <span>Iniciar Sesión</span>
+              <ArrowRight className="size-4" />
+            </Link>
+            <Link
+              href={`/register?next=${encodeURIComponent(currentPath)}`}
+              className="py-2 text-xs font-bold text-muted-foreground hover:text-foreground transition-colors"
+            >
+              ¿No tienes cuenta? Regístrate gratis
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // C) Estado de error de carga inicial
+  if (loadError && !joinedSuccess) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center p-4 sm:p-6 text-center">
+        <div className="w-full max-w-md rounded-3xl border border-destructive/30 bg-card p-6 sm:p-8 shadow-xl">
+          <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-destructive/10 text-destructive mb-4">
+            <AlertTriangle className="size-7" />
+          </div>
+          <span className="rounded-full bg-destructive/10 px-3 py-1 text-xs font-mono font-bold text-destructive border border-destructive/20">
+            Código: {loadError.code || 'ERROR'}
+          </span>
+          <h2 className="text-xl font-black text-foreground mt-3">Error al Cargar la Invitación</h2>
+          <p className="mt-2 text-sm text-muted-foreground">{loadError.message}</p>
+
+          {loadError.details && (
+            <p className="mt-2 text-xs font-mono text-muted-foreground bg-secondary/70 p-2 rounded-xl text-left break-all">
+              {loadError.details}
+            </p>
+          )}
+
+          <div className="mt-6 flex flex-col gap-3">
+            <button
+              onClick={() => router.replace('/app')}
+              className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-primary text-sm font-bold text-primary-foreground shadow-soft transition-transform active:scale-95"
+            >
+              <Home className="size-4" />
+              <span>Ir al Inicio</span>
+            </button>
+            <Link
+              href="/login"
+              className="py-2 text-xs font-bold text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Cambiar de cuenta
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // D) Estado de éxito tras unirse
+  if (joinedSuccess) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center p-4 sm:p-6 text-center animate-fade-in">
+        <div className="w-full max-w-md rounded-3xl border border-emerald-500/30 bg-card p-6 sm:p-8 shadow-2xl">
+          <div className="mx-auto flex size-16 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 mb-4 animate-bounce">
+            <Sparkles className="size-8" />
+          </div>
+          <span className="rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-bold text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+            ¡Todo listo!
+          </span>
+          <h2 className="text-2xl font-black text-foreground mt-3">
+            ¡Te has unido a “{householdName}”!
+          </h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Accediendo a tus tareas, calendario y finanzas compartidas...
+          </p>
+
+          <div className="mt-6 flex items-center justify-center gap-2 text-xs font-semibold text-muted-foreground">
+            <Loader2 className="size-3.5 animate-spin text-primary" />
+            <span>Entrando a USYTask...</span>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // E) Ya es miembro de la familia
+  if (alreadyMember) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center p-4 sm:p-6 text-center animate-fade-in">
+        <div className="w-full max-w-md rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-xl">
+          <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-primary/10 text-primary mb-4">
+            <CheckCircle2 className="size-7" />
+          </div>
+          <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary border border-primary/20">
+            Miembro actual
+          </span>
+          <h2 className="text-2xl font-black text-foreground mt-3">
+            Ya perteneces a “{householdName}”
+          </h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Tu cuenta ya está vinculada a este hogar. Puedes ingresar directamente para gestionar tus tareas y eventos.
+          </p>
+
+          <div className="mt-6">
+            <button
+              onClick={() => router.replace('/app')}
+              className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-primary text-sm font-bold text-primary-foreground shadow-soft transition-transform active:scale-95"
+            >
+              <span>Abrir USYTask</span>
+              <ArrowRight className="size-4" />
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // F) Pantalla Principal de Aceptación de Invitación
+  const userName =
+    currentUser?.user_metadata?.full_name ||
+    currentUser?.user_metadata?.name ||
+    currentUser?.user_metadata?.username ||
+    currentUser?.email?.split('@')[0] ||
+    'Usuario'
+  const userEmail = currentUser?.email || ''
+
+  return (
+    <div className="flex min-h-screen flex-col items-center justify-between p-4 sm:p-6 bg-background text-foreground">
+      {/* Cabecera con Logo */}
+      <div className="w-full max-w-md pt-6 flex justify-center">
+        <UsyTaskLogo size="md" />
+      </div>
+
+      {/* Tarjeta de Aceptación */}
+      <div className="w-full max-w-md my-auto rounded-[32px] border border-emerald-500/30 bg-card p-6 sm:p-8 shadow-2xl flex flex-col items-center text-center">
+        
+        {/* BANNER DE APERTURA NATIVA EN PWA (si se abre en navegador web) */}
+        {!isStandalone && (
+          <div className="w-full mb-4 p-3 rounded-2xl bg-purple-500/10 border border-purple-500/20 text-purple-400 text-xs flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 text-left">
+              <Smartphone className="size-4 text-purple-400 shrink-0" />
+              <span className="text-[11px] font-semibold leading-tight">
+                ¿Tienes la app instalada en tu móvil?
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                const url = window.location.href
+                if (typeof navigator !== 'undefined' && (navigator as any).share) {
+                  navigator.share({ title: 'Invitación USYTask', url })
+                } else {
+                  window.location.reload()
+                }
+              }}
+              className="rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-bold text-[10px] px-2.5 py-1 transition-transform active:scale-95 shrink-0"
+            >
+              Abrir en App
+            </button>
+          </div>
+        )}
+
+        <div className="flex size-14 items-center justify-center rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 mb-3">
+          <Users className="size-7" />
+        </div>
+
+        <span className="rounded-full bg-emerald-500/10 px-3.5 py-1 text-xs font-extrabold text-emerald-700 dark:text-emerald-300 border border-emerald-500/20 flex items-center gap-1.5">
+          <ShieldCheck className="size-3.5" /> Invitación Familiar
+        </span>
+
+        <p className="text-xs font-bold text-muted-foreground mt-3 uppercase tracking-wider">
+          Has sido invitado a unirte a
+        </p>
+
+        {/* Nombre REAL de la familia */}
+        <h1 className="text-2xl sm:text-3xl font-black text-foreground mt-1 text-balance">
+          {householdName || 'Cargando familia...'}
+        </h1>
+
+        <p className="text-xs sm:text-sm text-muted-foreground mt-2 max-w-xs">
+          Comparte tareas del hogar, listas de la compra, calendario familiar y finanzas en tiempo real.
+        </p>
+
+        {/* Usuario actual */}
+        <div className="w-full mt-5 rounded-2xl border border-border bg-secondary/50 p-3.5 flex items-center gap-3 text-left">
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary font-black text-sm">
+            {userName.charAt(0).toUpperCase()}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-bold text-foreground truncate">{userName}</p>
+            <p className="text-[11px] text-muted-foreground truncate">{userEmail}</p>
+          </div>
+          <UserCheck className="size-4 text-emerald-500 shrink-0" />
+        </div>
+
+        {/* ALERTA EN CASO DE ERROR DE SUPABASE / RLS */}
+        {joinError && (
+          <div className="w-full mt-4 p-4 rounded-2xl border border-destructive/40 bg-destructive/10 text-left text-destructive animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-start gap-2.5">
+              <AlertTriangle className="size-5 shrink-0 mt-0.5 text-destructive" />
+              <div className="flex-1 min-w-0 text-xs">
+                <div className="flex items-center justify-between">
+                  <p className="font-extrabold text-sm text-destructive">
+                    Error de Supabase [{joinError.code || 'FAIL'}]
+                  </p>
+                  <button
+                    type="button"
+                    onClick={copyErrorToClipboard}
+                    className="flex items-center gap-1 text-[10px] font-bold text-destructive/80 hover:text-destructive p-1 rounded-lg hover:bg-destructive/20 transition-colors"
+                    title="Copiar error"
+                  >
+                    {copiedError ? <Check className="size-3" /> : <Copy className="size-3" />}
+                    <span>{copiedError ? 'Copiado' : 'Copiar'}</span>
+                  </button>
+                </div>
+
+                <p className="mt-1 font-mono text-[11px] font-semibold break-all">
+                  {joinError.message}
+                </p>
+
+                {joinError.details && (
+                  <p className="mt-1 text-[10px] opacity-80 break-all">
+                    <strong>Detalles:</strong> {joinError.details}
+                  </p>
+                )}
+
+                {joinError.hint && (
+                  <p className="mt-1 text-[10px] opacity-80">
+                    <strong>Sugerencia:</strong> {joinError.hint}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Botón Principal de Aceptar */}
+        <div className="w-full mt-6 flex flex-col gap-2.5">
+          <button
+            type="button"
+            onClick={handleAcceptJoin}
+            disabled={joining}
+            className="flex h-13 w-full items-center justify-center gap-2 rounded-2xl bg-primary text-sm sm:text-base font-bold text-primary-foreground shadow-soft transition-transform active:scale-95 disabled:opacity-50"
+          >
+            {joining ? (
+              <>
+                <Loader2 className="size-4 animate-spin" />
+                <span>Uniendo a la familia...</span>
+              </>
+            ) : joinError ? (
+              <>
+                <RefreshCw className="size-4" />
+                <span>Reintentar Unión</span>
+              </>
+            ) : (
+              <>
+                <Sparkles className="size-4" />
+                <span>Aceptar y Unirme al Hogar</span>
+              </>
+            )}
+          </button>
+
+          <Link
+            href="/app"
+            className="py-2 text-xs font-bold text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Cancelar y volver a mi espacio
+          </Link>
+        </div>
+      </div>
+
+      {/* Pie de página */}
+      <div className="w-full max-w-md pb-4 text-center">
+        <p className="text-[11px] text-muted-foreground">
+          USYTask — Organización y colaboración para el hogar
+        </p>
+      </div>
+    </div>
+  )
+}
+
+// Compatibilidad con export previo
+export { JoinInvitationClient as JoinInvitationContent }

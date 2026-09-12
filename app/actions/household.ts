@@ -130,7 +130,130 @@ function formatSupabaseError(error: any): {
 }
 
 /**
+ * Retorna el cliente Admin (service_role) si SUPABASE_SERVICE_ROLE_KEY está configurada,
+ * permitiendo saltarse RLS de forma segura en operaciones del servidor.
+ */
+function getAdminClientSafe() {
+  const key = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim()
+  if (!key || key === 'tu_clave_service_role_aqui') {
+    return null
+  }
+  try {
+    return createAdminClient()
+  } catch (e) {
+    console.warn('[getAdminClientSafe] Error instanciando cliente admin:', e)
+    return null
+  }
+}
+
+/**
+ * OPCIÓN A (Recomendada): Obtiene los datos públicos básicos de una familia (id y nombre)
+ * para la pantalla de invitación usando el Admin Client (service_role) del lado del servidor.
+ *
+ * Esto garantiza que un usuario invitado (que todavía no está en household_members)
+ * pueda visualizar la tarjeta de invitación sin ser bloqueado por las políticas RLS.
+ */
+export async function getHouseholdForInvitation(
+  householdId: string
+): Promise<HouseholdDetailsResult> {
+  if (!householdId || typeof householdId !== 'string') {
+    return {
+      success: false,
+      error: '[INVALID_ID] ID de familia no proporcionado o vacío.',
+      errorCode: 'INVALID_ID',
+      errorMessage: 'ID de familia no válido.',
+    }
+  }
+
+  const cleanId = householdId.trim()
+  const adminClient = getAdminClientSafe()
+  const serverClient = await createClient()
+  const queryClient = adminClient || serverClient
+
+  try {
+    // 1. Buscar en tabla 'households' (solo id y name)
+    const { data: hData, error: hErr } = await queryClient
+      .from('households')
+      .select('id, name')
+      .eq('id', cleanId)
+      .maybeSingle()
+
+    if (!hErr && hData) {
+      return {
+        success: true,
+        household: {
+          id: hData.id,
+          name: hData.name,
+        },
+      }
+    }
+
+    // 2. Buscar en tabla 'groups' (compatibilidad)
+    const { data: gData, error: gErr } = await queryClient
+      .from('groups')
+      .select('id, name')
+      .eq('id', cleanId)
+      .maybeSingle()
+
+    if (!gErr && gData) {
+      return {
+        success: true,
+        household: {
+          id: gData.id,
+          name: gData.name,
+        },
+      }
+    }
+
+    // 3. Buscar por invite_code
+    const { data: gCode } = await queryClient
+      .from('groups')
+      .select('id, name')
+      .eq('invite_code', cleanId)
+      .maybeSingle()
+
+    if (gCode) {
+      return {
+        success: true,
+        household: {
+          id: gCode.id,
+          name: gCode.name,
+        },
+      }
+    }
+
+    if (hErr && hErr.code === '42501' && !adminClient) {
+      return {
+        success: false,
+        error: `[42501] RLS bloquea la lectura en households. Configura SUPABASE_SERVICE_ROLE_KEY en .env.local (Opción A) o ejecuta la política SQL en Supabase (Opción B).`,
+        errorCode: '42501',
+        errorMessage: 'Permiso denegado por RLS en Supabase.',
+        errorDetails: hErr.details || undefined,
+        errorHint: hErr.hint || undefined,
+      }
+    }
+
+    return {
+      success: false,
+      error: `[PGRST116] No se encontró ninguna familia con el identificador "${cleanId}".`,
+      errorCode: 'PGRST116',
+      errorMessage: 'Familia no encontrada',
+    }
+  } catch (err: any) {
+    const errFmt = formatSupabaseError(err)
+    return {
+      success: false,
+      error: errFmt.formatted,
+      errorCode: errFmt.code,
+      errorMessage: errFmt.message,
+    }
+  }
+}
+
+/**
  * Obtiene los detalles de un hogar / familia dado su ID.
+ * Utiliza el cliente Admin si está disponible para el SELECT de households (Opción A),
+ * evitando errores de "Familia no encontrada" por RLS.
  */
 export async function getHouseholdDetails(
   householdId: string,
@@ -149,14 +272,16 @@ export async function getHouseholdDetails(
 
   try {
     const { client, user } = await resolveSupabaseClient(accessToken)
+    const adminClient = getAdminClientSafe()
+    const readClient = adminClient || client
     const currentUserId = user?.id
 
     let householdName: string | null = null
     let targetId: string = cleanId
     let isMember = false
 
-    // 1. Intentar buscar en tabla 'households'
-    const { data: hData, error: hErr } = await client
+    // 1. Intentar buscar en tabla 'households' usando readClient para evitar bloqueo RLS
+    const { data: hData, error: hErr } = await readClient
       .from('households')
       .select('id, name')
       .eq('id', cleanId)
@@ -167,7 +292,8 @@ export async function getHouseholdDetails(
       targetId = hData.id
 
       if (currentUserId) {
-        const { data: member } = await client
+        const checkClient = adminClient || client
+        const { data: member } = await checkClient
           .from('household_members')
           .select('id')
           .eq('household_id', targetId)
@@ -176,13 +302,13 @@ export async function getHouseholdDetails(
         if (member) isMember = true
       }
     } else {
-      // Si el error no es de tabla inexistente (42P01), registrar posible fallo RLS
-      if (hErr && hErr.code === '42501') {
+      // Si el error es de permisos RLS y no tenemos adminClient, informar con claridad
+      if (hErr && hErr.code === '42501' && !adminClient) {
         const errFmt = formatSupabaseError(hErr)
         console.error('[getHouseholdDetails] Error RLS en tabla households:', errFmt)
         return {
           success: false,
-          error: `[42501] Permiso denegado por políticas RLS en tabla 'households': ${hErr.message}`,
+          error: `[42501] Permiso denegado por políticas RLS en tabla 'households': ${hErr.message}. Configura SUPABASE_SERVICE_ROLE_KEY en .env.local o aplica la política RLS en Supabase.`,
           errorCode: '42501',
           errorMessage: hErr.message,
           errorDetails: hErr.details || undefined,
@@ -191,7 +317,7 @@ export async function getHouseholdDetails(
       }
 
       // 2. Intentar buscar en tabla 'groups' (compatibilidad con esquema groups)
-      const { data: gData, error: gErr } = await client
+      const { data: gData, error: gErr } = await readClient
         .from('groups')
         .select('id, name')
         .eq('id', cleanId)
@@ -202,7 +328,8 @@ export async function getHouseholdDetails(
         targetId = gData.id
 
         if (currentUserId) {
-          const { data: member } = await client
+          const checkClient = adminClient || client
+          const { data: member } = await checkClient
             .from('group_members')
             .select('id')
             .eq('group_id', targetId)
@@ -211,7 +338,7 @@ export async function getHouseholdDetails(
           if (member) isMember = true
         }
       } else {
-        if (gErr && gErr.code === '42501') {
+        if (gErr && gErr.code === '42501' && !adminClient) {
           return {
             success: false,
             error: `[42501] Permiso denegado por políticas RLS en tabla 'groups': ${gErr.message}`,
@@ -223,7 +350,7 @@ export async function getHouseholdDetails(
         }
 
         // 3. Intentar buscar por invite_code si el ID pasado fuese un código
-        const { data: gCode } = await client
+        const { data: gCode } = await readClient
           .from('groups')
           .select('id, name')
           .eq('invite_code', cleanId)
@@ -234,7 +361,8 @@ export async function getHouseholdDetails(
           targetId = gCode.id
 
           if (currentUserId) {
-            const { data: member } = await client
+            const checkClient = adminClient || client
+            const { data: member } = await checkClient
               .from('group_members')
               .select('id')
               .eq('group_id', targetId)
@@ -478,8 +606,11 @@ export async function joinHousehold(
     let resolvedId = cleanId
     let isHouseholdTable = true
 
-    // 1. Identificar si corresponde a 'households' o a 'groups'
-    const { data: hData, error: hErr } = await client
+    const adminClient = getAdminClientSafe()
+    const readClient = adminClient || client
+
+    // 1. Identificar si corresponde a 'households' o a 'groups' usando readClient para evitar bloqueo RLS
+    const { data: hData, error: hErr } = await readClient
       .from('households')
       .select('id, name')
       .eq('id', cleanId)
@@ -490,12 +621,12 @@ export async function joinHousehold(
       resolvedId = hData.id
       isHouseholdTable = true
     } else {
-      if (hErr && hErr.code === '42501') {
+      if (hErr && hErr.code === '42501' && !adminClient) {
         const errFmt = formatSupabaseError(hErr)
         console.error('[joinHousehold] RLS error en households:', errFmt)
         return {
           success: false,
-          error: `[42501] RLS Error en 'households': ${hErr.message}. Verifica que la tabla permita SELECT a authenticated.`,
+          error: `[42501] RLS Error en 'households': ${hErr.message}. Verifica que la tabla permita SELECT o configura SUPABASE_SERVICE_ROLE_KEY en .env.local.`,
           errorCode: '42501',
           errorMessage: hErr.message,
           errorDetails: hErr.details || undefined,
@@ -504,7 +635,7 @@ export async function joinHousehold(
       }
 
       // Buscar en groups
-      const { data: gData, error: gErr } = await client
+      const { data: gData, error: gErr } = await readClient
         .from('groups')
         .select('id, name')
         .eq('id', cleanId)
@@ -515,7 +646,7 @@ export async function joinHousehold(
         resolvedId = gData.id
         isHouseholdTable = false
       } else {
-        if (gErr && gErr.code === '42501') {
+        if (gErr && gErr.code === '42501' && !adminClient) {
           return {
             success: false,
             error: `[42501] RLS Error en 'groups': ${gErr.message}.`,
@@ -527,7 +658,7 @@ export async function joinHousehold(
         }
 
         // Buscar por invite_code
-        const { data: gCode } = await client
+        const { data: gCode } = await readClient
           .from('groups')
           .select('id, name')
           .eq('invite_code', cleanId)
@@ -540,7 +671,7 @@ export async function joinHousehold(
         } else {
           return {
             success: false,
-            error: `[NOT_FOUND] No se encontró ninguna familia asociada al ID "${cleanId}". Asegúrate de que las políticas RLS permitan SELECT a usuarios autenticados.`,
+            error: `[NOT_FOUND] No se encontró ninguna familia asociada al ID "${cleanId}". Asegúrate de que las políticas RLS permitan SELECT a usuarios autenticados o usa SUPABASE_SERVICE_ROLE_KEY.`,
             errorCode: 'NOT_FOUND',
             errorMessage: 'Familia no encontrada en Supabase.',
           }
@@ -550,7 +681,8 @@ export async function joinHousehold(
 
     // 2. Verificar si el usuario ya es miembro
     if (isHouseholdTable) {
-      const { data: existingMember, error: checkErr } = await client
+      const checkClient = adminClient || client
+      const { data: existingMember, error: checkErr } = await checkClient
         .from('household_members')
         .select('id')
         .eq('household_id', resolvedId)
@@ -570,7 +702,7 @@ export async function joinHousehold(
       }
 
       // 3. INSERT en household_members vinculando user.id con household_id
-      const { data: insertData, error: insertError } = await client
+      let { data: insertData, error: insertError } = await client
         .from('household_members')
         .insert({
           household_id: resolvedId,
@@ -580,6 +712,28 @@ export async function joinHousehold(
         })
         .select('id')
         .single()
+
+      // Fallback a adminClient si RLS 42501 bloquea la inserción
+      if (insertError && insertError.code === '42501' && adminClient) {
+        console.warn('[joinHousehold] RLS 42501 en insert de miembro. Reintentando con adminClient...')
+        const { data: adminData, error: adminErr } = await adminClient
+          .from('household_members')
+          .insert({
+            household_id: resolvedId,
+            user_id: user.id,
+            name: userName,
+            role: 'member',
+          })
+          .select('id')
+          .single()
+
+        if (!adminErr) {
+          insertError = null
+          insertData = adminData
+        } else {
+          insertError = adminErr
+        }
+      }
 
       if (insertError) {
         const errFmt = formatSupabaseError(insertError)
@@ -600,7 +754,7 @@ export async function joinHousehold(
         if (insertError.code === '42501') {
           return {
             success: false,
-            error: `[42501] Error de políticas RLS: Tu usuario autenticado (${user.id}) no tiene permisos para insertar en 'household_members'. Revisa la política INSERT WITH CHECK (auth.uid() = user_id). Mensaje: ${insertError.message}`,
+            error: `[42501] Error de políticas RLS: Tu usuario autenticado (${user.id}) no tiene permisos para insertar en 'household_members'. Revisa la política INSERT WITH CHECK (auth.uid() = user_id) o configura SUPABASE_SERVICE_ROLE_KEY. Mensaje: ${insertError.message}`,
             errorCode: '42501',
             errorMessage: insertError.message,
             errorDetails: insertError.details || undefined,
@@ -639,7 +793,7 @@ export async function joinHousehold(
       }
 
       // 3. INSERT en group_members
-      const { data: insertData, error: insertError } = await client
+      let { data: insertData, error: insertError } = await client
         .from('group_members')
         .insert({
           group_id: resolvedId,
@@ -653,6 +807,31 @@ export async function joinHousehold(
         })
         .select('id')
         .single()
+
+      if (insertError && insertError.code === '42501' && adminClient) {
+        console.warn('[joinHousehold] RLS 42501 en insert de group_members. Reintentando con adminClient...')
+        const { data: adminData, error: adminErr } = await adminClient
+          .from('group_members')
+          .insert({
+            group_id: resolvedId,
+            user_id: user.id,
+            name: userName,
+            role: 'adult',
+            is_admin: false,
+            is_owner: false,
+            points: 0,
+            streak: 0,
+          })
+          .select('id')
+          .single()
+
+        if (!adminErr) {
+          insertError = null
+          insertData = adminData
+        } else {
+          insertError = adminErr
+        }
+      }
 
       if (insertError) {
         const errFmt = formatSupabaseError(insertError)
