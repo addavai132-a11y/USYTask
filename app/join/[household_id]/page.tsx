@@ -8,10 +8,14 @@ import { UsyTaskLogo } from '@/components/ui/usytask-logo'
 // Regex estándar de validación de formato UUID
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
-interface JoinPageProps {
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+interface PageProps {
+  params: Promise<{ household_id?: string; id?: string }>
 }
 
+/**
+ * UI amigable que se renderiza directamente si el UUID no es válido
+ * o si ocurre un fallo fatal de conexión, evitando crasheos y errores 500.
+ */
 function InvalidInvitationUI({
   title = 'Enlace de invitación inválido',
   message = 'El enlace no incluye un identificador de familia válido o está cortado.',
@@ -71,28 +75,18 @@ function InvalidInvitationUI({
   )
 }
 
-/**
- * Server Component para la ruta /join (?household_id=... o ?h=...).
- */
-export default async function JoinPage({ searchParams }: JoinPageProps) {
-  // 1. REGLA 1: AWAIT SEARCHPARAMS (Next.js 15+)
+export default async function JoinHouseholdPage({ params }: PageProps) {
+  // 1. REGLA 1: AWAIT PARAMS (Crucial en Next.js 15/16 App Router)
   let rawId = ''
   try {
-    const resolvedParams = await searchParams
-    const rawVal =
-      resolvedParams?.household_id ||
-      resolvedParams?.h ||
-      resolvedParams?.id ||
-      resolvedParams?.groupId ||
-      resolvedParams?.code ||
-      ''
-    rawId = Array.isArray(rawVal) ? rawVal[0] : (rawVal as string) || ''
+    const resolvedParams = await params
+    rawId = resolvedParams?.household_id || resolvedParams?.id || ''
   } catch (paramErr) {
-    console.error('[JoinPage] Error resolviendo searchParams:', paramErr)
+    console.error('[JoinHouseholdPage] Error al resolver params asíncronamente:', paramErr)
     return (
       <InvalidInvitationUI
         title="Error en el enlace"
-        message="No se pudo interpretar los parámetros de la invitación."
+        message="No se pudo interpretar el enlace de invitación."
         code="PARAM_RESOLVE_ERROR"
       />
     )
@@ -101,6 +95,7 @@ export default async function JoinPage({ searchParams }: JoinPageProps) {
   const cleanId = extractHouseholdId(rawId)
 
   // 2. REGLA 2: VALIDACIÓN DE UUID ESTRICTA
+  // Si no es un UUID válido, evitamos que Postgres lance '22P02: invalid input syntax for type uuid'
   if (!cleanId || !UUID_REGEX.test(cleanId)) {
     return (
       <InvalidInvitationUI
@@ -116,7 +111,8 @@ export default async function JoinPage({ searchParams }: JoinPageProps) {
   try {
     result = await getHouseholdForInvitation(cleanId)
   } catch (err: any) {
-    console.error('[JoinPage] Error fatal no controlado al consultar Supabase:', err)
+    // Registro detallado en los logs de Vercel / servidor
+    console.error('[JoinHouseholdPage] Error fatal no controlado al consultar Supabase:', err)
     return (
       <InvalidInvitationUI
         title="No pudimos cargar la invitación"
@@ -126,6 +122,7 @@ export default async function JoinPage({ searchParams }: JoinPageProps) {
     )
   }
 
+  // Si la consulta devolvió un resultado controlado, renderizamos la vista de invitación
   return (
     <Suspense
       fallback={
@@ -150,6 +147,3 @@ export default async function JoinPage({ searchParams }: JoinPageProps) {
     </Suspense>
   )
 }
-
-// Re-exportar para compatibilidad con código existente
-export { JoinInvitationClient as JoinInvitationContent } from '@/app/join/join-client'

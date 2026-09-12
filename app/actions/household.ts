@@ -166,25 +166,63 @@ export async function getHouseholdForInvitation(
   }
 
   const cleanId = householdId.trim()
-  const adminClient = getAdminClientSafe()
-  const serverClient = await createClient()
+  const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+  const isUuid = UUID_REGEX.test(cleanId)
+
+  let adminClient: any = null
+  try {
+    adminClient = getAdminClientSafe()
+  } catch (e) {
+    console.warn('[getHouseholdForInvitation] Error instanciando admin client:', e)
+  }
+
+  let serverClient: any = null
+  if (!adminClient) {
+    try {
+      serverClient = await createClient()
+    } catch (e) {
+      console.warn('[getHouseholdForInvitation] Error instanciando server client:', e)
+    }
+  }
+
   const queryClient = adminClient || serverClient
+  if (!queryClient) {
+    return {
+      success: false,
+      error: '[CLIENT_INIT_FAILED] No se pudo inicializar la conexión con Supabase.',
+      errorCode: 'CLIENT_INIT_FAILED',
+      errorMessage: 'Error al conectar con la base de datos.',
+    }
+  }
 
   try {
-    // 1. Buscar en tabla 'households' (solo id y name)
-    const { data: hData, error: hErr } = await queryClient
-      .from('households')
-      .select('id, name')
-      .eq('id', cleanId)
-      .maybeSingle()
+    // 1. Si es un UUID válido, buscar en tabla 'households' (solo id y name)
+    if (isUuid) {
+      const { data: hData, error: hErr } = await queryClient
+        .from('households')
+        .select('id, name')
+        .eq('id', cleanId)
+        .maybeSingle()
 
-    if (!hErr && hData) {
-      return {
-        success: true,
-        household: {
-          id: hData.id,
-          name: hData.name,
-        },
+      if (!hErr && hData) {
+        return {
+          success: true,
+          household: {
+            id: hData.id,
+            name: hData.name,
+          },
+        }
+      }
+
+      if (hErr && hErr.code === '42501' && !adminClient) {
+        return {
+          success: false,
+          error: `[42501] RLS bloquea la lectura en households. Configura SUPABASE_SERVICE_ROLE_KEY en .env.local (Opción A) o ejecuta la política SQL en Supabase (Opción B).`,
+          errorCode: '42501',
+          errorMessage: 'Permiso denegado por RLS en Supabase.',
+          errorDetails: hErr.details || undefined,
+          errorHint: hErr.hint || undefined,
+        }
       }
     }
 
@@ -222,16 +260,6 @@ export async function getHouseholdForInvitation(
       }
     }
 
-    if (hErr && hErr.code === '42501' && !adminClient) {
-      return {
-        success: false,
-        error: `[42501] RLS bloquea la lectura en households. Configura SUPABASE_SERVICE_ROLE_KEY en .env.local (Opción A) o ejecuta la política SQL en Supabase (Opción B).`,
-        errorCode: '42501',
-        errorMessage: 'Permiso denegado por RLS en Supabase.',
-        errorDetails: hErr.details || undefined,
-        errorHint: hErr.hint || undefined,
-      }
-    }
 
     return {
       success: false,
