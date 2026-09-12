@@ -2,10 +2,15 @@ import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
 import { Plus_Jakarta_Sans } from 'next/font/google'
 import { ServiceWorkerRegister } from '@/components/pwa/service-worker-register'
+import { PwaSync } from '@/components/pwa/pwa-sync'
 import { ThemeModeProvider } from '@/components/ui/theme-mode-context'
 import { HistoryLock } from '@/components/app/history-lock'
 import { TrustedTypesInit } from '@/components/security/trusted-types-init'
 import './globals.css'
+
+// Desactivar caché estática para que la PWA y la web siempre sirvan datos frescos
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
 const fontSans = Plus_Jakarta_Sans({
   subsets: ['latin'],
@@ -101,6 +106,7 @@ export default function RootLayout({
 
           {children}
           <ServiceWorkerRegister />
+          <PwaSync />
           <TrustedTypesInit />
           {process.env.NODE_ENV === 'production' && <Analytics />}
         </ThemeModeProvider>

@@ -139,8 +139,8 @@ export function validateInvitationToken(token: string): {
 
 export function getInvitationUrl(tokenOrHouseholdId: string): string {
   if (typeof window !== 'undefined') {
-    return `${window.location.origin}/join?household_id=${encodeURIComponent(tokenOrHouseholdId)}`
+    return `${window.location.origin}/join/${encodeURIComponent(tokenOrHouseholdId)}`
   }
-  return `http://localhost:3000/join?household_id=${encodeURIComponent(tokenOrHouseholdId)}`
+  return `http://localhost:3000/join/${encodeURIComponent(tokenOrHouseholdId)}`
 }
 

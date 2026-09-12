@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, useCallback } from 'rea
 import { ConfirmDeleteModal } from '@/components/ui/confirm-delete-modal'
 import { UsyTaskLogo } from '@/components/ui/usytask-logo'
 import { useToast } from '@/components/ui/toast'
+import { createHousehold } from '@/app/actions/household'
 import type { Group, Task, CalendarEvent, Reminder, Member, GroupType, EventCategory, TaskSection, TaskPriority, Activity, AppNotification, TaskCategory, EventPoll, DailyMenu, WeeklyMenu, Income, Expense, BillSubscription, Budget, ShoppingReceipt } from '@/types'
 import { MEMBER_COLORS } from '@/types'
 
@@ -634,6 +635,39 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, [refreshData])
 
+  // Cross-device synchronization: Re-fetchea datos al recuperar el foco (móvil PWA / cambio de pestaña)
+  useEffect(() => {
+    let lastSync = 0
+
+    const handleFocusSync = async () => {
+      const now = Date.now()
+      // Throttle de 2.5s para evitar peticiones repetidas al cambiar de pestaña rápidamente
+      if (now - lastSync < 2500) return
+      lastSync = now
+
+      try {
+        await syncFromSupabaseCloud()
+        refreshData()
+      } catch (e) {
+        console.warn('[app-context] Error al refrescar datos en foco:', e)
+      }
+    }
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        handleFocusSync()
+      }
+    }
+
+    window.addEventListener('focus', handleFocusSync)
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    return () => {
+      window.removeEventListener('focus', handleFocusSync)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
+  }, [refreshData])
+
   // Process monthly recurring items whenever selectedMonthISO changes
   useEffect(() => {
     if (activeGroup?.id && selectedMonthISO) {
@@ -700,6 +734,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     ensureOwnerMember(newGroup.id, userName, role)
     refreshData()
     setCreateGroupModalOpen(false)
+
+    // Sincronizar creación en Supabase para propagación cross-device
+    createHousehold(name.trim(), role).catch((err) => {
+      console.warn('[app-context] Error registrando hogar en base de datos:', err)
+    })
+
     return newGroup
   }
 

@@ -308,10 +308,50 @@ export async function syncFromSupabaseCloud(): Promise<{ success: boolean; resto
     if (cloudBackup && cloudBackup.groups && cloudBackup.groups.length > 0) {
       // Hydrate local storage with the cloud backup strictly belonging to THIS user
       hydrateLocalFromCloud(cloudBackup)
-      return { success: true, restored: true }
     }
 
-    return { success: true, restored: false }
+    // Sincronización cruzada de hogares desde household_members en Supabase (PC <-> Móvil)
+    try {
+      const { data: hmData } = await supabase
+        .from('household_members')
+        .select('household_id, role, households(id, name)')
+        .eq('user_id', user.id)
+
+      if (hmData && hmData.length > 0) {
+        const existingGroups = getAllGroups()
+        let modified = false
+
+        for (const hm of hmData) {
+          const h = (hm as any).households
+          if (h && h.id && h.name) {
+            const already = existingGroups.find((g) => g.id === h.id)
+            if (!already) {
+              existingGroups.push({
+                id: h.id,
+                name: h.name,
+                type: 'family',
+                icon: '👨‍👩‍👧',
+                createdAt: new Date().toISOString(),
+                inviteToken: h.id,
+                isOwner: hm.role === 'owner',
+              })
+              modified = true
+            }
+          }
+        }
+
+        if (modified) {
+          saveAllGroups(existingGroups)
+          if (!getActiveGroupId() && existingGroups.length > 0) {
+            setActiveGroupId(existingGroups[0].id)
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('[cloud-sync] Error sincronizando household_members:', e)
+    }
+
+    return { success: true, restored: true }
   } catch (err) {
     console.error('Error syncing from Supabase cloud:', err)
     return { success: false, restored: false }

@@ -3,7 +3,48 @@ self.addEventListener('install', (event) => {
 })
 
 self.addEventListener('activate', (event) => {
-  event.waitUntil(self.clients.claim())
+  event.waitUntil(
+    Promise.all([
+      // 1. Invalidar y purgar cachés obsoletas para evitar stale data en la PWA
+      caches.keys().then((cacheNames) => {
+        return Promise.all(
+          cacheNames.map((cacheName) => {
+            console.log('[SW] Purgando caché obsoleta:', cacheName)
+            return caches.delete(cacheName)
+          })
+        )
+      }),
+      // 2. Tomar control inmediato de los clientes
+      self.clients.claim(),
+    ])
+  )
+})
+
+// Estrategias de red: NUNCA CacheFirst para APIs o URLs de Supabase
+self.addEventListener('fetch', (event) => {
+  const request = event.request
+  const url = new URL(request.url)
+
+  // 1. Peticiones a /api/* o URLs de Supabase (*.supabase.co): SIEMPRE NetworkOnly
+  if (
+    url.pathname.startsWith('/api/') ||
+    url.hostname.includes('supabase.co') ||
+    url.hostname.includes('supabase')
+  ) {
+    // Permitir que vaya directo a la red sin interceptar ni almacenar en caché
+    return
+  }
+
+  // 2. Navegaciones HTML (páginas dinámicas de Next.js App Router): NetworkFirst
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      fetch(request).catch(() => {
+        // Fallback a caché solo si el dispositivo está completamente desconectado (offline)
+        return caches.match(request)
+      })
+    )
+    return
+  }
 })
 
 self.addEventListener('push', (event) => {

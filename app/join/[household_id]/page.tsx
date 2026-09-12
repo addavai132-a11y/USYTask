@@ -8,18 +8,21 @@ import { UsyTaskLogo } from '@/components/ui/usytask-logo'
 // Regex estándar de validación de formato UUID
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 interface PageProps {
   params: Promise<{ household_id?: string; id?: string }>
 }
 
 /**
- * UI amigable que se renderiza directamente si el UUID no es válido
- * o si ocurre un fallo fatal de conexión, evitando crasheos y errores 500.
+ * UI estándar (JSX) que se renderiza si la familia no se encuentra, el enlace caducó
+ * o el ID no es válido. PROHIBIDO llamar a notFound() para evitar pantallas 404 nativas.
  */
 function InvalidInvitationUI({
-  title = 'Enlace de invitación inválido',
-  message = 'El enlace no incluye un identificador de familia válido o está cortado.',
-  code = 'INVALID_UUID',
+  title = 'Error: No se ha podido encontrar la familia o el enlace ha caducado',
+  message = 'No se encontró la familia asociada a este enlace de invitación o el enlace ha caducado.',
+  code = 'NOT_FOUND',
 }: {
   title?: string
   message?: string
@@ -40,11 +43,11 @@ function InvalidInvitationUI({
           Código: {code}
         </span>
 
-        <h1 className="text-2xl font-black text-foreground mt-3">
+        <h1 className="text-xl sm:text-2xl font-black text-foreground mt-3 text-balance">
           {title}
         </h1>
 
-        <p className="mt-2 text-sm text-muted-foreground max-w-xs">
+        <p className="mt-2 text-sm text-muted-foreground max-w-xs text-balance">
           {message}
         </p>
 
@@ -54,7 +57,7 @@ function InvalidInvitationUI({
             className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-primary text-sm font-bold text-primary-foreground shadow-soft transition-transform active:scale-95"
           >
             <Home className="size-4" />
-            <span>Ir a USYTask</span>
+            <span>Volver al Inicio</span>
           </Link>
 
           <Link
@@ -76,16 +79,19 @@ function InvalidInvitationUI({
 }
 
 export default async function JoinHouseholdPage({ params }: PageProps) {
-  // 1. REGLA 1: AWAIT PARAMS (Crucial en Next.js 15/16 App Router)
+  // 1. AWAIT PARAMS (Crucial en Next.js 15/16 App Router)
   let rawId = ''
   try {
     const resolvedParams = await params
     rawId = resolvedParams?.household_id || resolvedParams?.id || ''
-  } catch (paramErr) {
+  } catch (paramErr: any) {
+    if (paramErr?.digest === 'DYNAMIC_SERVER_USAGE') {
+      throw paramErr
+    }
     console.error('[JoinHouseholdPage] Error al resolver params asíncronamente:', paramErr)
     return (
       <InvalidInvitationUI
-        title="Error en el enlace"
+        title="Error: No se ha podido encontrar la familia o el enlace ha caducado"
         message="No se pudo interpretar el enlace de invitación."
         code="PARAM_RESOLVE_ERROR"
       />
@@ -94,35 +100,44 @@ export default async function JoinHouseholdPage({ params }: PageProps) {
 
   const cleanId = extractHouseholdId(rawId)
 
-  // 2. REGLA 2: VALIDACIÓN DE UUID ESTRICTA
-  // Si no es un UUID válido, evitamos que Postgres lance '22P02: invalid input syntax for type uuid'
+  // 2. VALIDACIÓN DE UUID ESTRICTA
   if (!cleanId || !UUID_REGEX.test(cleanId)) {
     return (
       <InvalidInvitationUI
-        title="Enlace de invitación inválido"
-        message="El identificador de la familia no tiene un formato UUID válido o el enlace está incompleto."
+        title="Error: No se ha podido encontrar la familia o el enlace ha caducado"
+        message="El identificador de la familia no tiene un formato válido o el enlace está incompleto."
         code="INVALID_UUID"
       />
     )
   }
 
-  // 3. REGLA 3: TRY / CATCH DEFENSIVO AL CONSULTAR SUPABASE
+  // 3. TRY / CATCH DEFENSIVO AL CONSULTAR SUPABASE (Sin llamar a notFound)
   let result: HouseholdDetailsResult | null = null
   try {
     result = await getHouseholdForInvitation(cleanId)
   } catch (err: any) {
-    // Registro detallado en los logs de Vercel / servidor
     console.error('[JoinHouseholdPage] Error fatal no controlado al consultar Supabase:', err)
     return (
       <InvalidInvitationUI
-        title="No pudimos cargar la invitación"
+        title="Error: No se ha podido encontrar la familia o el enlace ha caducado"
         message="Ocurrió un error inesperado al conectar con el servidor. Por favor, intenta de nuevo más tarde."
         code="SERVER_ERROR"
       />
     )
   }
 
-  // Si la consulta devolvió un resultado controlado, renderizamos la vista de invitación
+  // 4. Si la familia no existe o no se pudo cargar, renderizar UI de error JSX (NUNCA notFound)
+  if (!result || !result.success || !result.household) {
+    return (
+      <InvalidInvitationUI
+        title="Error: No se ha podido encontrar la familia o el enlace ha caducado"
+        message={result?.errorMessage || 'No se encontró ninguna familia asociada a este enlace de invitación o ha sido eliminada.'}
+        code={result?.errorCode || 'NOT_FOUND'}
+      />
+    )
+  }
+
+  // Si se encontró la familia, renderizamos la vista interactiva
   return (
     <Suspense
       fallback={
@@ -133,16 +148,7 @@ export default async function JoinHouseholdPage({ params }: PageProps) {
     >
       <JoinInvitationClient
         paramHouseholdId={cleanId}
-        initialHousehold={result?.household || null}
-        initialError={
-          result && !result.success
-            ? {
-                code: result.errorCode || 'NOT_FOUND',
-                message: result.errorMessage || result.error || 'Familia no encontrada',
-                details: result.errorDetails,
-              }
-            : null
-        }
+        initialHousehold={result.household}
       />
     </Suspense>
   )

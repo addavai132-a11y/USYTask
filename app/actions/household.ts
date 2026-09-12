@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase-server'
 import { createAdminClient } from '@/lib/supabase-admin'
 import { createClient as createSupabaseJsClient } from '@supabase/supabase-js'
+import { revalidatePath } from 'next/cache'
 
 export interface JoinHouseholdResult {
   success: boolean
@@ -545,6 +546,13 @@ export async function getCurrentUserHousehold(accessToken?: string): Promise<Use
         name: userName,
         role: 'owner',
       })
+
+      // REGLA CACHE: Revalidar imperativamente para limpiar caché del servidor
+      revalidatePath('/', 'layout')
+      revalidatePath('/app', 'layout')
+      revalidatePath('/dashboard', 'layout')
+      revalidatePath('/profile', 'layout')
+
       return { success: true, householdId: newHousehold.id, householdName: newHousehold.name }
     }
 
@@ -569,6 +577,13 @@ export async function getCurrentUserHousehold(accessToken?: string): Promise<Use
         is_admin: true,
         is_owner: true,
       })
+
+      // REGLA CACHE: Revalidar imperativamente para limpiar caché del servidor
+      revalidatePath('/', 'layout')
+      revalidatePath('/app', 'layout')
+      revalidatePath('/dashboard', 'layout')
+      revalidatePath('/profile', 'layout')
+
       return { success: true, householdId: newGroup.id, householdName: newGroup.name }
     }
 
@@ -588,6 +603,95 @@ export async function getCurrentUserHousehold(accessToken?: string): Promise<Use
       errorCode: errFmt.code,
       errorMessage: errFmt.message,
     }
+  }
+}
+
+/**
+ * Server Action para crear una nueva familia en Supabase.
+ * Limpia imperativamente la caché del servidor mediante revalidatePath.
+ */
+export async function createHousehold(
+  name: string,
+  role = 'owner',
+  accessToken?: string
+): Promise<{ success: boolean; householdId?: string; householdName?: string; error?: string }> {
+  try {
+    const { client, user } = await resolveSupabaseClient(accessToken)
+
+    if (!user) {
+      return { success: false, error: 'Debes iniciar sesión para crear una familia.' }
+    }
+
+    const trimmedName = name.trim() || 'Mi Familia'
+    const adminClient = getAdminClientSafe()
+    const targetClient = adminClient || client
+
+    // 1. Insertar en tabla households
+    const { data: newH, error: hErr } = await targetClient
+      .from('households')
+      .insert({
+        name: trimmedName,
+        created_by: user.id,
+      })
+      .select('id, name')
+      .single()
+
+    if (hErr || !newH) {
+      // Fallback a groups si households no existiera
+      const { data: newG, error: gErr } = await targetClient
+        .from('groups')
+        .insert({
+          name: trimmedName,
+          type: 'family',
+          created_by: user.id,
+          invite_code: `HOG-${Math.random().toString(36).substring(2, 6).toUpperCase()}`,
+        })
+        .select('id, name')
+        .single()
+
+      if (gErr || !newG) {
+        return { success: false, error: hErr?.message || gErr?.message || 'Error al crear la familia.' }
+      }
+
+      await targetClient.from('group_members').insert({
+        group_id: newG.id,
+        user_id: user.id,
+        name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Titular',
+        role: 'adult',
+        is_admin: true,
+        is_owner: true,
+      })
+
+      // REGLA CACHE: Revalidar imperativamente para limpiar caché del servidor
+      revalidatePath('/', 'layout')
+      revalidatePath('/app', 'layout')
+      revalidatePath('/dashboard', 'layout')
+      revalidatePath('/profile', 'layout')
+
+      return { success: true, householdId: newG.id, householdName: newG.name }
+    }
+
+    // 2. Insertar al usuario como owner en household_members
+    await targetClient.from('household_members').upsert(
+      {
+        household_id: newH.id,
+        user_id: user.id,
+        name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Titular',
+        role: role || 'owner',
+      },
+      { onConflict: 'household_id,user_id' }
+    )
+
+    // REGLA CACHE: Revalidar imperativamente para limpiar caché del servidor
+    revalidatePath('/', 'layout')
+    revalidatePath('/app', 'layout')
+    revalidatePath('/dashboard', 'layout')
+    revalidatePath('/profile', 'layout')
+
+    return { success: true, householdId: newH.id, householdName: newH.name }
+  } catch (err: any) {
+    console.error('[createHousehold] Error:', err)
+    return { success: false, error: err?.message || 'Error al crear la familia.' }
   }
 }
 
@@ -898,6 +1002,12 @@ export async function joinHousehold(
         }
       }
     }
+
+    // REGLA CACHE: Revalidar imperativamente para limpiar caché del servidor tras unirse
+    revalidatePath('/', 'layout')
+    revalidatePath('/app', 'layout')
+    revalidatePath('/dashboard', 'layout')
+    revalidatePath('/profile', 'layout')
 
     return {
       success: true,

@@ -125,11 +125,29 @@ export function InviteSection() {
 
   useEffect(() => {
     loadHouseholdFromSupabase()
+
+    // Sincronización automática al recuperar el foco en PWA móvil o escritorio
+    const handleFocus = () => {
+      loadHouseholdFromSupabase()
+    }
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        loadHouseholdFromSupabase()
+      }
+    }
+
+    window.addEventListener('focus', handleFocus)
+    document.addEventListener('visibilitychange', handleVisibility)
+
+    return () => {
+      window.removeEventListener('focus', handleFocus)
+      document.removeEventListener('visibilitychange', handleVisibility)
+    }
   }, [activeGroup?.id])
 
-  // Generar enlace dinámico usando el household_id real
+  // Generar enlace canónico dinámico usando la ruta /join/[household_id]
   const origin = typeof window !== 'undefined' ? window.location.origin : ''
-  const inviteUrl = householdId ? `${origin}/join?household_id=${householdId}` : ''
+  const inviteUrl = householdId ? `${origin}/join/${householdId}` : ''
   const displayName = householdName || activeGroup?.name || 'Mi Familia'
 
   const handleCopyLink = () => {
