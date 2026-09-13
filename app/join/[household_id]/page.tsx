@@ -8,47 +8,27 @@ import { createClient } from '@/lib/supabase-server'
 import { UsyTaskLogo } from '@/components/ui/usytask-logo'
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ESQUEMA VERIFICADO (migraciones 20260911 / 20260912):
-//   - Tabla: public.households        → columnas: id (UUID PK), name (TEXT), created_by (UUID)
-//   - Tabla: public.household_members → columnas: id, household_id (FK), user_id (FK), name, role
-//   - RLS en households: SELECT permitido a authenticated y anon (USING true)
-//   - RLS en household_members: SELECT permitido si user_id = auth.uid() o el usuario ya es miembro
-//                                INSERT permitido si auth.uid() = user_id
+// TIPADOS ESTRICTOS
 // ─────────────────────────────────────────────────────────────────────────────
 
-// ── Tipos explícitos para los datos de Supabase ─────────────────────────────
-
-/** Datos mínimos de la familia para la pantalla de invitación (solo lectura). */
 interface HouseholdBasicInfo {
   id: string
   name: string
 }
 
-/** Resultado de verificar membresía del usuario actual en una familia. */
-interface MembershipRow {
-  id: string
+interface PageProps {
+  params: Promise<{ household_id?: string; id?: string }>
 }
 
-// ── Configuración de la página ──────────────────────────────────────────────
-
-/** Regex estándar de validación de formato UUID v4. */
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
-interface PageProps {
-  params: Promise<{ household_id?: string; id?: string }>
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
-// COMPONENTES DE UI ESTÁTICOS (Server Components puros — sin "use client")
+// COMPONENTES DE UI
 // ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * UI para invitación no válida (familia inexistente, UUID malformado, enlace expirado).
- * PROHIBIDO llamar a notFound() — siempre renderizar JSX amigable.
- */
 function InvalidInvitationUI({
   title = 'Invitación no válida o expirada',
   message = 'No se encontró la familia asociada a este enlace de invitación.',
@@ -63,24 +43,19 @@ function InvalidInvitationUI({
       <div className="w-full max-w-md pt-6 flex justify-center">
         <UsyTaskLogo size="md" />
       </div>
-
       <div className="w-full max-w-md my-auto rounded-[32px] border border-destructive/30 bg-card p-6 sm:p-8 shadow-2xl flex flex-col items-center text-center animate-fade-in">
         <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-destructive/10 text-destructive mb-4">
           <AlertTriangle className="size-7" />
         </div>
-
         <span className="rounded-full bg-destructive/10 px-3 py-1 text-xs font-mono font-bold text-destructive border border-destructive/20">
           Código: {code}
         </span>
-
         <h1 className="text-xl sm:text-2xl font-black text-foreground mt-3 text-balance">
           {title}
         </h1>
-
         <p className="mt-2 text-sm text-muted-foreground max-w-xs text-balance">
           {message}
         </p>
-
         <div className="mt-6 flex flex-col gap-2.5 w-full">
           <Link
             href="/app"
@@ -89,7 +64,6 @@ function InvalidInvitationUI({
             <Home className="size-4" />
             <span>Volver al Inicio</span>
           </Link>
-
           <Link
             href="/login"
             className="py-2 text-xs font-bold text-muted-foreground hover:text-foreground transition-colors"
@@ -98,7 +72,6 @@ function InvalidInvitationUI({
           </Link>
         </div>
       </div>
-
       <div className="w-full max-w-md pb-4 text-center">
         <p className="text-[11px] text-muted-foreground">
           USYTask — Organización y colaboración para el hogar
@@ -108,33 +81,25 @@ function InvalidInvitationUI({
   )
 }
 
-/**
- * UI para errores de conexión / excepciones de Supabase (distinta de "familia no encontrada").
- */
 function ServerErrorUI({ message }: { message?: string }) {
   return (
     <div className="flex min-h-screen flex-col items-center justify-between p-4 sm:p-6 bg-background text-foreground">
       <div className="w-full max-w-md pt-6 flex justify-center">
         <UsyTaskLogo size="md" />
       </div>
-
       <div className="w-full max-w-md my-auto rounded-[32px] border border-orange-500/30 bg-card p-6 sm:p-8 shadow-2xl flex flex-col items-center text-center animate-fade-in">
         <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-orange-500/10 text-orange-500 mb-4">
           <XCircle className="size-7" />
         </div>
-
-        <span className="rounded-full bg-orange-500/10 px-3 py-1 text-xs font-mono font-bold text-orange-600 dark:text-orange-400 border border-orange-500/20">
-          Error de servidor
+        <span className="rounded-full bg-orange-500/10 px-3 py-1 text-xs font-mono font-bold text-orange-600 border border-orange-500/20">
+          Error al cargar la invitación
         </span>
-
         <h1 className="text-xl sm:text-2xl font-black text-foreground mt-3 text-balance">
-          No se pudo cargar la invitación
+          Ocurrió un error inesperado
         </h1>
-
         <p className="mt-2 text-sm text-muted-foreground max-w-xs text-balance">
-          {message || 'Ocurrió un error al conectar con el servidor. Por favor, inténtalo de nuevo más tarde.'}
+          {message || 'Ocurrió un error al cargar la invitación, inténtalo de nuevo más tarde.'}
         </p>
-
         <div className="mt-6 flex flex-col gap-2.5 w-full">
           <Link
             href="/app"
@@ -145,44 +110,23 @@ function ServerErrorUI({ message }: { message?: string }) {
           </Link>
         </div>
       </div>
-
-      <div className="w-full max-w-md pb-4 text-center">
-        <p className="text-[11px] text-muted-foreground">
-          USYTask — Organización y colaboración para el hogar
-        </p>
-      </div>
     </div>
   )
 }
 
-/**
- * UI que se renderiza cuando el usuario autenticado YA es miembro de la familia.
- * Early return limpio — NUNCA debe mostrarse el botón "Unirse".
- */
 function AlreadyMemberUI({ householdName }: { householdName: string }) {
   return (
     <div className="flex min-h-screen flex-col items-center justify-between p-4 sm:p-6 bg-background text-foreground">
       <div className="w-full max-w-md pt-6 flex justify-center">
         <UsyTaskLogo size="md" />
       </div>
-
       <div className="w-full max-w-md my-auto rounded-[32px] border border-primary/30 bg-card p-6 sm:p-8 shadow-2xl flex flex-col items-center text-center animate-fade-in">
         <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-primary/10 text-primary mb-4">
           <CheckCircle2 className="size-7" />
         </div>
-
-        <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary border border-primary/20">
-          Miembro actual
-        </span>
-
         <h1 className="text-2xl sm:text-3xl font-black text-foreground mt-3 text-balance">
           Ya eres miembro de &ldquo;{householdName}&rdquo;
         </h1>
-
-        <p className="mt-2 text-sm text-muted-foreground max-w-xs text-balance">
-          Tu cuenta ya está vinculada a este hogar. Puedes acceder directamente para gestionar tus tareas, calendario y finanzas compartidas.
-        </p>
-
         <div className="mt-6 flex flex-col gap-2.5 w-full">
           <Link
             href="/app"
@@ -191,20 +135,7 @@ function AlreadyMemberUI({ householdName }: { householdName: string }) {
             <span>Ir al Dashboard</span>
             <ArrowRight className="size-4" />
           </Link>
-
-          <Link
-            href="/login"
-            className="py-2 text-xs font-bold text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Cambiar de cuenta
-          </Link>
         </div>
-      </div>
-
-      <div className="w-full max-w-md pb-4 text-center">
-        <p className="text-[11px] text-muted-foreground">
-          USYTask — Organización y colaboración para el hogar
-        </p>
       </div>
     </div>
   )
@@ -213,36 +144,29 @@ function AlreadyMemberUI({ householdName }: { householdName: string }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // SERVER COMPONENT PRINCIPAL
 // ─────────────────────────────────────────────────────────────────────────────
-//
-// ⚠️  IMPORTANTE — SEGURIDAD:
-//   Este archivo es un Server Component (NO tiene "use client").
-//   La variable process.env.SUPABASE_SERVICE_ROLE_KEY SOLO existe en el servidor.
-//   NUNCA se debe importar este archivo desde un componente cliente.
-//   NUNCA se debe pasar la service_role key como prop al cliente.
-//
-// ─────────────────────────────────────────────────────────────────────────────
 
 export default async function JoinHouseholdPage({ params }: PageProps) {
   try {
-    // ── PASO 1: Resolver params (async en Next.js 15/16 App Router) ──────
+    // =========================================================================
+    // 1. LECTURA DE PARAMS (Safe Parsing)
+    // NOTA: Versión Next.js 16 detectada, 'params' es Promise y debe ser await.
+    // =========================================================================
     let rawId = ''
     try {
       const resolvedParams = await params
       rawId = resolvedParams?.household_id || resolvedParams?.id || ''
     } catch (paramErr: any) {
-      // Propagar errores internos de Next.js (ej: DYNAMIC_SERVER_USAGE)
-      if (paramErr?.digest === 'DYNAMIC_SERVER_USAGE') {
-        throw paramErr
-      }
-      console.error('[JoinPage] Error al resolver params:', { error: paramErr })
-      return <InvalidInvitationUI message="No se pudo interpretar el enlace de invitación." code="PARAM_ERROR" />
+      if (paramErr?.digest === 'DYNAMIC_SERVER_USAGE') throw paramErr
+      console.error("🔥 ERROR PARAMS:", { message: paramErr?.message })
+      return <InvalidInvitationUI code="PARAM_ERROR" />
     }
 
     const cleanId = extractHouseholdId(rawId)
 
-    // ── PASO 2: Validación de UUID estricta ──────────────────────────────
+    // =========================================================================
+    // 2. VALIDACIÓN UUID (Evita consultas innecesarias)
+    // =========================================================================
     if (!cleanId || !UUID_REGEX.test(cleanId)) {
-      console.warn('[JoinPage] UUID inválido recibido:', { rawId, cleanId })
       return (
         <InvalidInvitationUI
           message="El identificador de la familia no tiene un formato válido o el enlace está incompleto."
@@ -251,185 +175,135 @@ export default async function JoinHouseholdPage({ params }: PageProps) {
       )
     }
 
-    // ── PASO 3: Obtener datos de la familia con Service Role (bypass RLS) ─
-    //
-    // Se usa createClient de @supabase/supabase-js (NO el helper de SSR/cookies)
-    // inicializado con SUPABASE_SERVICE_ROLE_KEY para garantizar que el SELECT
-    // funcione incluso si el usuario no está autenticado o no es miembro.
-    //
-    // SOLO se seleccionan columnas públicas no sensibles: {id, name}.
-    //
-    const supabaseUrl = (process.env.NEXT_PUBLIC_SUPABASE_URL || '').trim()
-    const serviceRoleKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim()
+    // =========================================================================
+    // 3. CONSULTA ADMIN PARA PREVISUALIZAR LA FAMILIA
+    // =========================================================================
+    let family: HouseholdBasicInfo | null = null
 
-    let household: HouseholdBasicInfo | null = null
+    try {
+      const supabaseUrl = (process.env.NEXT_PUBLIC_SUPABASE_URL || '').trim()
+      const serviceRoleKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim()
 
-    if (supabaseUrl && serviceRoleKey && serviceRoleKey.length > 20 && serviceRoleKey !== 'tu_clave_service_role_aqui') {
-      // ⚠️ ESTA KEY NUNCA DEBE EXPONERSE AL CLIENTE — solo existe en el servidor.
+      if (!supabaseUrl || !serviceRoleKey) {
+        console.error("🔥 ERROR CONFIG: faltan variables de entorno", {
+          hasUrl: !!supabaseUrl,
+          hasKey: !!serviceRoleKey,
+        })
+        throw new Error("Configuración del servidor incompleta (faltan credenciales Supabase).")
+      }
+
+      // IMPORTANTE: Este cliente se usa ÚNICA Y EXCLUSIVAMENTE para el SELECT
+      // de solo lectura de la familia (households). No reutilizar para nada
+      // que dependa del contexto del usuario autenticado actual.
       const supabaseAdmin = createSupabaseJsClient(supabaseUrl, serviceRoleKey, {
         auth: { autoRefreshToken: false, persistSession: false },
       })
 
-      console.log(`[JoinPage] Consultando familia "${cleanId}" con cliente Admin (service_role)...`)
-
-      const { data, error } = await supabaseAdmin
+      const { data: familyData, error: familyError } = await supabaseAdmin
         .from('households')
         .select('id, name')
         .eq('id', cleanId)
         .maybeSingle()
 
-      if (error) {
-        console.error('[JoinPage] Error de Supabase al consultar familia con service role:', {
+      if (familyError) {
+        console.error("🔥 ERROR SUPABASE ADMIN:", {
           familyId: cleanId,
-          error: {
-            message: error.message,
-            code: error.code,
-            details: error.details,
-            hint: error.hint,
-          },
+          message: familyError.message,
+          code: familyError.code,
+          details: familyError.details,
+          hint: familyError.hint,
         })
-        // Distinguir: error de conexión/consulta ≠ familia no encontrada
-        return <ServerErrorUI message={`Error de base de datos: ${error.message}`} />
+        return <ServerErrorUI message="Error al consultar la invitación." />
       }
 
-      if (data) {
-        household = { id: data.id, name: data.name }
-        console.log(`[JoinPage] ✅ Familia encontrada: "${data.name}" (${data.id})`)
+      if (!familyData) {
+        // Caso de negocio válido: UUID correcto pero no existe en BD
+        return <InvalidInvitationUI code="NOT_FOUND" />
       }
-    } else {
-      // Fallback: si no hay service role key, intentar con el cliente de cookies
-      console.warn('[JoinPage] ⚠️ SUPABASE_SERVICE_ROLE_KEY no configurada. Usando cliente de cookies como fallback.')
 
-      try {
-        const supabaseCookie = await createClient()
-        const { data, error } = await supabaseCookie
-          .from('households')
-          .select('id, name')
-          .eq('id', cleanId)
-          .maybeSingle()
-
-        if (error) {
-          console.error('[JoinPage] Error de Supabase al consultar familia (cookie client):', {
-            familyId: cleanId,
-            error: {
-              message: error.message,
-              code: error.code,
-              details: error.details,
-              hint: error.hint,
-            },
-          })
-          return <ServerErrorUI message={`Error de base de datos: ${error.message}. Si el error es de permisos (RLS), configura SUPABASE_SERVICE_ROLE_KEY en .env.local.`} />
-        }
-
-        if (data) {
-          household = { id: data.id, name: data.name }
-        }
-      } catch (cookieErr: any) {
-        console.error('[JoinPage] Excepción al consultar familia con cookie client:', {
-          familyId: cleanId,
-          error: cookieErr,
-        })
-        return <ServerErrorUI />
-      }
+      family = { id: familyData.id, name: familyData.name }
+    } catch (adminTryCatchErr: any) {
+      console.error("🔥 ERROR SUPABASE ADMIN:", {
+        familyId: cleanId,
+        message: adminTryCatchErr?.message,
+      })
+      return <ServerErrorUI message="Ocurrió un error al cargar la invitación, inténtalo de nuevo más tarde." />
     }
 
-    // ── PASO 4: Familia no encontrada (dato vacío, no error de conexión) ──
-    if (!household) {
-      console.warn(`[JoinPage] Familia no encontrada para ID "${cleanId}". Posible enlace expirado o ID incorrecto.`)
-      return (
-        <InvalidInvitationUI
-          title="Invitación no válida o expirada"
-          message="No se encontró ninguna familia asociada a este enlace de invitación. El enlace puede haber caducado o ser incorrecto."
-          code="NOT_FOUND"
-        />
-      )
-    }
-
-    // ── PASO 5: Obtener usuario autenticado actual (cliente de cookies) ───
+    // =========================================================================
+    // 4. AUTENTICACIÓN DEL USUARIO ACTUAL (Cliente normal - SSR)
+    // =========================================================================
     let currentUserId: string | null = null
 
     try {
-      const supabaseAuth = await createClient()
+      const supabaseAuth = await createClient() // Usa el helper de SSR para leer cookies
       const { data: { user }, error: authError } = await supabaseAuth.auth.getUser()
 
       if (authError) {
-        console.warn('[JoinPage] Error al obtener usuario autenticado:', {
+        console.error("🔥 ERROR SESIÓN:", {
           familyId: cleanId,
-          error: { message: authError.message, status: authError.status },
+          message: authError.message,
+          status: authError.status,
         })
+        // Asumiremos fallo al validar el token, obligamos a logear de nuevo.
       }
 
       if (!user) {
-        // No hay usuario logueado → redirigir a login con URL de retorno
-        console.log(`[JoinPage] Usuario no autenticado. Redirigiendo a login con redirect_to=/join/${cleanId}`)
+        // No hay usuario logueado -> redirect a login.
         redirect(`/login?next=${encodeURIComponent(`/join/${cleanId}`)}`)
       }
 
       currentUserId = user.id
-    } catch (authErr: any) {
-      // redirect() de Next.js lanza un error especial con digest — hay que propagarlo
-      if (authErr?.digest?.startsWith('NEXT_REDIRECT')) {
-        throw authErr
+    } catch (authTryCatchErr: any) {
+      if (authTryCatchErr?.digest?.startsWith('NEXT_REDIRECT')) {
+        throw authTryCatchErr
       }
-      console.error('[JoinPage] Excepción al verificar autenticación:', {
+      console.error("🔥 ERROR SESIÓN:", {
         familyId: cleanId,
-        error: authErr,
+        message: authTryCatchErr?.message,
       })
-      // Si falla la autenticación, dejamos que el componente cliente lo maneje
+      return <ServerErrorUI message="No pudimos validar tu sesión." />
     }
 
-    // ── PASO 6: Verificación de membresía previa (EARLY RETURN) ──────────
-    //
-    // ANTES de renderizar el botón "Unirse", verificamos si el usuario
-    // ya es miembro de esta familia. Esta consulta usa el cliente autenticado
-    // normal (cookies), ya que RLS SÍ permite a un usuario consultar
-    // sus propias filas en household_members (user_id = auth.uid()).
-    //
-    if (currentUserId) {
-      try {
-        const supabaseMembership = await createClient()
+    // =========================================================================
+    // 5. VERIFICACIÓN DE MEMBRESÍA PREVIA
+    // =========================================================================
+    try {
+      const supabaseMembership = await createClient() // Usar cliente autenticado (sujeto a RLS)
+      const { data: membershipData, error: membershipError } = await supabaseMembership
+        .from('household_members')
+        .select('id')
+        .eq('household_id', family.id)
+        .eq('user_id', currentUserId)
+        .maybeSingle()
 
-        const { data: existingMember, error: memberError } = await supabaseMembership
-          .from('household_members')
-          .select('id')
-          .eq('household_id', household.id)
-          .eq('user_id', currentUserId)
-          .maybeSingle()
-
-        if (memberError) {
-          console.warn('[JoinPage] Error al verificar membresía (no bloqueante):', {
-            familyId: household.id,
-            userId: currentUserId,
-            error: {
-              message: memberError.message,
-              code: memberError.code,
-              details: memberError.details,
-            },
-          })
-          // No bloqueamos el flujo — si la consulta falla, dejamos que el cliente lo maneje
-        }
-
-        if (existingMember) {
-          console.log(`[JoinPage] ✅ Usuario ${currentUserId} ya es miembro de "${household.name}" (${household.id}). Early return.`)
-          return <AlreadyMemberUI householdName={household.name} />
-        }
-      } catch (memberCheckErr: any) {
-        console.warn('[JoinPage] Excepción al verificar membresía (no bloqueante):', {
-          familyId: household.id,
+      if (membershipError) {
+        console.error("🔥 ERROR MEMBRESÍA:", {
+          familyId: family.id,
           userId: currentUserId,
-          error: memberCheckErr,
+          message: membershipError.message,
+          code: membershipError.code,
+          details: membershipError.details,
         })
-        // No bloquear el flujo — dejar que el componente cliente lo maneje
+        return <ServerErrorUI message="Error al verificar si ya perteneces a esta familia." />
       }
+
+      if (membershipData) {
+        // EARLY RETURN si ya es miembro, sin renderizar botón de unirse.
+        return <AlreadyMemberUI householdName={family.name} />
+      }
+    } catch (membershipTryCatchErr: any) {
+      console.error("🔥 ERROR MEMBRESÍA:", {
+        familyId: family.id,
+        userId: currentUserId,
+        message: membershipTryCatchErr?.message,
+      })
+      return <ServerErrorUI message="Error inesperado al validar membresía." />
     }
 
-    // ── PASO 7: Renderizar la vista interactiva de aceptación ────────────
-    //
-    // Si llegamos aquí:
-    //   ✅ La familia existe y tenemos su nombre
-    //   ✅ El usuario está autenticado (o se le redirigió a login)
-    //   ✅ El usuario NO es miembro de la familia todavía
-    //
+    // =========================================================================
+    // 6. RENDERIZADO DEL CLIENTE DE INVITACIÓN (Aceptación de la invitación)
+    // =========================================================================
     return (
       <Suspense
         fallback={
@@ -439,30 +313,66 @@ export default async function JoinHouseholdPage({ params }: PageProps) {
         }
       >
         <JoinInvitationClient
-          paramHouseholdId={cleanId}
-          initialHousehold={household}
+          paramHouseholdId={family.id}
+          initialHousehold={family}
         />
       </Suspense>
     )
-  } catch (outerErr: any) {
-    // ── CATCH GLOBAL — Captura cualquier excepción no controlada ─────────
-    //
-    // Propagar errores internos de Next.js (redirect, DYNAMIC_SERVER_USAGE, etc.)
+  } catch (globalCatchErr: any) {
     if (
-      outerErr?.digest?.startsWith('NEXT_REDIRECT') ||
-      outerErr?.digest === 'DYNAMIC_SERVER_USAGE'
+      globalCatchErr?.digest?.startsWith('NEXT_REDIRECT') ||
+      globalCatchErr?.digest === 'DYNAMIC_SERVER_USAGE'
     ) {
-      throw outerErr
+      throw globalCatchErr
     }
 
-    console.error('[JoinPage] ❌ EXCEPCIÓN GLOBAL no controlada en Server Component:', {
-      message: outerErr?.message,
-      code: outerErr?.code,
-      stack: outerErr?.stack,
-      name: outerErr?.name,
+    console.error("🔥 ERROR INESPERADO EN JOIN PAGE:", {
+      message: globalCatchErr?.message,
+      stack: globalCatchErr?.stack,
     })
 
-    // NUNCA propagar como 500 genérico — siempre renderizar fallback amigable
     return <ServerErrorUI />
   }
 }
+
+/*
+ ===============================================================================
+ REPORTE DE RESOLUCIÓN DE FALLOS SILENCIOSOS
+ ===============================================================================
+ Anteriormente, varios escenarios podían generar errores silenciosos o un 500
+ no manejado (error.tsx). Estos son los puntos corregidos:
+
+ 1. Fallo al instanciar Admin Client por falta de variables:
+    Antes: getAdminClientSafe() podía devolver null si la key faltaba, cayendo 
+    silenciosamente a un cliente autenticado que reventaba por RLS.
+    Ahora: Si NEXT_PUBLIC_SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY faltan, se lanza
+    un Error explícito que es capturado, logueado como "🔥 ERROR CONFIG", y
+    muestra un UI en lugar de un 500.
+
+ 2. Excepción interna de Supabase (ej. timeout de BD, network):
+    Antes: await supabase.from(...).maybeSingle() si fallaba a nivel de red,
+    o en .single() que lanzaba PGRST116 si no encontraba registros, esto reventaba
+    el Server Component.
+    Ahora: Se usa SIEMPRE .maybeSingle(). El resultado data/error se desestructura
+    siempre. Si hay `error`, se evalúa independientemente. Si es una excepción a nivel JS 
+    (promesa rechazada), es atrapada por el bloque try/catch INDIVIDUAL de la consulta Admin.
+
+ 3. Excepción en supabase.auth.getUser():
+    Antes: Podía ser no controlada.
+    Ahora: Tiene su propio try/catch. Si el token está corrupto y genera una excepción,
+    lo captura, loguea con "🔥 ERROR SESIÓN", y renderiza ServerErrorUI. 
+    Notar que hemos excluido del catch los errores de `redirect()`.
+
+ 4. Consulta de membresía previa (family_members -> household_members):
+    Antes: Se omitían try/catches dedicados, y usar .single() habría reventado 
+    con 406 Not Acceptable (PGRST116) para usuarios que no son miembros (que son 
+    la mayoría visitando esta página).
+    Ahora: Usa .maybeSingle() y atrapa errores aisladamente. Si hay error de 
+    red/permisos, "🔥 ERROR MEMBRESÍA" lo reporta.
+
+ 5. Catch Global como última barrera:
+    Cualquier cosa fuera de los 3 grandes bloques (como un error parseando params)
+    cae al Catch global que loguea con "🔥 ERROR INESPERADO EN JOIN PAGE" y muestra
+    ServerErrorUI. NUNCA deja que Next.js levante el error.tsx por su cuenta.
+ ===============================================================================
+*/
