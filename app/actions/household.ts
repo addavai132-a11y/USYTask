@@ -149,15 +149,19 @@ function getAdminClientSafe() {
 
 /**
  * OPCIÓN A (Recomendada): Obtiene los datos públicos básicos de una familia (id y nombre)
- * para la pantalla de invitación usando el Admin Client (service_role) del lado del servidor.
+ * para la pantalla de invitación usando un cliente Admin (service_role) del lado del servidor.
  *
  * Esto garantiza que un usuario invitado (que todavía no está en household_members)
  * pueda visualizar la tarjeta de invitación sin ser bloqueado por las políticas RLS.
+ *
+ * IMPORTANTE: Este Server Action crea un cliente Admin inline con SUPABASE_SERVICE_ROLE_KEY
+ * para hacer ÚNICAMENTE un SELECT de {id, name} — no expone datos sensibles.
  */
 export async function getHouseholdForInvitation(
   householdId: string
 ): Promise<HouseholdDetailsResult> {
   if (!householdId || typeof householdId !== 'string') {
+    console.error('[getHouseholdForInvitation] ID vacío o no string:', householdId)
     return {
       success: false,
       error: '[INVALID_ID] ID de familia no proporcionado o vacío.',
@@ -170,42 +174,100 @@ export async function getHouseholdForInvitation(
   const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
   const isUuid = UUID_REGEX.test(cleanId)
 
-  let adminClient: any = null
-  try {
-    adminClient = getAdminClientSafe()
-  } catch (e) {
-    console.warn('[getHouseholdForInvitation] Error instanciando admin client:', e)
+  // ─── 1. Construir el cliente Admin (Bypass RLS) ───────────────────────
+  const supabaseUrl = (process.env.NEXT_PUBLIC_SUPABASE_URL || '').trim()
+  const serviceRoleKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim()
+
+  console.log('[getHouseholdForInvitation] Diagnóstico de configuración:', {
+    householdId: cleanId,
+    isUuid,
+    supabaseUrlPresent: !!supabaseUrl,
+    serviceRoleKeyPresent: !!serviceRoleKey && serviceRoleKey !== 'tu_clave_service_role_aqui',
+    serviceRoleKeyLength: serviceRoleKey.length,
+  })
+
+  let queryClient: any = null
+  let usingAdminClient = false
+
+  // Prioridad: SIEMPRE usar service_role para esta consulta de solo lectura
+  if (supabaseUrl && serviceRoleKey && serviceRoleKey !== 'tu_clave_service_role_aqui' && serviceRoleKey.length > 20) {
+    try {
+      queryClient = createSupabaseJsClient(supabaseUrl, serviceRoleKey, {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false,
+        },
+      })
+      usingAdminClient = true
+      console.log('[getHouseholdForInvitation] ✅ Cliente Admin (service_role) creado correctamente — RLS bypassed.')
+    } catch (adminErr) {
+      console.error('[getHouseholdForInvitation] ❌ Error FATAL al crear cliente Admin (service_role):', adminErr)
+    }
+  } else {
+    console.warn(
+      '[getHouseholdForInvitation] ⚠️ SUPABASE_SERVICE_ROLE_KEY NO configurada o es el placeholder.',
+      'El SELECT a households PROBABLEMENTE fallará por RLS si el usuario no es miembro.',
+      'Para solucionarlo: ve a Supabase Dashboard → Settings → API → service_role y cópiala en .env.local como SUPABASE_SERVICE_ROLE_KEY=...'
+    )
   }
 
-  let serverClient: any = null
-  if (!adminClient) {
+  // Fallback: si no se pudo crear el admin client, intentar con el server client (cookies)
+  if (!queryClient) {
     try {
-      serverClient = await createClient()
-    } catch (e) {
-      console.warn('[getHouseholdForInvitation] Error instanciando server client:', e)
+      queryClient = await createClient()
+      console.log('[getHouseholdForInvitation] ⚠️ Usando server client (cookies) como fallback — RLS ACTIVO.')
+    } catch (serverErr) {
+      console.error('[getHouseholdForInvitation] ❌ Error FATAL al crear server client:', serverErr)
     }
   }
 
-  const queryClient = adminClient || serverClient
   if (!queryClient) {
+    console.error('[getHouseholdForInvitation] ❌ No se pudo inicializar NINGÚN cliente de Supabase.')
     return {
       success: false,
-      error: '[CLIENT_INIT_FAILED] No se pudo inicializar la conexión con Supabase.',
+      error: '[CLIENT_INIT_FAILED] No se pudo inicializar la conexión con Supabase. Verifica NEXT_PUBLIC_SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY en .env.local.',
       errorCode: 'CLIENT_INIT_FAILED',
       errorMessage: 'Error al conectar con la base de datos.',
     }
   }
 
+  // ─── 2. Consultas de solo lectura (id, name) ─────────────────────────
   try {
-    // 1. Si es un UUID válido, buscar en tabla 'households' (solo id y name)
+    // 2a. Si es UUID válido, buscar en tabla 'households'
     if (isUuid) {
+      console.log(`[getHouseholdForInvitation] Buscando UUID "${cleanId}" en tabla 'households'...`)
       const { data: hData, error: hErr } = await queryClient
         .from('households')
         .select('id, name')
         .eq('id', cleanId)
         .maybeSingle()
 
-      if (!hErr && hData) {
+      if (hErr) {
+        console.error('[getHouseholdForInvitation] Supabase Error detallado (households):', {
+          code: hErr.code,
+          message: hErr.message,
+          details: hErr.details,
+          hint: hErr.hint,
+          status: hErr.status,
+          statusText: hErr.statusText,
+          usingAdminClient,
+        })
+
+        // Si es error RLS y NO estamos usando admin → informar claramente
+        if ((hErr.code === '42501' || hErr.code === 'PGRST301') && !usingAdminClient) {
+          return {
+            success: false,
+            error: `[${hErr.code}] RLS bloquea la lectura en 'households'. El usuario invitado no tiene permiso SELECT porque no es miembro. SOLUCIÓN: Añade SUPABASE_SERVICE_ROLE_KEY a .env.local (Supabase Dashboard → Settings → API → service_role).`,
+            errorCode: hErr.code,
+            errorMessage: 'Permiso denegado por RLS en Supabase. Configura la Service Role Key.',
+            errorDetails: hErr.details || undefined,
+            errorHint: hErr.hint || undefined,
+          }
+        }
+      }
+
+      if (hData) {
+        console.log(`[getHouseholdForInvitation] ✅ Familia encontrada en 'households': "${hData.name}" (${hData.id})`)
         return {
           success: true,
           household: {
@@ -215,26 +277,29 @@ export async function getHouseholdForInvitation(
         }
       }
 
-      if (hErr && hErr.code === '42501' && !adminClient) {
-        return {
-          success: false,
-          error: `[42501] RLS bloquea la lectura en households. Configura SUPABASE_SERVICE_ROLE_KEY en .env.local (Opción A) o ejecuta la política SQL en Supabase (Opción B).`,
-          errorCode: '42501',
-          errorMessage: 'Permiso denegado por RLS en Supabase.',
-          errorDetails: hErr.details || undefined,
-          errorHint: hErr.hint || undefined,
-        }
-      }
+      console.log(`[getHouseholdForInvitation] UUID no encontrado en 'households' (data: null, error: ${hErr ? hErr.code : 'none'}). Buscando en 'groups'...`)
     }
 
-    // 2. Buscar en tabla 'groups' (compatibilidad)
+    // 2b. Buscar en tabla 'groups' (compatibilidad con esquema antiguo)
+    console.log(`[getHouseholdForInvitation] Buscando "${cleanId}" en tabla 'groups'...`)
     const { data: gData, error: gErr } = await queryClient
       .from('groups')
       .select('id, name')
       .eq('id', cleanId)
       .maybeSingle()
 
-    if (!gErr && gData) {
+    if (gErr) {
+      console.error('[getHouseholdForInvitation] Supabase Error detallado (groups):', {
+        code: gErr.code,
+        message: gErr.message,
+        details: gErr.details,
+        hint: gErr.hint,
+        usingAdminClient,
+      })
+    }
+
+    if (gData) {
+      console.log(`[getHouseholdForInvitation] ✅ Familia encontrada en 'groups': "${gData.name}" (${gData.id})`)
       return {
         success: true,
         household: {
@@ -244,14 +309,26 @@ export async function getHouseholdForInvitation(
       }
     }
 
-    // 3. Buscar por invite_code
-    const { data: gCode } = await queryClient
+    // 2c. Buscar por invite_code
+    console.log(`[getHouseholdForInvitation] Buscando por invite_code="${cleanId}" en 'groups'...`)
+    const { data: gCode, error: gCodeErr } = await queryClient
       .from('groups')
       .select('id, name')
       .eq('invite_code', cleanId)
       .maybeSingle()
 
+    if (gCodeErr) {
+      console.error('[getHouseholdForInvitation] Supabase Error detallado (groups invite_code):', {
+        code: gCodeErr.code,
+        message: gCodeErr.message,
+        details: gCodeErr.details,
+        hint: gCodeErr.hint,
+        usingAdminClient,
+      })
+    }
+
     if (gCode) {
+      console.log(`[getHouseholdForInvitation] ✅ Familia encontrada por invite_code: "${gCode.name}" (${gCode.id})`)
       return {
         success: true,
         household: {
@@ -261,14 +338,21 @@ export async function getHouseholdForInvitation(
       }
     }
 
-
+    // No se encontró en ninguna tabla
+    console.warn(`[getHouseholdForInvitation] ❌ No se encontró ninguna familia con ID "${cleanId}" en ninguna tabla (households, groups, invite_code).`)
     return {
       success: false,
-      error: `[PGRST116] No se encontró ninguna familia con el identificador "${cleanId}".`,
-      errorCode: 'PGRST116',
-      errorMessage: 'Familia no encontrada',
+      error: `[NOT_FOUND] No se encontró ninguna familia con el identificador "${cleanId}".`,
+      errorCode: 'NOT_FOUND',
+      errorMessage: 'Familia no encontrada. El enlace puede haber caducado o ser incorrecto.',
     }
   } catch (err: any) {
+    console.error('[getHouseholdForInvitation] ❌ EXCEPCIÓN no controlada al consultar Supabase:', {
+      message: err?.message,
+      code: err?.code,
+      stack: err?.stack,
+      name: err?.name,
+    })
     const errFmt = formatSupabaseError(err)
     return {
       success: false,
